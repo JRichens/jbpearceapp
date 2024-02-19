@@ -82,7 +82,10 @@ const ReconcileBank = () => {
 
         try {
           const res = await fetch(
-            "http://192.168.0.122:4000/paidTickets?from=" + from + "&to=" + to,
+            "https://genuine-calf-newly.ngrok-free.app/paidTickets?from=" +
+              from +
+              "&to=" +
+              to,
             {
               method: "GET",
               headers: {
@@ -97,7 +100,7 @@ const ReconcileBank = () => {
 
         try {
           const res = await fetch(
-            "http://192.168.0.122:4000/paidTickets?from=" +
+            "https://genuine-calf-newly.ngrok-free.app/paidTickets?from=" +
               from +
               "&to=" +
               to +

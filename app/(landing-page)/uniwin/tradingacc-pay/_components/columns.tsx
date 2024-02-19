@@ -5,8 +5,6 @@ import { UnPaidTickets } from "@/types/uniwindata"
 
 import PaidCell from "./paid-cell"
 
-import { useEffect } from "react"
-
 export const columns: ColumnDef<UnPaidTickets>[] = [
   {
     accessorKey: "number17",

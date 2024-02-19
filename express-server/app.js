@@ -6,10 +6,21 @@ const cron = require("node-cron")
 const cors = require("cors")
 const PORT = process.env.PORT || 4000
 
+// Middleware to log the origin of requests
+app.use((req, res, next) => {
+  const origin = req.get("Origin")
+  if (origin) {
+    console.log("Request Origin:", origin)
+  } else {
+    console.log("Request Origin: Origin header is not present")
+  }
+  next()
+})
+
 // Cross Origin Resource Sharing
 app.use(
   cors({
-    origin: ["http://192.168.0.122:3001"],
+    origin: ["http://192.168.0.122:3001", "https://www.jbpearce.app"],
     methods: ["GET", "PUT"],
   })
 )
@@ -35,9 +46,7 @@ app.get("/", (req, res) => {
 // Schedule task function
 const callDailyChecksAPI = async () => {
   try {
-    const response = await axios.get(
-      "http://192.168.0.122:3001/api/dailychecks"
-    )
+    const response = await axios.get("https://www.jbpearce.app/api/dailychecks")
     console.log("Successfully called daily checks API", response.data)
   } catch (error) {
     console.error("Error calling daily checks API", error)
