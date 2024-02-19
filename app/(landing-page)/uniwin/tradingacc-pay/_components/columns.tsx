@@ -2,9 +2,10 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { UnPaidTickets } from "@/types/uniwindata"
-import { Checkbox } from "@/components/ui/checkbox"
-import { useCallback, useEffect, useState, useTransition } from "react"
-import { GetUser } from "@/actions/get-user"
+
+import PaidCell from "./paid-cell"
+
+import { useEffect } from "react"
 
 export const columns: ColumnDef<UnPaidTickets>[] = [
   {
@@ -93,50 +94,6 @@ export const columns: ColumnDef<UnPaidTickets>[] = [
   {
     accessorKey: "logical22",
     header: "Paid",
-    cell: ({ cell }) => {
-      const [checked, setChecked] = useState(false)
-      const [isPending, startTransition] = useTransition()
-
-      const updatePaidState = useCallback(async (checked: boolean) => {
-        const today = Math.floor(
-          (new Date().getTime() - new Date(1899, 11, 30).getTime()) / 86400000
-        ).toString()
-        const ticketNo = cell.row.getValue("ticket2")
-
-        try {
-          const user = await GetUser()
-          await fetch(
-            `https://genuine-calf-newly.ngrok-free.app/unPaidTickets?ticketNo=${ticketNo}&paid=${
-              checked ? 1 : 0
-            }&initials=${user?.initials}&date=${today}`,
-            {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-              },
-            }
-          )
-          console.log("Updated the paid state on ticket: ", ticketNo)
-        } catch (error) {
-          console.error("Failed to update paid state: ", error)
-        }
-      }, [])
-
-      return (
-        <div className="flex items-center justify-center">
-          <Checkbox
-            checked={checked}
-            onCheckedChange={() => {
-              startTransition(() => {
-                const newChecked = !checked
-                setChecked(newChecked)
-                updatePaidState(newChecked)
-              })
-            }}
-            disabled={isPending}
-          />
-        </div>
-      )
-    },
+    cell: ({ cell }) => <PaidCell cell={cell} />,
   },
 ]

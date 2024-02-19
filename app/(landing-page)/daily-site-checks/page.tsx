@@ -64,8 +64,8 @@ const DailySiteChecks = async () => {
         <CardHeader>
           <CardTitle>Daily Site Checks</CardTitle>
           <CardDescription>
-            Information of all daily site checks - click in 'View Check' for
-            full detail of checks
+            Information of all daily site checks - click in &apos;View
+            Check&apos; for full detail of checks
           </CardDescription>
         </CardHeader>
 

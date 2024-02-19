@@ -37,7 +37,7 @@ export function CheckView({ checkDesc }: Props) {
       })
     }
     getCheckDetails()
-  }, [])
+  }, [checkDesc])
 
   return (
     <Dialog defaultOpen={true}>

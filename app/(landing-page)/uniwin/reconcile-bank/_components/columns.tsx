@@ -3,7 +3,10 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { PaidTickets } from "@/types/uniwindata"
 import { Checkbox } from "@/components/ui/checkbox"
-import { startTransition, useState, useTransition } from "react"
+
+import ReconcileCell from "./reconcile-cell"
+
+import { useState, useTransition } from "react"
 
 export const columns: ColumnDef<PaidTickets>[] = [
   {
@@ -87,46 +90,6 @@ export const columns: ColumnDef<PaidTickets>[] = [
   {
     accessorKey: "logical27",
     header: "Reconcile",
-    cell: ({ cell }) => {
-      const [reconcileIsPending, startSetReconcileTransition] = useTransition()
-      const [reconcileStatus, setReconcileStatus] = useState(0)
-
-      // Get the ticket2
-      const ticketNo = cell.row.original.ticket2
-      // Cell value as boolean
-      const defaultValue = cell.getValue() === "1" ? true : false
-
-      const updateReconcileState = async () => {
-        // Set to opposite of reconcileStatus
-        const newReconcileStatus = reconcileStatus === 0 ? 1 : 0
-        setReconcileStatus(newReconcileStatus)
-        startSetReconcileTransition(async () => {
-          try {
-            const res = await fetch(
-              "http://192.168.0.122:4000/paidTickets?ticketNo=" +
-                ticketNo +
-                "&reconcile=" +
-                newReconcileStatus,
-              {
-                method: "PUT",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-              }
-            )
-            const data = await res.json()
-          } catch (error) {}
-        })
-      }
-      return (
-        <div className="flex items-center justify-center">
-          <Checkbox
-            defaultChecked={defaultValue}
-            disabled={reconcileIsPending}
-            onCheckedChange={updateReconcileState}
-          />
-        </div>
-      )
-    },
+    cell: ({ cell }) => <ReconcileCell cell={cell} />,
   },
 ]
