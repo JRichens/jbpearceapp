@@ -47,11 +47,6 @@ export const columns: ColumnDef<UnPaidTickets>[] = [
     accessorKey: "string4",
     header: "Payment Type",
     cell: ({ cell }) => {
-      // check logical22 ticked or not to show BACS or TRADING ACC
-      let logical22 = cell.row.getValue("logical22")
-      useEffect(() => {
-        logical22 = cell.row.getValue("logical22")
-      }, [])
       if (cell.row.getValue("logical22") === "1") {
         return <div className="text-center">TRADING ACC</div>
       } else {

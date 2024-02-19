@@ -7,9 +7,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Task } from "@prisma/client"
 
 import { Checkbox } from "@/components/ui/checkbox"
-import { CheckView } from "./check-popup"
-import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import CheckViewCell from "./description-cell"
 
 export const columns: ColumnDef<Task>[] = [
   {
@@ -26,23 +24,7 @@ export const columns: ColumnDef<Task>[] = [
   {
     accessorKey: "description",
     header: "Description",
-    cell: ({ cell }) => {
-      // First 2 letters of cell value
-      const value = cell.getValue() as string
-      const [dialogStatus, setDialogStatus] = useState(false)
-
-      return (
-        <>
-          <Button
-            variant={"outline"}
-            onClick={() => setDialogStatus(!dialogStatus)}
-          >
-            View Check
-          </Button>
-          {dialogStatus && <CheckView checkDesc={value} />}
-        </>
-      )
-    },
+    cell: ({ cell }) => <CheckViewCell cell={cell} />,
   },
   {
     accessorKey: "completed",
