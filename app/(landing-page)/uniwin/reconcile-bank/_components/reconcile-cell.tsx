@@ -22,7 +22,10 @@ const ReconcileCell: React.FC<ReconcileCellProps> = ({ cell }) => {
           `https://genuine-calf-newly.ngrok-free.app/paidTickets?ticketNo=${ticketNo}&reconcile=${newReconcileStatus}`,
           {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "ngrok-skip-browser-warning": "69420",
+              "Content-Type": "application/json",
+            },
           }
         )
         const data = await response.json()

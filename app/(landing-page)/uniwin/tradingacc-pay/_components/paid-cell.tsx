@@ -26,7 +26,10 @@ const PaidCell: React.FC<PaidCellProps> = ({ cell }) => {
           }&initials=${user?.initials}&date=${today}`,
           {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "ngrok-skip-browser-warning": "69420",
+              "Content-Type": "application/json",
+            },
           }
         )
         console.log("Updated the paid state on ticket: ", ticketNo)

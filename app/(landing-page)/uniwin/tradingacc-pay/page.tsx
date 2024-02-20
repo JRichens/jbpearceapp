@@ -94,6 +94,7 @@ const ReconcileBank = () => {
             {
               method: "GET",
               headers: {
+                "ngrok-skip-browser-warning": "69420",
                 "Content-Type": "application/json",
               },
             }
@@ -113,6 +114,7 @@ const ReconcileBank = () => {
             {
               method: "GET",
               headers: {
+                "ngrok-skip-browser-warning": "69420",
                 "Content-Type": "application/json",
               },
             }
