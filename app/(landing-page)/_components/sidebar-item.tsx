@@ -13,6 +13,7 @@ import {
   ClipboardCheck,
   Scale,
   DatabaseZap,
+  UserCog2Icon,
 } from "lucide-react"
 import { BiCar } from "react-icons/bi"
 import { Button } from "@/components/ui/button"
@@ -65,6 +66,12 @@ export const SidebarItem = () => {
       label: "UniWin",
       icon: <DatabaseZap className="h-6 w-6 mr-2" />,
       href: `/uniwin`,
+      access: ["admin", "super"],
+    },
+    {
+      label: "Users",
+      icon: <UserCog2Icon className="h-6 w-6 mr-2" />,
+      href: `/users`,
       access: ["admin", "super"],
     },
   ]
