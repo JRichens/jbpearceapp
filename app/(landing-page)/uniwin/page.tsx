@@ -4,7 +4,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { NavMenu } from "./materials/_components/nav-menu"
+import { NavMenu } from "./nav-menu"
 import { Separator } from "@/components/ui/separator"
 
 const UniWin = async () => {

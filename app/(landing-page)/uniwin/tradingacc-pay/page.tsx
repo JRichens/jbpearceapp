@@ -12,7 +12,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { UnPaidTickets } from "@/types/uniwindata"
 import { columns } from "./_components/columns"
 import { DataTable } from "./_components/data-table"
-import { NavMenu } from "../materials/_components/nav-menu"
+import { NavMenu } from "../nav-menu"
 import { Separator } from "@/components/ui/separator"
 import { ThreeCircles } from "react-loader-spinner"
 

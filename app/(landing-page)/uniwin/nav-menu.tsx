@@ -71,9 +71,9 @@ export function NavMenu() {
               </li>
               <ListItem
                 href="/uniwin/reconcile-bank"
-                title="Reconcile Bank"
+                title="Reconcile Trading Acc"
               >
-                Reconcile payments that have been made via bank transfer
+                Reconcile payments that have been made via trading account
               </ListItem>
               <ListItem
                 href="/uniwin/tradingacc-pay"
@@ -81,6 +81,13 @@ export function NavMenu() {
               >
                 Print and pay all BACS payments and update the method to Trading
                 Acc
+              </ListItem>
+              <ListItem
+                href="/uniwin/bacs-pay"
+                title="BACS Pay"
+              >
+                Print and pay all BACS payments and generate CSV file then mark
+                paid
               </ListItem>
             </ul>
           </NavigationMenuContent>

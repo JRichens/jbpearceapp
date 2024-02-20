@@ -2,8 +2,6 @@
 
 import { useEffect, useState, useTransition } from "react"
 
-import axios from "axios"
-
 import {
   Card,
   CardDescription,
@@ -11,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { PaidTickets } from "@/types/uniwindata"
+import { UnPaidTickets } from "@/types/uniwindata"
 import { columns } from "./_components/columns"
 import { DataTable } from "./_components/data-table"
 import { NavMenu } from "../nav-menu"
@@ -30,9 +28,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { CalendarDays, PrinterIcon } from "lucide-react"
+import { CalendarDays, DownloadIcon, PrinterIcon } from "lucide-react"
 import ReactToPrint from "react-to-print"
 import { DataTablePrint } from "./_components/print-data-table"
+import { Input } from "@/components/ui/input"
+import { GetUser } from "@/actions/get-user"
+import { DialogInitials } from "./_components/dialog-initials"
 
 const ReconcileBank = () => {
   class ComponentToPrint extends React.Component {
@@ -51,16 +52,18 @@ const ReconcileBank = () => {
 
           <DataTablePrint
             columns={columns}
-            data={paidTickets}
+            data={unPaidTickets}
           />
         </div>
       )
     }
   }
 
-  const [paidTickets, setPaidTickets] = useState<PaidTickets[]>([])
+  const [unPaidTickets, setUnPaidTickets] = useState<UnPaidTickets[]>([])
   const [totalPayable, setTotalPayable] = useState("")
   const [isPending, startTransition] = useTransition()
+  const [initials, setInitials] = useState("")
+  const [initialsDialog, setInitialsDialog] = useState(false)
 
   const [date, setDate] = React.useState<DateRange | undefined>({
     from: addDays(new Date(), -7),
@@ -84,7 +87,7 @@ const ReconcileBank = () => {
 
         try {
           const res = await fetch(
-            "https://genuine-calf-newly.ngrok-free.app/paidTickets?from=" +
+            "https://genuine-calf-newly.ngrok-free.app/unPaidTickets?from=" +
               from +
               "&to=" +
               to,
@@ -97,13 +100,13 @@ const ReconcileBank = () => {
             }
           )
           const data = await res.json()
-
-          setPaidTickets(data)
+          console.log("data", data)
+          setUnPaidTickets(data)
         } catch (error) {}
 
         try {
           const res = await fetch(
-            "https://genuine-calf-newly.ngrok-free.app/paidTickets?from=" +
+            "https://genuine-calf-newly.ngrok-free.app/unPaidTickets?from=" +
               from +
               "&to=" +
               to +
@@ -132,6 +135,77 @@ const ReconcileBank = () => {
     getTickets()
   }, [date])
 
+  useEffect(() => {
+    const getInitials = async () => {
+      const user = await GetUser()
+      user?.initials && setInitials(user.initials)
+      if (!user?.initials) {
+        setInitialsDialog(true)
+      }
+    }
+    getInitials()
+  }, [])
+
+  const downloadCsv = (data: any[]) => {
+    // Define the new headers in the desired order
+    const newHeaders = [
+      "Suppliers Name",
+      "Ticket No",
+      "Payable",
+      "Payment",
+      "On Hold",
+      "Paid By",
+      "Ticket Date",
+      "Account No",
+      "Sort Code",
+      "Telephone No",
+      "Date",
+      "Remarks",
+    ]
+
+    // Today's date in the required format
+    const todayDate = new Date().toLocaleDateString("en-GB", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    })
+
+    // Today's date but YYYY-MM-DD
+    const todayDateYYYYMMDD = new Date().toISOString().slice(0, 10)
+
+    // Map each object to the new CSV row structure
+    const rows = data
+      .map((obj) =>
+        [
+          `"${obj.string9}"`, // Suppliers Name
+          `"${obj.ticket2}"`, // Ticket No
+          `"${obj.number6}"`, // Payable - assuming `number2` is the correct field, added default empty if not present
+          `"Awaiting"`, // Payment
+          `"No"`, // On Hold
+          `""`, // Paid By
+          `"${obj.number17}"`, // Ticket Date
+          `"${obj.string7}"`, // Account No
+          `"${obj.string8}"`, // Sort Code
+          `""`, // Telephone No
+          `"${todayDate}"`, // Date - hardcoded as example, can use todayDate for dynamic date
+          `""`, // Remarks
+        ].join(",")
+      )
+      .join("\n")
+
+    const csvString = newHeaders.join(",") + "\n" + rows
+    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+
+    // Create download link and trigger download
+    const link = document.createElement("a")
+    link.setAttribute("href", url)
+    link.setAttribute("download", `${todayDateYYYYMMDD}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   const componentRef = React.useRef<ComponentToPrint | null>(null)
 
   return (
@@ -143,14 +217,15 @@ const ReconcileBank = () => {
 
         <Separator />
         <CardHeader>
-          <CardTitle>Reconcile Trading Account</CardTitle>
+          <CardTitle>BACS Pay</CardTitle>
           <CardDescription>
-            Reconcile all paid bank transfers made from the trading account.
+            Print out what needs to be paid. Then export the CSV file for tha
+            bank. Pay it and mark off paid.
           </CardDescription>
         </CardHeader>
 
         <div className="px-4 md:px-6 pb-3">
-          <div className="flex flex-row gap-2 pb-2">
+          <div className="flex flex-row flex-wrap gap-x-2 gap-y-3 pb-2">
             {/* Date Picker with Range */}
             <div className={cn("grid gap-2")}>
               <Popover>
@@ -159,7 +234,7 @@ const ReconcileBank = () => {
                     id="date"
                     variant={"outline"}
                     className={cn(
-                      " justify-start text-left font-normal",
+                      "justify-start text-left font-normal",
                       !date && "text-muted-foreground"
                     )}
                   >
@@ -194,27 +269,51 @@ const ReconcileBank = () => {
               </Popover>
             </div>
             {/* Print Button */}
-            <ReactToPrint
-              trigger={() => (
-                <Button variant={"outline"}>
-                  <PrinterIcon className="w-4 h-4 mr-2" />
-                  Print
-                </Button>
-              )}
-              content={() => componentRef.current}
-              pageStyle={`@page {size: 297mm 210mm; margin: 30;}`}
-            />
-            <div style={{ display: "none" }}>
-              <ComponentToPrint
-                ref={(el) => {
-                  if (el) {
-                    componentRef.current = el
-                  }
-                }}
+            <div>
+              <ReactToPrint
+                trigger={() => (
+                  <Button variant={"outline"}>
+                    <PrinterIcon className="w-4 h-4 mr-2" />
+                    Print
+                  </Button>
+                )}
+                content={() => componentRef.current}
+                pageStyle={`@page {size: 297mm 210mm; margin: 30;}`}
               />
+              <div style={{ display: "none" }}>
+                <ComponentToPrint
+                  ref={(el) => {
+                    if (el) {
+                      componentRef.current = el
+                    }
+                  }}
+                />
+              </div>
             </div>
-            <div className="px-2 flex items-center justify-center border-solid border-[1px] border-slate-200 rounded-md">
-              Total Payable: {totalPayable}
+            {/*Export CSV Button */}
+            <div>
+              <Button
+                onClick={() => downloadCsv(unPaidTickets)}
+                variant={"outline"}
+              >
+                <DownloadIcon className="w-4 h-4 mr-2" />
+                Export CSV
+              </Button>
+            </div>
+            {/* Total Payable */}
+            <div className="whitespace-nowrap px-2 flex flex-row items-center justify-center border-solid border-[1px] border-slate-200 rounded-md">
+              <span>Total Payable: {totalPayable}</span>
+            </div>
+            {/* Payment Initials */}
+            <div className="relative">
+              <Input
+                className="w-[75px]"
+                placeholder="..."
+                value={initials}
+              />
+              <div className="absolute bg-white text-sm -top-[10px] left-2">
+                Initials
+              </div>
             </div>
           </div>
 
@@ -226,7 +325,7 @@ const ReconcileBank = () => {
             ) : (
               <DataTable
                 columns={columns}
-                data={paidTickets}
+                data={unPaidTickets}
               />
             )}
 
@@ -234,6 +333,12 @@ const ReconcileBank = () => {
           </ScrollArea>
         </div>
       </Card>
+      <DialogInitials
+        initialsDialog={initialsDialog}
+        setInitialsDialog={setInitialsDialog}
+        initials={initials}
+        setInitials={setInitials}
+      />
     </>
   )
 }

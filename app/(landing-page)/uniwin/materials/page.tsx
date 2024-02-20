@@ -9,7 +9,7 @@ import { Materials } from "@/types/uniwindata"
 import { columns } from "./_components/columns"
 import { DataTable } from "./_components/data-table"
 import { revalidateTag } from "next/cache"
-import { NavMenu } from "./_components/nav-menu"
+import { NavMenu } from "../nav-menu"
 import { Separator } from "@/components/ui/separator"
 
 async function getData(): Promise<Materials[]> {

@@ -23,9 +23,7 @@ const PaidCell: React.FC<PaidCellProps> = ({ cell }) => {
         await fetch(
           `https://genuine-calf-newly.ngrok-free.app/unPaidTickets?ticketNo=${ticketNo}&paid=${
             isChecked ? 1 : 0
-          }&initials=${
-            user?.initials
-          }&date=${today}&bank=TRADING ACCOUNT BANK SCO`,
+          }&initials=${user?.initials}&date=${today}&bank=BACS`,
           {
             method: "PUT",
             headers: {
