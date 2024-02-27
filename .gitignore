@@ -3,6 +3,8 @@
 /express-server
 ngrok.exe
 *.bat
+/public/sw.js
+/public/sw.js.map
 
 # dependencies
 /node_modules

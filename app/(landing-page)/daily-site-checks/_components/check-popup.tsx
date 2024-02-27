@@ -40,6 +40,7 @@ export function CheckView({ checkDesc }: Props) {
         // Handle error (e.g., set an error state, show a toast message, etc.)
       }
     })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkDesc])
 
   return (
