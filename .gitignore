@@ -2,6 +2,7 @@
 # joes ignores
 /express-server
 ngrok.exe
+*.bat
 
 # dependencies
 /node_modules
