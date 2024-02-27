@@ -147,7 +147,13 @@ export async function GET() {
 
   if (latestTaskDate === tomorrowDateFormatted) {
     console.log("##### No new tasks needed #####")
-    return new Response("No new tasks need creating")
+    return new Response(
+      "No new tasks need creating: " +
+        latestTaskDate +
+        " " +
+        tomorrowDateFormatted,
+      { status: 200 }
+    )
   } else {
     // First check the day of the week
     const dayOfWeek = daysOfWeek[todaysDate.getDay()]
