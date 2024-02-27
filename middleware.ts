@@ -1,7 +1,8 @@
 import { authMiddleware, redirectToSignIn } from "@clerk/nextjs"
 
 export default authMiddleware({
-  publicRoutes: ["/(api|trpc)(.*)"],
+  publicRoutes: ["/api/dailychecks"],
+  apiRoutes: [],
 })
 
 export const config = {

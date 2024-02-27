@@ -7,7 +7,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Task } from "@prisma/client"
 
 import { Checkbox } from "@/components/ui/checkbox"
-import CheckViewCell from "./description-cell"
+import CheckButton from "./check-button"
 
 export const columns: ColumnDef<Task>[] = [
   {
@@ -24,7 +24,9 @@ export const columns: ColumnDef<Task>[] = [
   {
     accessorKey: "description",
     header: "Description",
-    cell: ({ cell }) => <CheckViewCell cell={cell} />,
+    cell: ({ cell }) => {
+      return <CheckButton cellDescription={cell.getValue() as string} />
+    },
   },
   {
     accessorKey: "completed",

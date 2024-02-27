@@ -1,14 +1,16 @@
-// CheckViewCell.tsx
+"use client"
 
-import React, { useState } from "react"
+import { useState } from "react"
+
 import { CheckView } from "./check-popup"
+
 import { Button } from "@/components/ui/button"
 
-interface CheckViewCellProps {
-  cell: any // The cell's value you're passing to CheckView
+type Props = {
+  cellDescription: string
 }
 
-const CheckViewCell: React.FC<CheckViewCellProps> = ({ cell }) => {
+export default function CheckButton({ cellDescription }: Props) {
   const [dialogStatus, setDialogStatus] = useState<boolean>(false)
 
   return (
@@ -19,9 +21,7 @@ const CheckViewCell: React.FC<CheckViewCellProps> = ({ cell }) => {
       >
         View Check
       </Button>
-      {dialogStatus && <CheckView checkDesc={cell} />}
+      {dialogStatus && <CheckView checkDesc={cellDescription} />}
     </>
   )
 }
-
-export default CheckViewCell
