@@ -2,25 +2,33 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { PaidTickets } from "@/types/uniwindata"
-import { Checkbox } from "@/components/ui/checkbox"
 
 import ReconcileCell from "./reconcile-cell"
-
-import { useState, useTransition } from "react"
 
 export const columns: ColumnDef<PaidTickets>[] = [
   {
     accessorKey: "number17",
     header: "Date",
     cell: ({ cell }) => {
-      if (typeof cell.getValue() !== "number") return
-      let numDays = cell.getValue() as number
-      let millisPerDay = 24 * 60 * 60 * 1000
-      let dateInMilliSec = (numDays - 1) * millisPerDay
-      let date = new Date(dateInMilliSec)
+      const numDays = cell.getValue()
+
+      // Make sure numDays is a valid number
+      if (typeof numDays !== "number") return "Invalid Date"
+
+      // Assuming numDays is the number of days since 1/1/1900
+      let baseDate = new Date("01/01/1900")
+
+      // JavaScript's setDate might not behave as expected if numDays is too large
+      // Hence, convert numDays to milliseconds and add to baseDate's time
+      const millisPerDay = 24 * 60 * 60 * 1000
+      // Also deduct 2 days to get the correct date from numDays
+      let targetDateInMillis = baseDate.getTime() + (numDays - 2) * millisPerDay
+
+      let targetDate = new Date(targetDateInMillis)
       return (
         <div>
-          {date.getDate()}/{date.getMonth() + 1}/{date.getFullYear() - 70}
+          {targetDate.getDate()}/{targetDate.getMonth() + 1}/
+          {targetDate.getFullYear()}
         </div>
       )
     },

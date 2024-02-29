@@ -14,6 +14,7 @@ import {
   Scale,
   DatabaseZap,
   UserCog2Icon,
+  Truck,
 } from "lucide-react"
 import { BiCar } from "react-icons/bi"
 import { Button } from "@/components/ui/button"
@@ -37,6 +38,12 @@ export const SidebarItem = () => {
       icon: <Car className="h-6 w-6 mr-2" />,
       href: `/vehicles-export`,
       access: ["userplus", "staff", "admin", "super"],
+    },
+    {
+      label: "Transport PODs",
+      icon: <Truck className="h-6 w-6 mr-2" />,
+      href: `/transport-pods`,
+      access: ["staff", "admin", "super"],
     },
     {
       label: "Weighbridge",
