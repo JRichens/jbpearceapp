@@ -13,10 +13,12 @@ import { Loader2 } from "lucide-react"
 
 export const Form = ({
   setVehicle,
+  search,
 }: {
   setVehicle: Dispatch<SetStateAction<Car | null>>
+  search?: string
 }) => {
-  const [reg, setReg] = useState("")
+  const [reg, setReg] = useState(search ? search : "")
   const [pending, setPending] = useState(false)
   const { toast } = useToast()
 
@@ -38,11 +40,11 @@ export const Form = ({
           description: "Please check the registration is correct",
           variant: "destructive",
         })
-        setVehicle(null)
+        setVehicle && setVehicle(null)
 
         return
       } else {
-        setVehicle(vehicleData)
+        setVehicle && setVehicle(vehicleData)
       }
       setReg("")
     } catch (error) {
@@ -52,22 +54,23 @@ export const Form = ({
     }
   }
 
-  useEffect(() => {
-    // remove spaces from the reg state when it changes
-    setReg(reg.replace(/\s/g, "").toUpperCase())
-  }, [reg])
-
   return (
     <form onSubmit={handleSubmit}>
-      <h3 className="font-bold">Vehicle Reg</h3>
       <div className="flex items-center gap-3 mt-1.5">
         <Input
           id="reg"
           name="reg"
           required
           value={reg}
-          onChange={(e) => setReg(e.target.value)}
-          className="text-xl max-w-[150px] uppercase"
+          autoFocus
+          placeholder="Registration.."
+          onKeyDown={(event) => {
+            if (event.key === " ") {
+              event.preventDefault()
+            }
+          }}
+          onChange={(e) => setReg(e.target.value.toUpperCase())}
+          className="text-xl max-w-[150px]"
         />
         <Button
           type="submit"

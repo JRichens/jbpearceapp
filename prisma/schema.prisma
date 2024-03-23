@@ -11,8 +11,8 @@ datasource db {
 }
 
 model Car {
-  uniqueId                 String @default(cuid())
-  reg                      String @id
+  uniqueId                 String    @default(cuid())
+  reg                      String    @id
   vinOriginalDvla          String?
   dvlaMake                 String?
   dvlaModel                String?
@@ -36,12 +36,22 @@ model Car {
   gears                    String?
   vehicleCategory          String?
   imageUrl                 String?
-  exportVehicle            Boolean? @default( false )
+  exportVehicle            Boolean?  @default(false)
   addedToExport            DateTime?
-  breakingVehicle          Boolean? @default( false )
+  breakingVehicle          Boolean?  @default(false)
   addedToBreaking          DateTime?
-  createdAt                DateTime @default(now())
-  updatedAt                DateTime @updatedAt
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  breaking                 Breaking?
+}
+
+model Breaking {
+  id          String   @id @default(cuid()) 
+  car         Car      @relation(fields: [carReg], references: [reg])
+  carReg      String   @unique
+  created     DateTime @default(now())
+  updated     DateTime @updatedAt
+  photos      String[]
 }
 
 model Task {
@@ -96,13 +106,30 @@ model weightcapture {
 }
 
 model Customer {
-  id           String @id @default(cuid())
-  name         String
-  emailpod     String?
-  emailinvoice String?
-  mobile       String?
-  officephone  String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                String @id @default(cuid())
+  name              String @unique
+  firstLineAddress  String?
+  secondLineAddress String?
+  townCity          String?
+  postcode          String?
+  emailpod          String?
+  emailinvoice      String?
+  mobile            String?
+  officephone       String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
+model LandArea {
+  id          String @id @default(cuid())
+  created     DateTime @default(now())
+  issuedDate  String
+  modified    DateTime @updatedAt
+  STid        String @unique
+  description String @default("Land Area")
+  area        String
+  colour      String @default("#008B02")
+  centerLat   Float?
+  centerLng   Float?
+  coordinates String[]
+}

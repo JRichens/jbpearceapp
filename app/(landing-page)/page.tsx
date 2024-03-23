@@ -1,5 +1,6 @@
 import { auth, currentUser } from "@clerk/nextjs"
 import { db } from "../../lib/db"
+import NumberPlate from "./numberplate"
 
 const LandingPage = async () => {
   const { userId } = auth()
@@ -41,7 +42,7 @@ const LandingPage = async () => {
     await createPrismaUser()
   }
 
-  return <h1>{userId ? userId : "Not signed in"}</h1>
+  return <NumberPlate />
 }
 
 export default LandingPage

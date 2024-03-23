@@ -16,52 +16,47 @@ import {
 
 import { Plus } from "lucide-react"
 import NewCustomerForm from "./new-customer-form"
+import { Separator } from "@/components/ui/separator"
 
 type Props = {
   customer: string
+  setOpenPopover: React.Dispatch<React.SetStateAction<boolean>>
+  setValue: React.Dispatch<React.SetStateAction<string>>
 }
 
-export function NewCustomerDrawer({ customer }: Props) {
-  // React.useEffect(() => {
-  //   console.log("passed Customer: ", customer)
-  // }, [customer])
+export function NewCustomerDrawer({
+  customer,
+  setOpenPopover,
+  setValue,
+}: Props) {
+  const [open, setOpen] = React.useState(false)
 
   return (
-    <Drawer>
+    <Drawer open={open}>
       <DrawerTrigger asChild>
         <Button
           className="ml-2"
           variant={"secondary"}
+          onClick={() => setOpen(true)}
         >
           <Plus className="mr-2 h-4 w-4" />
           Add
         </Button>
       </DrawerTrigger>
       <DrawerContent>
-        <div className="mx-auto w-full max-w-sm">
+        <div className="mx-auto w-full max-w-sm px-4">
           <DrawerHeader>
-            <DrawerTitle>New Customer</DrawerTitle>
-            <DrawerDescription>
-              Create an account customer that will be invoiced
-            </DrawerDescription>
+            <DrawerTitle>Create New Customer</DrawerTitle>
+            <Separator />
           </DrawerHeader>
-          <div className="p-4">
-            <NewCustomerForm customer={customer} />
-          </div>
 
-          <DrawerFooter>
-            <div className="flex flex-row items-center justify-evenly gap-x-2">
-              <Button className="w-full">Submit</Button>
-              <DrawerClose asChild>
-                <Button
-                  className="w-full"
-                  variant="outline"
-                >
-                  Cancel
-                </Button>
-              </DrawerClose>
-            </div>
-          </DrawerFooter>
+          {/* The actual form the user enters data into */}
+          <NewCustomerForm
+            setOpen={setOpen}
+            customer={customer}
+            setOpenPopover={setOpenPopover}
+            setValue={setValue}
+          />
         </div>
       </DrawerContent>
     </Drawer>

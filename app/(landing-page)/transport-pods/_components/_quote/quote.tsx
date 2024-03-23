@@ -41,10 +41,7 @@ const Quote = () => {
         </div>
         {/* Separator */}
         <Separator />
-        <div>
-          Quotes hereQuotes hereQuotes hereQuotes hereQuotes hereQuotes
-          hereQuotes here
-        </div>
+        <div className="p-2">No quotes...</div>
       </Card>
     </>
   )

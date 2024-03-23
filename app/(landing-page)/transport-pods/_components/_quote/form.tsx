@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { CustomerCombobox } from "./customers-box"
+import { Label } from "@/components/ui/label"
+import { useState } from "react"
 
 const formSchema = z.object({
   username: z.string().min(2).max(50),
@@ -33,11 +35,12 @@ const QuoteForm = () => {
   function onSubmit(values: z.infer<typeof formSchema>) {
     // Do something with the form values.
     // ✅ This will be type-safe and validated.
-    console.log(values)
+    console.log("New quote values: ", values)
   }
 
   return (
     <>
+      <Label>Customer</Label>
       <CustomerCombobox />
       <Form {...form}>
         <form
@@ -49,15 +52,15 @@ const QuoteForm = () => {
             name="username"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Username</FormLabel>
+                <FormLabel>Job Description</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="shadcn"
+                    placeholder="Enter..."
                     {...field}
                   />
                 </FormControl>
                 <FormDescription>
-                  This is your public display name.
+                  This is a description of the transport job
                 </FormDescription>
                 <FormMessage />
               </FormItem>

@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "LandArea" ADD COLUMN     "parcelId" TEXT NOT NULL DEFAULT '0000',
+ADD COLUMN     "sheetId" TEXT NOT NULL DEFAULT 'ST0000';

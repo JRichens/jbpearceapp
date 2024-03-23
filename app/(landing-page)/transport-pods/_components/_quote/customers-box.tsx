@@ -24,7 +24,7 @@ import {
 import { NewCustomerDrawer } from "./new-customer-drawer"
 
 export function CustomerCombobox() {
-  const [open, setOpen] = React.useState(false)
+  const [openPopover, setOpenPopover] = React.useState(false)
   const [value, setValue] = React.useState("")
   const [typedValue, setTypedValue] = React.useState("")
   const [customers, setCustomers] = React.useState<Customer[]>([])
@@ -36,7 +36,7 @@ export function CustomerCombobox() {
       response && setCustomers(response)
     }
     getCustomers()
-  }, [])
+  }, [open])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTypedValue(e.target.value)
@@ -44,15 +44,15 @@ export function CustomerCombobox() {
 
   return (
     <Popover
-      open={open}
-      onOpenChange={setOpen}
+      open={openPopover}
+      onOpenChange={setOpenPopover}
     >
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           role="combobox"
-          aria-expanded={open}
-          className="w-[300px] justify-between"
+          aria-expanded={openPopover}
+          className="w-[320px] justify-between"
         >
           {value
             ? customers.find(
@@ -70,7 +70,11 @@ export function CustomerCombobox() {
           />
           <CommandEmpty>
             No customer found.
-            <NewCustomerDrawer customer={typedValue} />
+            <NewCustomerDrawer
+              customer={typedValue}
+              setOpenPopover={setOpenPopover}
+              setValue={setValue}
+            />
           </CommandEmpty>
           <CommandGroup>
             {customers.map((customer) => (
@@ -79,7 +83,7 @@ export function CustomerCombobox() {
                 value={customer.name}
                 onSelect={(currentValue: any) => {
                   setValue(currentValue === value ? "" : currentValue)
-                  setOpen(false)
+                  setOpenPopover(false)
                 }}
               >
                 <Check

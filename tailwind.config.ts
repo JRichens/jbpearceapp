@@ -16,6 +16,9 @@ module.exports = {
       },
     },
     extend: {
+      fontFamily: {
+        "charles-wright": ["Charles Wright", "sans-serif"],
+      },
       colors: {
         left: "#1F8DC1",
         middle: "#1C6C91",

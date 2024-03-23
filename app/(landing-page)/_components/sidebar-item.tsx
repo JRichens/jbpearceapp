@@ -15,6 +15,7 @@ import {
   DatabaseZap,
   UserCog2Icon,
   Truck,
+  MapPinned,
 } from "lucide-react"
 import { BiCar } from "react-icons/bi"
 import { Button } from "@/components/ui/button"
@@ -73,6 +74,12 @@ export const SidebarItem = () => {
       label: "UniWin",
       icon: <DatabaseZap className="h-6 w-6 mr-2" />,
       href: `/uniwin`,
+      access: ["admin", "super"],
+    },
+    {
+      label: "Land",
+      icon: <MapPinned className="h-6 w-6 mr-2" />,
+      href: `/land-areas`,
       access: ["admin", "super"],
     },
     {
