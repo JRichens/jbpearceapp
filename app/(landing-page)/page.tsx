@@ -56,10 +56,10 @@ const LandingPage = async () => {
           <p className="text-2xl">Welcome to </p>
           <div className="flex flex-row items-center">
             <span className="font-bold text-3xl bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-gold">
-              J B Pearce's
+              J B Pearce&apos;s
             </span>
             <span className="mx-1"> </span>
-            <p className="text-2xl">{`App`}</p>
+            <p className="text-2xl">App</p>
           </div>
 
           <p>
