@@ -1,6 +1,9 @@
 import { auth, currentUser } from "@clerk/nextjs"
 import { db } from "../../lib/db"
-import NumberPlate from "./numberplate"
+
+import LottieAnimation from "./lottieAnimation"
+import { cn } from "@/lib/utils"
+import { Menu } from "lucide-react"
 
 const LandingPage = async () => {
   const { userId } = auth()
@@ -42,7 +45,31 @@ const LandingPage = async () => {
     await createPrismaUser()
   }
 
-  return <NumberPlate />
+  return (
+    <>
+      <div
+        className={cn(
+          "mt-10 flex flex-col items-center justify-center max-w-xl mx-auto gap-2 p-4 h-[calc(100vh-14rem)]"
+        )}
+      >
+        <div className="flex flex-col items-center bg-white bg-opacity-40 p-4 rounded-2xl shadow-xl">
+          <p className="text-2xl">Welcome to </p>
+          <div className="flex flex-row items-center">
+            <span className="font-bold text-3xl bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-gold">
+              J B Pearce's
+            </span>
+            <span className="mx-1"> </span>
+            <p className="text-2xl">{`App`}</p>
+          </div>
+
+          <p>
+            Click the <Menu className="h-5 w-5 inline" /> to get started
+          </p>
+        </div>
+        <LottieAnimation />
+      </div>
+    </>
+  )
 }
 
 export default LandingPage
