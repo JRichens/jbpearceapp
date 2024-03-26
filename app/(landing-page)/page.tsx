@@ -4,6 +4,7 @@ import { db } from "../../lib/db"
 import LottieAnimation from "./lottieAnimation"
 import { cn } from "@/lib/utils"
 import { Menu } from "lucide-react"
+import BlackOut from "./blackOut"
 
 const LandingPage = async () => {
   const { userId } = auth()
@@ -47,6 +48,9 @@ const LandingPage = async () => {
 
   return (
     <>
+      <div className="absolute top-10 left-10 z-50 block sm:hidden">
+        <BlackOut />
+      </div>
       <div
         className={cn(
           "mt-10 flex flex-col items-center justify-center max-w-xl mx-auto gap-2 p-4 h-[calc(100vh-14rem)]"
@@ -62,7 +66,7 @@ const LandingPage = async () => {
             <p className="text-2xl">App</p>
           </div>
 
-          <p>
+          <p className="block sm:hidden">
             Click the <Menu className="h-5 w-5 inline" /> to get started
           </p>
         </div>

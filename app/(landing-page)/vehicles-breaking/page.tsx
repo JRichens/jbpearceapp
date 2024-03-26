@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Plus, Trash2 } from "lucide-react"
+import { ImagePlus, Loader2, Plus, Trash2 } from "lucide-react"
 import { GetBreakingVehicles } from "@/actions/get-breakVehicles"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -14,6 +14,13 @@ import { ConfirmDel } from "./_componentes/confirmDel"
 import Typewriter from "typewriter-effect"
 import { ThreeCircles } from "react-loader-spinner"
 import { GetUser } from "@/actions/get-user"
+import { Label } from "@/components/ui/label"
+import CountUp from "react-countup"
+
+import { UploadButton } from "@/utils/uploadthing"
+import "@uploadthing/react/styles.css"
+import { UpdateBreakingVehicle } from "@/actions/update-breakingVehicle"
+import Photos from "./_componentes/photos"
 
 const BreakingVehicles = () => {
   const [search, setSearch] = useState("")
@@ -23,6 +30,8 @@ const BreakingVehicles = () => {
   const [newVehicleDialog, setNewVehicleDialog] = useState(false)
   const [confirmDel, setConfirmDel] = useState(false)
   const [userType, setUserType] = useState("")
+  const [photoModal, setPhotoModal] = useState(false)
+  const [modalPhotos, setModalPhotos] = useState<string[]>([])
 
   useEffect(() => {
     // Fetch user type
@@ -36,7 +45,7 @@ const BreakingVehicles = () => {
   useEffect(() => {
     const fetchVehicles = async () => {
       const vehicles = await GetBreakingVehicles()
-      console.log("fetching vehicles repeat")
+
       if (vehicles) {
         setVehicles(vehicles)
       }
@@ -54,13 +63,29 @@ const BreakingVehicles = () => {
   return (
     <>
       <div className="max-w-3xl mb-6 px-4 md:px-8 py-4 mx-4 md:mx-8 shadow-md rounded-md bg-white border">
-        <h1 className="font-bold text-2xl">Breaking Vehicles</h1>
+        <div className="flex flex-row items-center">
+          <h1 className="font-bold text-2xl">Breaking&nbsp;</h1>
+          {vehicles && (
+            <CountUp
+              className="text-2xl font-bold"
+              end={vehicles.length}
+            />
+          )}
+          <h1 className="font-bold text-2xl">&nbsp;Vehicles</h1>
+        </div>
         <p>Search for vehicles that are breaking</p>
+        <Separator className="my-2" />
 
-        <div className="flex flex-row gap-3 mt-4">
+        <div className="flex flex-row gap-3 relative mt-4">
+          <Label
+            htmlFor="search"
+            className="text-lg absolute left-2 -top-3 bg-white -m-1"
+          >
+            Search
+          </Label>
           <Input
             id="search"
-            placeholder="Search details.."
+            placeholder="Any vehicle details.."
             value={search}
             onChange={(e) => setSearch(e.target.value.toUpperCase())}
             type="search"
@@ -158,21 +183,66 @@ const BreakingVehicles = () => {
                   key={vehicle.id}
                 >
                   <div className="flex flex-row flex-grow justify-between">
-                    <Image
-                      src={`https://ws.carwebuk.com${vehicle.car.imageUrl}`}
-                      width={140}
-                      height={140}
-                      alt=""
-                    />
-                    <Image
-                      src={`https://ws.carwebuk.com${vehicle.car.imageUrl}`}
-                      width={140}
-                      height={140}
-                      style={{
-                        transform: "scaleX(-1)",
-                      }}
-                      alt=""
-                    />
+                    {/* Check if photos exist otherwise use default */}
+                    {vehicle.photos.length > 0 && (
+                      <>
+                        <div className="relative w-[140px] h-[100px]">
+                          <Image
+                            width={140}
+                            height={100}
+                            className="absolute inset-0 w-full h-full object-cover rounded-md shadow-sm"
+                            src={vehicle.photos[0]}
+                            alt=""
+                            loading="lazy"
+                            placeholder="blur"
+                            blurDataURL={`https://ws.carwebuk.com${vehicle.car.imageUrl}`}
+                            onClick={() => {
+                              // Popup a modal with the image
+                              setSelectedVehicle(vehicle)
+                              setPhotoModal(true)
+                              setModalPhotos(vehicle.photos)
+                            }}
+                          />
+                        </div>
+
+                        {vehicle.photos.length > 1 && (
+                          <div className="relative w-[140px] h-[100px]">
+                            <Image
+                              width={140}
+                              height={100}
+                              className="absolute inset-0 w-full h-full rounded-md object-cover shadow-sm"
+                              src={vehicle.photos[1]}
+                              alt=""
+                              loading="lazy"
+                              placeholder="blur"
+                              blurDataURL={`https://ws.carwebuk.com${vehicle.car.imageUrl}`}
+                              onClick={() => {
+                                // Popup a modal with the image
+                                setPhotoModal(true)
+                                setModalPhotos(vehicle.photos)
+                              }}
+                            />
+                          </div>
+                        )}
+                      </>
+                    )}
+                    {vehicle.photos.length === 0 && (
+                      <>
+                        <Image
+                          src={`https://ws.carwebuk.com${vehicle.car.imageUrl}`}
+                          width={140}
+                          height={140}
+                          alt=""
+                        />
+                        <Image
+                          src={`https://ws.carwebuk.com${vehicle.car.imageUrl}`}
+                          width={140}
+                          height={140}
+                          style={{ transform: "scaleX(-1)" }}
+                          alt=""
+                        />
+                      </>
+                    )}
                   </div>
                   <div className="flex flex-col">
                     <p className="font-medium">
@@ -198,15 +268,64 @@ const BreakingVehicles = () => {
                   <div className="flex flex-row justify-between items-center">
                     <p>Added {moment(vehicle.created).fromNow()}</p>
                     {userType !== "user" && (
-                      <Button
-                        onClick={() => {
-                          setConfirmDel(true)
-                          setSelectedVehicle(vehicle)
-                        }}
-                        className="bg-red-700 p-1.5 py-0 h-8 hover:opacity-50 hover:bg-red-600"
-                      >
-                        <Trash2 className="h-5 w-5" />
-                      </Button>
+                      <div className="flex flex-row gap-3 relative">
+                        {vehicle.photos.length < 2 && (
+                          <UploadButton
+                            content={{
+                              button({ ready }) {
+                                if (ready) {
+                                  return <ImagePlus />
+                                }
+                                return (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                )
+                              },
+                            }}
+                            appearance={{
+                              button:
+                                "h-8 w-8  text-white  ut-ready:bg-green-500 ut-uploading:cursor-not-allowed rounded-r-none  bg-none after:bg-green-500",
+                              container:
+                                "w-max flex-row rounded-md border-cyan-300 bg-slate-800",
+                              allowedContent: "hidden",
+                            }}
+                            key={vehicle.id}
+                            endpoint="imageUploader"
+                            onClientUploadComplete={async (res) => {
+                              // Add the image path to the array of photos in the vehicle
+                              const updatedVehicle = {
+                                id: vehicle.id,
+                                carReg: vehicle.carReg,
+                                photos: [...vehicle.photos, res[0].url],
+                              }
+                              // Then update the vehicle in the database
+                              await UpdateBreakingVehicle(updatedVehicle)
+                              setVehicles(
+                                vehicles.map((v) =>
+                                  v.id === vehicle.id
+                                    ? {
+                                        ...v,
+                                        photos: [...vehicle.photos, res[0].url],
+                                      }
+                                    : v
+                                )
+                              )
+                            }}
+                            onUploadError={(error: Error) => {
+                              // Do something with the error.
+                            }}
+                          />
+                        )}
+
+                        <Button
+                          onClick={() => {
+                            setConfirmDel(true)
+                            setSelectedVehicle(vehicle)
+                          }}
+                          className="bg-red-700 p-1.5 py-0 h-8 hover:opacity-50 hover:bg-red-600"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -214,6 +333,7 @@ const BreakingVehicles = () => {
           </div>
         )}
       </div>
+      {/* Conditional dialogs */}
       <NewVehicleDialog
         newVehicleDialog={newVehicleDialog}
         setNewVehicleDialog={setNewVehicleDialog}
@@ -227,6 +347,14 @@ const BreakingVehicles = () => {
           reg={selectedVehicle?.carReg}
         />
       )}
+      <Photos
+        open={photoModal}
+        setOpen={setPhotoModal}
+        photos={modalPhotos}
+        setModalPhotos={setModalPhotos}
+        userType={userType}
+        selectedVehicle={selectedVehicle}
+      />
     </>
   )
 }

@@ -15,6 +15,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "ws.carwebuk.com",
       },
+      {
+        protocol: "https",
+        hostname: "utfs.io",
+      },
     ],
   },
 }
