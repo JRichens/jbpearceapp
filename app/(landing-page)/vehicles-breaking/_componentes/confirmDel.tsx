@@ -36,14 +36,14 @@ export function ConfirmDel({ open, setOpen, reg }: Props) {
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete your
-            account and remove your data from our servers.
+            This action cannot be undone. This will permanently delete the
+            vehicle and all associated photos.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <div className="flex flex-row gap-3 justify-end">
             <AlertDialogAction
-              className="w-24"
+              className="w-24 bg-red-600 hover:bg-red-800"
               onClick={handleAction}
             >
               {deleting ? (

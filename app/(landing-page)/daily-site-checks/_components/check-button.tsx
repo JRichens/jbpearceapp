@@ -21,7 +21,12 @@ export default function CheckButton({ cellDescription }: Props) {
       >
         View Check
       </Button>
-      {dialogStatus && <CheckView checkDesc={cellDescription} />}
+      {dialogStatus && (
+        <CheckView
+          checkDesc={cellDescription}
+          setDialogStatus={setDialogStatus}
+        />
+      )}
     </>
   )
 }

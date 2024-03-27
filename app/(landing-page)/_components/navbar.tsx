@@ -20,13 +20,16 @@ export const Navbar = async () => {
   return (
     <div className="z-50 fixed top-0 w-full h-14 px-4 border-b shadow-md md:shadow-sm bg-white flex items-center">
       <div className="mx-auto flex items-center w-full justify-between">
-        <MobileSidebar />
+        <div className="md:hidden">
+          <MobileSidebar />
+        </div>
+
         <div className="hidden md:block">
           <Logo />
         </div>
 
         <div className="flex items-center gap-2">
-          <span className={cn("font-bold  text-slate-600", textFont.className)}>
+          <span className={cn("font-bold text-slate-600", textFont.className)}>
             {user?.firstName}
           </span>
           <UserButton />

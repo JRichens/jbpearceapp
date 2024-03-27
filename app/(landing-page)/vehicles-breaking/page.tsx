@@ -186,11 +186,11 @@ const BreakingVehicles = () => {
                     {/* Check if photos exist otherwise use default */}
                     {vehicle.photos.length > 0 && (
                       <>
-                        <div className="relative w-[140px] h-[100px]">
+                        <div className="relative w-[145px] h-[100px]">
                           <Image
                             width={140}
                             height={100}
-                            className="absolute inset-0 w-full h-full object-cover rounded-md shadow-sm"
+                            className="absolute inset-0 w-full h-full object-cover rounded-l-md shadow-sm"
                             src={vehicle.photos[0]}
                             alt=""
                             loading="lazy"
@@ -206,11 +206,11 @@ const BreakingVehicles = () => {
                         </div>
 
                         {vehicle.photos.length > 1 && (
-                          <div className="relative w-[140px] h-[100px]">
+                          <div className="relative w-[145px] h-[100px]">
                             <Image
                               width={140}
                               height={100}
-                              className="absolute inset-0 w-full h-full rounded-md object-cover shadow-sm"
+                              className="absolute inset-0 w-full h-full rounded-r-md object-cover shadow-sm"
                               src={vehicle.photos[1]}
                               alt=""
                               loading="lazy"

@@ -6,11 +6,9 @@ import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
@@ -22,9 +20,10 @@ import { ThreeCircles } from "react-loader-spinner"
 
 type Props = {
   checkDesc: string
+  setDialogStatus: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-export function CheckView({ checkDesc }: Props) {
+export function CheckView({ checkDesc, setDialogStatus }: Props) {
   const [isPending, startTransition] = useTransition()
   const [checkDetails, setCheckDetails] = useState("")
 
@@ -41,7 +40,7 @@ export function CheckView({ checkDesc }: Props) {
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [checkDesc])
+  }, [])
 
   return (
     <Dialog defaultOpen={true}>
@@ -56,13 +55,18 @@ export function CheckView({ checkDesc }: Props) {
               <ThreeCircles color="#d3c22a" />
             </div>
           ) : (
-            <TipTapEditor initialContent={checkDetails} />
+            checkDetails && <TipTapEditor initialContent={checkDetails} />
           )}
 
           <DialogFooter>
-            <DialogTrigger className="absolute bottom-2 right-4">
-              <Button>Close</Button>
-            </DialogTrigger>
+            <Button
+              onClick={() => {
+                setDialogStatus(false)
+              }}
+              className="absolute bottom-2 right-4"
+            >
+              Close
+            </Button>
           </DialogFooter>
         </ScrollArea>
       </DialogContent>

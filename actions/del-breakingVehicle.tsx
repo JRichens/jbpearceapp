@@ -3,6 +3,7 @@
 import { db } from "@/lib/db"
 import { auth } from "@clerk/nextjs"
 import { revalidatePath } from "next/cache"
+import { utapi } from "@/server/uploadthing"
 
 export async function DelBreakingVehicle(reg: string) {
   // Validate that a userId is present.
@@ -11,7 +12,27 @@ export async function DelBreakingVehicle(reg: string) {
     throw new Error("User must be authenticated.")
   }
 
-  // Update the user in the database
+  // First find if any associate photos, then delete them from hosting
+  try {
+    const vehicle = await db.breaking.findFirst({
+      where: {
+        carReg: reg,
+      },
+    })
+    const photos = vehicle?.photos
+    // Loop through the photos, isolate the filename and delete from hosting
+    if (photos) {
+      photos.forEach(async (photo) => {
+        const fileName = photo.split("/").pop()
+        fileName && (await utapi.deleteFiles(fileName))
+        console.log(`${userId} Deleted Photo: ${photo}`)
+      })
+    }
+  } catch (error) {
+    console.error("Error", error)
+  }
+
+  // Then delete the database entry
   try {
     await db.breaking.delete({
       where: {
