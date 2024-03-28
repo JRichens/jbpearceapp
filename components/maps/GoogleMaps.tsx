@@ -401,7 +401,7 @@ const GoogleMaps = () => {
     return (
       <div className="">
         <ScrollArea
-          className="mt-20 h-[calc(100vh-8rem)] overflow-auto"
+          className="mt-2 h-[calc(100vh-70px)] overflow-auto"
           type="scroll"
         >
           <div className="drop-shadow-lg flex flex-col sticky top-0 bg-white mb-2">
@@ -493,7 +493,7 @@ const GoogleMaps = () => {
     <>
       <ResizablePanelGroup
         direction="horizontal"
-        className="absolute left-0 top-0 bg-white rounded-lg shadow-lg w-[250px] h-screen"
+        className="bg-white"
       >
         <ResizablePanel defaultSize={20}>
           {gettingLandAreas ? null : landMenuOpen && renderMenu()}
@@ -520,30 +520,32 @@ const GoogleMaps = () => {
           >
             {/* Map out and render any polygons from the landAreas state */}
             {gettingLandAreas ? renderLoading() : renderPolygons()}
-            <DrawingManager
-              onPolygonComplete={handlePolygonComplete}
-              options={{
-                drawingMode: null,
-                drawingControl: true,
-                drawingControlOptions: {
-                  position: window.google.maps.ControlPosition.TOP_CENTER,
-                  drawingModes: [
-                    window.google.maps.drawing.OverlayType.POLYGON,
-                  ],
-                },
-                polygonOptions: {
-                  fillColor: polygonColour,
-                  fillOpacity: 0.4,
-                  strokeColor: "white",
-                  strokeOpacity: 1,
-                  strokeWeight: 1,
-                  editable: true,
-                  draggable: false,
-                  clickable: true,
-                  map: mapRef.current,
-                },
-              }}
-            />
+            {mapRef.current && (
+              <DrawingManager
+                onPolygonComplete={handlePolygonComplete}
+                options={{
+                  drawingMode: null,
+                  drawingControl: true,
+                  drawingControlOptions: {
+                    position: window.google.maps.ControlPosition.TOP_CENTER,
+                    drawingModes: [
+                      window.google.maps.drawing.OverlayType.POLYGON,
+                    ],
+                  },
+                  polygonOptions: {
+                    fillColor: polygonColour,
+                    fillOpacity: 0.4,
+                    strokeColor: "white",
+                    strokeOpacity: 1,
+                    strokeWeight: 1,
+                    editable: true,
+                    draggable: false,
+                    clickable: true,
+                    map: mapRef.current,
+                  },
+                }}
+              />
+            )}
           </GoogleMap>
         </ResizablePanel>
       </ResizablePanelGroup>
