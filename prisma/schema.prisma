@@ -74,6 +74,9 @@ model TaskDetails {
 
 model User {
   id            String         @id @default(cuid())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt @default(now())
+  lastVisit     DateTime?      @default(now())  
   clerkId       String
   name          String
   initials      String?
@@ -81,6 +84,7 @@ model User {
   userType      UserType       @relation(fields: [userTypeId], references: [name])
   userTypeId    String
   weightcapture weightcapture[]
+  pageViewDays  PageViewDay[]
 }
 
 model UserType {
@@ -121,15 +125,39 @@ model Customer {
 }
 
 model LandArea {
-  id          String @id @default(cuid())
-  created     DateTime @default(now())
-  issuedDate  String
-  modified    DateTime @updatedAt
-  STid        String @unique
-  description String @default("Land Area")
-  area        String
-  colour      String @default("#008B02")
-  centerLat   Float?
-  centerLng   Float?
-  coordinates String[]
+  id            String @id @default(cuid())
+  created       DateTime @default(now())
+  issuedDate    String
+  modified      DateTime @updatedAt
+  plotNo        String @default("0")
+  STid          String @unique
+  registryNo    String @default("")
+  purchaseDate  String @default("01-01-2000")
+  purchasePrice Float @default(0)
+  name          String @default("Land Name")
+  description   String @default("Land Description")
+  area          String
+  colour        String @default("#008B02")
+  centerLat     Float?
+  centerLng     Float?
+  coordinates   String[]
 }
+
+model PageView {
+  id        String        @id @default(cuid())
+  page      String
+  days      PageViewDay[]
+  created   DateTime      @default(now())
+  modified  DateTime      @updatedAt
+}
+
+model PageViewDay {
+  id          String    @id @default(cuid())
+  created     DateTime  @default(now())
+  modified    DateTime  @updatedAt
+  description String
+  pageView    PageView  @relation(fields: [pageViewId], references: [id])
+  pageViewId  String
+  users       User[]
+}
+

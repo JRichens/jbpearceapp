@@ -1,0 +1,11 @@
+-- DropIndex
+DROP INDEX "LandArea_STid_key";
+
+-- AlterTable
+ALTER TABLE "LandArea" ADD COLUMN     "name" TEXT NOT NULL DEFAULT 'Land Name',
+ADD COLUMN     "plotNo" TEXT NOT NULL DEFAULT '0',
+ADD COLUMN     "purchaseDate" TEXT NOT NULL DEFAULT '01-01-2000',
+ADD COLUMN     "purchasePrice" DOUBLE PRECISION NOT NULL DEFAULT 0,
+ADD COLUMN     "registryNo" TEXT NOT NULL DEFAULT '',
+ALTER COLUMN "description" SET DEFAULT 'Land Description',
+ALTER COLUMN "STid" SET DEFAULT 'ST0000 0000';

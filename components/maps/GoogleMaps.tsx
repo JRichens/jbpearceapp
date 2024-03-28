@@ -16,6 +16,7 @@ import {
   DrawingManager,
   useLoadScript,
   Libraries,
+  OverlayView,
 } from "@react-google-maps/api"
 import {
   Dialog,
@@ -28,10 +29,19 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "../ui/button"
 import { ThreeCircles } from "react-loader-spinner"
-import { ScrollArea } from "../ui/scroll-area"
+import { ScrollArea, ScrollBar } from "../ui/scroll-area"
 import { ArrowLeft } from "lucide-react"
 import CountUp from "react-countup"
 import { convertToBNG } from "./convertToBNG"
+
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable"
+import { cn } from "@/lib/utils"
+import { Separator } from "../ui/separator"
+import { Input } from "../ui/input"
 
 const initialCoords: google.maps.LatLngLiteral = {
   lat: 51.397756,
@@ -53,6 +63,11 @@ const GoogleMaps = () => {
   const [currentPolygon, setCurrentPolygon] =
     useState<google.maps.Polygon | null>(null)
   const [polygonId, setPolygonId] = useState("")
+  const [polygonPlotNo, setPolygonPlotNo] = useState("")
+  const [polygonRegNo, setPolygonRegNo] = useState("")
+  const [polygonPurchaseDate, setPolygonPurchaseDate] = useState("")
+  const [polygonPurchasePrice, setPolygonPurchasePrice] = useState(0)
+  const [polygonName, setPolygonName] = useState("")
   const [polygonSTid, setPolygonSTid] = useState("")
   const [polygonDescription, setPolygonDescription] = useState("")
   const [polygonColour, setPolygonColour] = useState("#008B02")
@@ -63,9 +78,11 @@ const GoogleMaps = () => {
   const [databasePaths, setDatabasePaths] = useState<string[]>([])
   const [showModal, setShowModal] = useState(false)
   const mapRef = useRef<google.maps.Map | null>(null)
+  const [mapZoom, setMapZoom] = useState(15)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [landMenuOpen, setLandMenuOpen] = useState(true)
   const [updatingCreating, setUpdatingCreating] = useState(false)
+  const [search, setSearch] = useState("")
 
   // Grab all the land areas from the database
   useEffect(() => {
@@ -151,6 +168,11 @@ const GoogleMaps = () => {
       if (currentLandArea) {
         const returnedUpdatedLandArea = await UpdateLandArea(
           currentLandArea.id,
+          polygonPlotNo,
+          polygonRegNo,
+          polygonName,
+          polygonPurchaseDate,
+          polygonPurchasePrice,
           polygonSTid,
           polygonDescription,
           polygonColour,
@@ -232,6 +254,12 @@ const GoogleMaps = () => {
     setPolygonDescription(landArea.description)
     setPolygonColour(landArea.colour)
     setPolygonArea(landArea.area)
+    setPolygonPlotNo(landArea.plotNo)
+    setPolygonRegNo(landArea.registryNo)
+    setPolygonPurchaseDate(landArea.purchaseDate)
+    setPolygonPurchasePrice(landArea.purchasePrice)
+    setPolygonName(landArea.name)
+
     setPolygonPaths(
       landArea.coordinates.map((coord) => {
         const [lat, lng] = coord.split(",")
@@ -317,21 +345,30 @@ const GoogleMaps = () => {
         return { lat: parseFloat(lat), lng: parseFloat(lng) }
       })
       return (
-        <Polygon
-          key={landArea.id}
-          paths={paths}
-          options={{
-            fillColor: landArea.colour,
-            fillOpacity: 0.4,
-            strokeColor: "#F9F9F9",
-            strokeOpacity: 0.7,
-            strokeWeight: 1,
-          }}
-          onLoad={(polygon) => handlePolygonLoad(polygon, landArea.id)}
-          onClick={() => {
-            handlePolygonClick(landArea)
-          }}
-        />
+        <div key={landArea.id}>
+          <Polygon
+            paths={paths}
+            options={{
+              fillColor: landArea.colour,
+              fillOpacity: 0.4,
+              strokeColor: "#F9F9F9",
+              strokeOpacity: 0.7,
+              strokeWeight: 1,
+            }}
+            onLoad={(polygon) => handlePolygonLoad(polygon, landArea.id)}
+            onClick={() => {
+              handlePolygonClick(landArea)
+            }}
+          />
+          {mapZoom > 15 && landArea.centerLat && landArea.centerLng && (
+            <OverlayView
+              position={{ lat: landArea.centerLat, lng: landArea.centerLng }} // pass as an object instead of an array
+              mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+            >
+              <div className="bg-black bg-opacity-40 text-white p-2 rounded-xl w-[58px]">{`Plot ${landArea.plotNo}`}</div>
+            </OverlayView>
+          )}
+        </div>
       )
     })
   }
@@ -362,8 +399,11 @@ const GoogleMaps = () => {
     const totalArea = landAreas.reduce((a, b) => a + parseFloat(b.area), 0)
 
     return (
-      <div className="absolute left-0 top-0 bg-white rounded-lg shadow-lg w-[250px] h-screen">
-        <ScrollArea className="mt-20 h-[calc(100%-160px)]">
+      <div className="">
+        <ScrollArea
+          className="mt-20 h-[calc(100vh-8rem)] overflow-auto"
+          type="scroll"
+        >
           <div className="drop-shadow-lg flex flex-col sticky top-0 bg-white mb-2">
             <div className="flex flex-col px-3 pb-2">
               <h2 className="text-lg font-bold mb-2">Land Areas</h2>
@@ -376,14 +416,34 @@ const GoogleMaps = () => {
                 />
               </p>
             </div>
+            <Input
+              className="mb-2 ml-2 w-[95%] text-lg"
+              placeholder="Search..."
+              autoFocus
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
           <ul className="mt-1 px-3">
             {landAreas
-              .sort((a, b) => a.STid.localeCompare(b.STid))
-              .map((landArea) => (
+              .filter((landArea) => {
+                const searchFields = [
+                  landArea.plotNo,
+                  landArea.registryNo,
+                  landArea.purchaseDate,
+                  landArea.purchasePrice.toString(),
+                  landArea.name,
+                  landArea.description,
+                ]
+                return searchFields.some((field) =>
+                  field.toLowerCase().includes(search.toLowerCase())
+                )
+              })
+              .sort((a, b) => a.plotNo.localeCompare(b.plotNo))
+              .map((landArea, index) => (
                 <li
                   key={landArea.id}
-                  className="mb-1 cursor-pointer hover:font-bold hover:bg-slate-200"
+                  className="mb-1 cursor-pointer  hover:shadow-lg "
                   onClick={() => {
                     if (landArea.polygonRef) {
                       const bounds = new window.google.maps.LatLngBounds()
@@ -394,67 +454,100 @@ const GoogleMaps = () => {
                     }
                   }}
                 >
-                  {landArea.STid} - {landArea.description}
+                  <div
+                    className={cn(
+                      "flex flex-col px-3 py-2 rounded-md hover:border-2 hover:border-slate-100",
+                      index % 2 === 0 && "bg-slate-100"
+                    )}
+                  >
+                    <div>
+                      <div className="flex flex-row items-center justify-between">
+                        <div
+                          className={cn(
+                            " rounded-full w-22 px-2 bg-gold text-white"
+                          )}
+                        >
+                          Plot {landArea.plotNo}
+                        </div>
+                        <div className="ml-2 font-semibold border px-2 rounded-md border-darkgold">
+                          {landArea.registryNo}
+                        </div>
+                      </div>
+                    </div>
+                    <div>{landArea.name}</div>
+                    <div className="hidden hover:block">
+                      {landArea.description}
+                    </div>
+                  </div>
                 </li>
               ))}
           </ul>
+          <ScrollBar />
         </ScrollArea>
-        <div className="relative shadow-[0_-15px_15px_-15px_rgba(0,0,0,0.2)]">
-          <Button
-            variant="outline"
-            onClick={() => setLandMenuOpen(false)}
-            className="m-4"
-          >
-            <ArrowLeft className="mr-2 h-5 w-5" />
-            Menu
-          </Button>
-        </div>
+        <div className="w-[100%] h-[70px]  relative shadow-[0_-15px_15px_-15px_rgba(0,0,0,0.2)]"></div>
       </div>
     )
   }
 
   return isLoaded ? (
     <>
-      <GoogleMap
-        mapContainerStyle={{ height: "100%", width: "100%" }}
-        zoom={15}
-        center={lastCoords}
-        options={{
-          mapTypeId: "hybrid",
-          zoomControl: true,
-          mapTypeControl: false,
-          streetViewControl: false,
-        }}
-        onLoad={(map) => {
-          mapRef.current = map
-        }}
+      <ResizablePanelGroup
+        direction="horizontal"
+        className="absolute left-0 top-0 bg-white rounded-lg shadow-lg w-[250px] h-screen"
       >
-        {/* Map out and render any polygons from the landAreas state */}
-        {gettingLandAreas ? renderLoading() : renderPolygons()}
-        <DrawingManager
-          onPolygonComplete={handlePolygonComplete}
-          options={{
-            drawingMode: null,
-            drawingControl: true,
-            drawingControlOptions: {
-              position: window.google.maps.ControlPosition.TOP_CENTER,
-              drawingModes: [window.google.maps.drawing.OverlayType.POLYGON],
-            },
-            polygonOptions: {
-              fillColor: polygonColour,
-              fillOpacity: 0.4,
-              strokeColor: "white",
-              strokeOpacity: 1,
-              strokeWeight: 1,
-              editable: true,
-              draggable: false,
-              clickable: true,
-              map: mapRef.current,
-            },
-          }}
-        />
-      </GoogleMap>
-      {gettingLandAreas ? null : landMenuOpen && renderMenu()}
+        <ResizablePanel defaultSize={20}>
+          {gettingLandAreas ? null : landMenuOpen && renderMenu()}
+        </ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel defaultSize={80}>
+          <GoogleMap
+            mapContainerStyle={{ height: "100%", width: "100%" }}
+            zoom={mapZoom}
+            center={lastCoords}
+            options={{
+              mapTypeId: "hybrid",
+              zoomControl: true,
+              mapTypeControl: false,
+              streetViewControl: false,
+            }}
+            onLoad={(map) => {
+              mapRef.current = map
+              map.addListener("zoom_changed", function () {
+                const zoom = map.getZoom()
+                zoom && setMapZoom(zoom)
+              })
+            }}
+          >
+            {/* Map out and render any polygons from the landAreas state */}
+            {gettingLandAreas ? renderLoading() : renderPolygons()}
+            <DrawingManager
+              onPolygonComplete={handlePolygonComplete}
+              options={{
+                drawingMode: null,
+                drawingControl: true,
+                drawingControlOptions: {
+                  position: window.google.maps.ControlPosition.TOP_CENTER,
+                  drawingModes: [
+                    window.google.maps.drawing.OverlayType.POLYGON,
+                  ],
+                },
+                polygonOptions: {
+                  fillColor: polygonColour,
+                  fillOpacity: 0.4,
+                  strokeColor: "white",
+                  strokeOpacity: 1,
+                  strokeWeight: 1,
+                  editable: true,
+                  draggable: false,
+                  clickable: true,
+                  map: mapRef.current,
+                },
+              }}
+            />
+          </GoogleMap>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+
       {showModal && (
         <PolygonModal
           onSubmit={handleModalSubmit}
@@ -467,6 +560,16 @@ const GoogleMaps = () => {
           setPolygonColour={setPolygonColour}
           polygonArea={polygonArea}
           setPolygonArea={setPolygonArea}
+          polygonPlotNo={polygonPlotNo}
+          setPolygonPlotNo={setPolygonPlotNo}
+          polygonRegNo={polygonRegNo}
+          setPolygonRegNo={setPolygonRegNo}
+          polygonPurchaseDate={polygonPurchaseDate}
+          setPolygonPurchaseDate={setPolygonPurchaseDate}
+          polygonPurchasePrice={polygonPurchasePrice}
+          setPolygonPurchasePrice={setPolygonPurchasePrice}
+          polygonName={polygonName}
+          setPolygonName={setPolygonName}
         />
       )}
       <Dialog

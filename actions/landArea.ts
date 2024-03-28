@@ -95,6 +95,11 @@ export async function UpdateLandAreaSTid(id: string, STid: string) {
 
 export async function UpdateLandArea(
   id: string,
+  plotNo: string,
+  registryNo: string,
+  plotName: string,
+  purchaseDate: string,
+  purchasePrice: number,
   STid: string,
   description: string,
   colour: string,
@@ -110,8 +115,13 @@ export async function UpdateLandArea(
         id,
       },
       data: {
-        STid: STid,
+        plotNo: plotNo,
+        registryNo: registryNo,
+        name: plotName,
         description: description,
+        purchaseDate: purchaseDate,
+        purchasePrice: purchasePrice,
+        STid: STid,
         colour: colour,
         area: area,
       },

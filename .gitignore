@@ -5,6 +5,8 @@ ngrok.exe
 *.bat
 /public/sw.js
 /public/sw.js.map
+*workbox-*
+
 
 # dependencies
 /node_modules
@@ -41,3 +43,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+

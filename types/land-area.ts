@@ -39,6 +39,11 @@ export type LocalPolygon = {
   created: Date
   issuedDate: string
   modified: Date
+  plotNo: string
+  registryNo: string
+  purchaseDate: string
+  purchasePrice: number
+  name: string
   STid: string
   description: string
   area: string
