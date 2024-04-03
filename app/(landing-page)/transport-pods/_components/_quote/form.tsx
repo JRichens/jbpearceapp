@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input"
 import { CustomerCombobox } from "./customers-box"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
+import InputCustomer from "./input-customer"
 
 const formSchema = z.object({
   username: z.string().min(2).max(50),
@@ -41,6 +42,7 @@ const QuoteForm = () => {
   return (
     <>
       <Label>Customer</Label>
+      <InputCustomer />
       <CustomerCombobox />
       <Form {...form}>
         <form

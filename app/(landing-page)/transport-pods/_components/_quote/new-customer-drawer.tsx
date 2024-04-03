@@ -33,16 +33,12 @@ export function NewCustomerDrawer({
 
   return (
     <Drawer open={open}>
-      <DrawerTrigger asChild>
-        <Button
-          className="ml-2"
-          variant={"secondary"}
-          onClick={() => setOpen(true)}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Add
-        </Button>
-      </DrawerTrigger>
+      <Button
+        onClick={() => setOpen(true)}
+        className="bg-green-500 hover:bg-green-700"
+      >
+        <Plus className="h-5 w-5" />
+      </Button>
       <DrawerContent>
         <div className="mx-auto w-full max-w-sm px-4">
           <DrawerHeader>

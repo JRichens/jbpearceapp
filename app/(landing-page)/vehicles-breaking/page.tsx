@@ -1,5 +1,6 @@
 "use client"
 
+import useSWR from "swr"
 import { useEffect, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -25,7 +26,7 @@ import Photos from "./_componentes/photos"
 
 const BreakingVehicles = () => {
   const [search, setSearch] = useState("")
-  const [vehicles, setVehicles] = useState<BreakingVehicle[]>()
+
   const [selectedVehicle, setSelectedVehicle] =
     useState<BreakingVehicle | null>(null)
   const [newVehicleDialog, setNewVehicleDialog] = useState(false)
@@ -43,33 +44,23 @@ const BreakingVehicles = () => {
     fetchUser()
   }, [])
 
-  useEffect(() => {
-    const fetchVehicles = async () => {
-      const vehicles = await GetBreakingVehicles()
-
-      if (vehicles) {
-        setVehicles(vehicles)
-      }
+  const { data, error, isLoading } = useSWR(
+    "/api/breaking-vehicles",
+    GetBreakingVehicles,
+    {
+      refreshInterval: 2000, // Fetch data every 5 seconds
     }
-
-    const timer = setTimeout(() => {
-      fetchVehicles()
-    }, 1000)
-
-    return () => {
-      clearTimeout(timer)
-    }
-  }, [vehicles])
+  )
 
   return (
     <>
       <div className="max-w-3xl mb-6 px-4 md:px-8 py-4 mx-4 md:mx-8 shadow-md rounded-md bg-white border">
         <div className="flex flex-row items-center">
           <h1 className="font-bold text-2xl">Breaking&nbsp;</h1>
-          {vehicles && (
+          {data && (
             <CountUp
               className="text-2xl font-bold"
-              end={vehicles.length}
+              end={data.length}
             />
           )}
           <h1 className="font-bold text-2xl">&nbsp;Vehicles</h1>
@@ -106,7 +97,7 @@ const BreakingVehicles = () => {
           )}
         </div>
         {/* Map out the vehicles */}
-        {!vehicles && (
+        {isLoading && (
           <>
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 text-white text-xl flex flex-col items-center gap-4 bg-black p-4 bg-opacity-50 rounded-2xl shadow-xl">
               <Typewriter
@@ -120,7 +111,7 @@ const BreakingVehicles = () => {
             </div>
           </>
         )}
-        {vehicles && (
+        {data && (
           <div
             className={cn(`
               mt-3
@@ -131,7 +122,7 @@ const BreakingVehicles = () => {
               gap-3
               `)}
           >
-            {vehicles
+            {data
               .sort((a, b) => moment(b.created).diff(moment(a.created)))
               .filter((vehicle) => {
                 const searchTerms = search.toLowerCase().split(" ")
@@ -300,16 +291,6 @@ const BreakingVehicles = () => {
                               }
                               // Then update the vehicle in the database
                               await UpdateBreakingVehicle(updatedVehicle)
-                              setVehicles(
-                                vehicles.map((v) =>
-                                  v.id === vehicle.id
-                                    ? {
-                                        ...v,
-                                        photos: [...vehicle.photos, res[0].url],
-                                      }
-                                    : v
-                                )
-                              )
                             }}
                             onUploadError={(error: Error) => {
                               // Do something with the error.
