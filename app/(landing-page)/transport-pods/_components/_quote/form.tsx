@@ -41,7 +41,6 @@ const QuoteForm = () => {
 
   return (
     <>
-      <Label>Customer</Label>
       <InputCustomer />
       <CustomerCombobox />
       <Form {...form}>

@@ -43,9 +43,19 @@ model Car {
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt
   breaking                 Breaking?
+  exporting                Exporting?
 }
 
 model Breaking {
+  id          String   @id @default(cuid()) 
+  car         Car      @relation(fields: [carReg], references: [reg])
+  carReg      String   @unique
+  created     DateTime @default(now())
+  updated     DateTime @updatedAt
+  photos      String[]
+}
+
+model Exporting {
   id          String   @id @default(cuid()) 
   car         Car      @relation(fields: [carReg], references: [reg])
   carReg      String   @unique

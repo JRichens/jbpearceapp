@@ -14,7 +14,7 @@ import { Form } from "../../_components/reg-form"
 import { Car } from "@prisma/client"
 import { useEffect, useState } from "react"
 import CarBox from "./carBox"
-import { AddBreakingVehicle } from "@/actions/add-breakingVehicle"
+import { AddExportVehicle } from "@/actions/add-exportVehicle"
 import { Loader2 } from "lucide-react"
 
 type Props = {
@@ -36,7 +36,7 @@ const NewVehicleDialog = ({
   const handleAdd = async () => {
     if (vehicle) {
       setAdding(true)
-      const result = await AddBreakingVehicle(vehicle.reg)
+      const result = await AddExportVehicle(vehicle.reg)
       setAdding(false)
       setVehicle(null)
       setSearch("")
@@ -49,7 +49,7 @@ const NewVehicleDialog = ({
       <Dialog open={newVehicleDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>New Vehicle For Breaking</DialogTitle>
+            <DialogTitle>New Vehicle For Export</DialogTitle>
             <DialogDescription>
               Add the vehicle reg and 2 photos
             </DialogDescription>

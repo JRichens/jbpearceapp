@@ -35,9 +35,10 @@ export function NewCustomerDrawer({
     <Drawer open={open}>
       <Button
         onClick={() => setOpen(true)}
-        className="bg-green-500 hover:bg-green-700"
+        className=""
       >
-        <Plus className="h-5 w-5" />
+        <Plus className="h-5 w-5 mr-1" />
+        New
       </Button>
       <DrawerContent>
         <div className="mx-auto w-full max-w-sm px-4">

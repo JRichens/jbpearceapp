@@ -1,0 +1,46 @@
+"use server"
+
+import { db } from "@/lib/db"
+import { auth } from "@clerk/nextjs"
+import { revalidatePath } from "next/cache"
+import { utapi } from "@/server/uploadthing"
+
+export async function DelExportVehicle(reg: string) {
+  // Validate that a userId is present.
+  const { userId }: { userId: string | null } = auth()
+  if (!userId) {
+    throw new Error("User must be authenticated.")
+  }
+
+  // First find if any associate photos, then delete them from hosting
+  try {
+    const vehicle = await db.exporting.findFirst({
+      where: {
+        carReg: reg,
+      },
+    })
+    const photos = vehicle?.photos
+    // Loop through the photos, isolate the filename and delete from hosting
+    if (photos) {
+      photos.forEach(async (photo) => {
+        const fileName = photo.split("/").pop()
+        fileName && (await utapi.deleteFiles(fileName))
+        console.log(`${userId} Deleted Photo: ${photo}`)
+      })
+    }
+  } catch (error) {
+    console.error("Error", error)
+  }
+
+  // Then delete the database entry
+  try {
+    await db.exporting.delete({
+      where: {
+        carReg: reg,
+      },
+    })
+    revalidatePath("/vehicles-export")
+  } catch (error) {
+    console.error("Error", error)
+  }
+}
