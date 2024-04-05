@@ -176,7 +176,7 @@ const BreakingVehicles = () => {
                     flex
                     flex-col
                     min-w-[300px]
-                    min-h-[220px]
+                    min-h-[225px]
                     border
                     border-slate-200
                     p-1
@@ -268,12 +268,11 @@ const BreakingVehicles = () => {
                       {vehicle.car.modelSeries?.split(" ")[0]}
                       {")"}
                     </p>
-
-                    <div className="flex flex-row gap-1 items-center">
+                    <Separator className="my-1" />
+                    <div className="flex flex-row gap-1">
                       <TbEngine className="text-2xl" />
                       {vehicle.car.engineCode}
-                      <BadgePoundSterling className="text-xl" />
-                      {vehicle.car.enginePrice}
+                      <span className="font-semibold">{` - £${vehicle.car.enginePrice}`}</span>
                     </div>
                   </div>
                   <Separator className="my-1" />
