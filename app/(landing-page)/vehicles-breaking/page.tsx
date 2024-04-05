@@ -210,6 +210,7 @@ const BreakingVehicles = () => {
                               blurDataURL={`https://ws.carwebuk.com${vehicle.car.imageUrl}`}
                               onClick={() => {
                                 // Popup a modal with the image
+                                setSelectedVehicle(vehicle)
                                 setPhotoModal(true)
                                 setModalPhotos(vehicle.photos)
                               }}

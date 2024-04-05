@@ -13,6 +13,18 @@ export async function GetExportVehicles() {
           car: true,
         },
       })
+      const enginePrices = await db.enginePrice.findMany()
+
+      // Then for each vehicle find associated enginePrice
+
+      vehicles.forEach((vehicle) => {
+        const enginePrice = enginePrices.find(
+          (enginePrice) => enginePrice.engineCode === vehicle.car.engineCode
+        )
+        if (enginePrice) {
+          vehicle.car.enginePrice = enginePrice.price
+        }
+      })
 
       return vehicles
     } catch (error) {

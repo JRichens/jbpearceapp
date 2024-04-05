@@ -4,7 +4,13 @@ import useSWR from "swr"
 import { useEffect, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { ImagePlus, Loader2, Plus, Trash2 } from "lucide-react"
+import {
+  BadgePoundSterling,
+  ImagePlus,
+  Loader2,
+  Plus,
+  Trash2,
+} from "lucide-react"
 
 import { GetExportVehicles } from "@/actions/get-exportVehicles"
 import { UpdateExportVehicle } from "@/actions/update-exportVehicle"
@@ -27,6 +33,10 @@ import "@uploadthing/react/styles.css"
 
 import Photos from "./_componentes/photos"
 
+import { TbEngine } from "react-icons/tb"
+import EnginePrice from "./_componentes/enginePrice"
+import { GetEnginePrice } from "@/actions/enginePrices"
+
 const BreakingVehicles = () => {
   const [search, setSearch] = useState("")
 
@@ -37,6 +47,7 @@ const BreakingVehicles = () => {
   const [userType, setUserType] = useState("")
   const [photoModal, setPhotoModal] = useState(false)
   const [modalPhotos, setModalPhotos] = useState<string[]>([])
+  const [priceModal, setPriceModal] = useState(false)
 
   useEffect(() => {
     // Fetch user type
@@ -101,18 +112,16 @@ const BreakingVehicles = () => {
         </div>
         {/* Map out the vehicles */}
         {isLoading && (
-          <>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 text-white text-xl flex flex-col items-center gap-4 bg-black p-4 bg-opacity-50 rounded-2xl shadow-xl">
-              <Typewriter
-                options={{
-                  strings: ["Loading vehicles...", "Please wait..."],
-                  autoStart: true,
-                  loop: true,
-                }}
-              />
-              <ThreeCircles color="#d3c22a" />
-            </div>
-          </>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 text-white text-xl flex flex-col items-center gap-4 bg-black p-4 bg-opacity-50 rounded-2xl shadow-xl">
+            <Typewriter
+              options={{
+                strings: ["Loading vehicles...", "Please wait..."],
+                autoStart: true,
+                loop: true,
+              }}
+            />
+            <ThreeCircles color="#d3c22a" />
+          </div>
         )}
         {data && (
           <div
@@ -167,7 +176,7 @@ const BreakingVehicles = () => {
                     flex
                     flex-col
                     min-w-[300px]
-                    min-h-[190px]
+                    min-h-[220px]
                     border
                     border-slate-200
                     p-1
@@ -213,6 +222,7 @@ const BreakingVehicles = () => {
                               blurDataURL={`https://ws.carwebuk.com${vehicle.car.imageUrl}`}
                               onClick={() => {
                                 // Popup a modal with the image
+                                setSelectedVehicle(vehicle)
                                 setPhotoModal(true)
                                 setModalPhotos(vehicle.photos)
                               }}
@@ -258,12 +268,29 @@ const BreakingVehicles = () => {
                       {vehicle.car.modelSeries?.split(" ")[0]}
                       {")"}
                     </p>
+
+                    <div className="flex flex-row gap-1 items-center">
+                      <TbEngine className="text-2xl" />
+                      {vehicle.car.engineCode}
+                      <BadgePoundSterling className="text-xl" />
+                      {vehicle.car.enginePrice}
+                    </div>
                   </div>
                   <Separator className="my-1" />
                   <div className="flex flex-row justify-between items-center">
                     <p>Added {moment(vehicle.created).fromNow()}</p>
-                    {userType !== "user" && (
+
+                    {userType !== "userplus" && (
                       <div className="flex flex-row gap-3 relative">
+                        <Button
+                          onClick={() => {
+                            setSelectedVehicle(vehicle)
+                            setPriceModal(true)
+                          }}
+                          className="bg-green-700 p-1.5 py-0 h-8 hover:opacity-50 hover:bg-green-700"
+                        >
+                          <BadgePoundSterling className="text-xl" />
+                        </Button>
                         {vehicle.photos.length < 2 && (
                           <UploadButton
                             content={{
@@ -278,7 +305,7 @@ const BreakingVehicles = () => {
                             }}
                             appearance={{
                               button:
-                                "h-8 w-8  text-white  ut-ready:bg-green-500 ut-uploading:cursor-not-allowed rounded-r-none  bg-none after:bg-green-500",
+                                "h-8 w-8 text-white ut-ready:bg-green-500 ut-uploading:cursor-not-allowed rounded-r-none  bg-none after:bg-green-500",
                               container:
                                 "w-max flex-row rounded-md border-cyan-300 bg-slate-800",
                               allowedContent: "hidden",
@@ -318,7 +345,7 @@ const BreakingVehicles = () => {
           </div>
         )}
       </div>
-      {/* Conditional dialogs */}
+      {/* Conditional dialogs / modals */}
       <NewVehicleDialog
         newVehicleDialog={newVehicleDialog}
         setNewVehicleDialog={setNewVehicleDialog}
@@ -338,6 +365,11 @@ const BreakingVehicles = () => {
         photos={modalPhotos}
         setModalPhotos={setModalPhotos}
         userType={userType}
+        selectedVehicle={selectedVehicle}
+      />
+      <EnginePrice
+        priceModal={priceModal}
+        setPriceModal={setPriceModal}
         selectedVehicle={selectedVehicle}
       />
     </>

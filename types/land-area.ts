@@ -1,3 +1,5 @@
+import { StringDecoder } from "string_decoder"
+
 export type Coordinates = number[][][]
 
 export interface Geometry {
@@ -44,7 +46,7 @@ export type LocalPolygon = {
   purchaseDate: string
   purchasePrice: number
   name: string
-  STid: string
+  STid: string | null
   description: string
   area: string
   colour: string
@@ -56,6 +58,11 @@ export type LocalPolygon = {
 
 export type NewLandArea = {
   issuedDate: string
+  plotNo: string
+  registryNo: string
+  purchaseDate: string
+  purchasePrice: number
+  name: string
   STid: string
   description: string
   area: string

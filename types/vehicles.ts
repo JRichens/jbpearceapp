@@ -31,6 +31,7 @@ export type BreakingVehicle = {
     addedToBreaking: Date | null
     createdAt: Date
     updatedAt: Date
+    enginePrice: number | null
   }
   id: string
   carReg: string

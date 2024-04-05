@@ -160,7 +160,7 @@ const GoogleMaps = () => {
   const handleModalSubmit = async () => {
     // Find the landArea in the current state
     const currentLandArea = landAreas.find(
-      (landArea) => landArea.STid === polygonSTid
+      (landArea) => landArea.id === polygonId
     )
     // If there is a database entry, then update it
     try {
@@ -193,8 +193,13 @@ const GoogleMaps = () => {
 
         const center = calcCenter(polygonPaths)
         const newLandArea: NewLandArea = {
-          STid: polygonSTid,
           issuedDate: new Date().toISOString(),
+          plotNo: polygonPlotNo,
+          registryNo: polygonRegNo,
+          purchaseDate: polygonPurchaseDate,
+          purchasePrice: polygonPurchasePrice,
+          name: polygonName,
+          STid: polygonSTid,
           description: polygonDescription,
           area: polygonArea,
           colour: polygonColour,
@@ -231,8 +236,13 @@ const GoogleMaps = () => {
       setUpdatingCreating(false)
       setShowModal(false)
       setPolygonId("")
-      setPolygonSTid("")
+      setPolygonPlotNo("")
+      setPolygonRegNo("")
+      setPolygonName("")
       setPolygonDescription("")
+      setPolygonPurchaseDate("")
+      setPolygonPurchasePrice(0)
+      setPolygonSTid("")
       setPolygonColour("")
       setPolygonArea("")
       setPolygonPaths([])
@@ -250,7 +260,7 @@ const GoogleMaps = () => {
   const handlePolygonClick = (landArea: LocalPolygon) => {
     setCurrentPolygon(landArea.polygonRef)
     setPolygonId(landArea.id)
-    setPolygonSTid(landArea.STid)
+    setPolygonSTid(landArea.STid ? landArea.STid : "")
     setPolygonDescription(landArea.description)
     setPolygonColour(landArea.colour)
     setPolygonArea(landArea.area)
@@ -299,20 +309,9 @@ const GoogleMaps = () => {
     if (currentPolygon) {
       // if there is a database entry, delete it first
       if (polygonId) {
-        await DeleteLandArea(polygonSTid)
+        await DeleteLandArea(polygonId)
       }
 
-      // Before removing the polygon, the the last centre coords of the polygon in state
-      // First find the landArea in state from it's STid
-      const currentLandArea = landAreas.find(
-        (landArea) => landArea.STid === polygonSTid
-      )
-      if (currentLandArea?.centerLat && currentLandArea?.centerLng) {
-        setLastCoords({
-          lat: currentLandArea?.centerLat,
-          lng: currentLandArea?.centerLng,
-        })
-      }
       // Remove the polygon from the map
       currentPolygon.setMap(null)
 
@@ -328,6 +327,11 @@ const GoogleMaps = () => {
       setPolygonId("")
       setPolygonSTid("")
       setPolygonDescription("")
+      setPolygonPlotNo("")
+      setPolygonRegNo("")
+      setPolygonPurchaseDate("")
+      setPolygonPurchasePrice(0)
+      setPolygonName("")
       setPolygonColour("")
       setDatabasePaths([])
       setShowModal(false)

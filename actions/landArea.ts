@@ -11,8 +11,13 @@ export async function AddLandArea({
   newLandArea: NewLandArea
 }) {
   const {
-    STid,
     issuedDate,
+    plotNo,
+    registryNo,
+    purchaseDate,
+    purchasePrice,
+    name,
+    STid,
     description,
     area,
     colour,
@@ -27,8 +32,13 @@ export async function AddLandArea({
     }
     return await db.landArea.create({
       data: {
-        STid: STid,
         issuedDate: issuedDate,
+        plotNo: plotNo,
+        registryNo: registryNo,
+        purchaseDate: purchaseDate,
+        purchasePrice: purchasePrice,
+        name: name,
+        STid: STid,
         description: description,
         area: area,
         colour: colour,
@@ -43,7 +53,7 @@ export async function AddLandArea({
   }
 }
 
-export async function GetLandArea(STid: string) {
+export async function GetLandArea(id: string) {
   try {
     const { userId }: { userId: string | null } = auth()
     if (!userId) {
@@ -51,7 +61,7 @@ export async function GetLandArea(STid: string) {
     }
     return await db.landArea.findFirst({
       where: {
-        STid: STid,
+        id: id,
       },
     })
   } catch (error) {
@@ -132,7 +142,7 @@ export async function UpdateLandArea(
   }
 }
 
-export async function DeleteLandArea(STid: string) {
+export async function DeleteLandArea(id: string) {
   try {
     const { userId }: { userId: string | null } = auth()
     if (!userId) {
@@ -140,7 +150,7 @@ export async function DeleteLandArea(STid: string) {
     }
     return await db.landArea.delete({
       where: {
-        STid,
+        id,
       },
     })
   } catch (error) {

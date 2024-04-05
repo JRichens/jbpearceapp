@@ -24,7 +24,7 @@ import {
   CarouselApi,
 } from "@/components/ui/carousel"
 import Image from "next/image"
-import { DeletePhoto } from "@/actions/del-photos"
+import { DeletePhoto } from "@/actions/del-breakingPhotos"
 import { BreakingVehicle } from "@/types/vehicles"
 import { Loader2 } from "lucide-react"
 import Typewriter from "typewriter-effect"

@@ -11,8 +11,8 @@ datasource db {
 }
 
 model Car {
-  uniqueId                 String    @default(cuid())
-  reg                      String    @id
+  uniqueId                 String        @default(cuid())
+  reg                      String        @id
   vinOriginalDvla          String?
   dvlaMake                 String?
   dvlaModel                String?
@@ -36,14 +36,23 @@ model Car {
   gears                    String?
   vehicleCategory          String?
   imageUrl                 String?
-  exportVehicle            Boolean?  @default(false)
+  exportVehicle            Boolean?      @default(false)
   addedToExport            DateTime?
-  breakingVehicle          Boolean?  @default(false)
+  breakingVehicle          Boolean?      @default(false)
   addedToBreaking          DateTime?
-  createdAt                DateTime  @default(now())
-  updatedAt                DateTime  @updatedAt
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
   breaking                 Breaking?
   exporting                Exporting?
+  enginePrice              Float? @default(0)
+}
+
+model EnginePrice {
+  id          String   @id @default(cuid())
+  engineCode  String   @unique
+  price       Float
+  created     DateTime @default(now())
+  updated     DateTime @updatedAt
 }
 
 model Breaking {
@@ -140,7 +149,7 @@ model LandArea {
   issuedDate    String
   modified      DateTime @updatedAt
   plotNo        String @default("0")
-  STid          String @unique
+  STid          String?
   registryNo    String @default("")
   purchaseDate  String @default("01-01-2000")
   purchasePrice Float @default(0)

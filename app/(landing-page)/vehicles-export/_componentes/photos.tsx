@@ -24,7 +24,7 @@ import {
   CarouselApi,
 } from "@/components/ui/carousel"
 import Image from "next/image"
-import { DeletePhoto } from "@/actions/del-photos"
+import { DeleteExportPhoto } from "@/actions/del-exportPhotos"
 import { BreakingVehicle } from "@/types/vehicles"
 import { Loader2 } from "lucide-react"
 import Typewriter from "typewriter-effect"
@@ -62,7 +62,6 @@ const Photos = ({
 
     api.on("select", () => {
       setCurrent(api.selectedScrollSnap() + 1)
-      console.log("current slide: ", api.selectedScrollSnap() + 1)
     })
   }, [api])
 
@@ -163,7 +162,7 @@ const Photos = ({
                     )
                     // Delete the photo and update the photos array in database
                     if (fileName && selectedVehicle) {
-                      await DeletePhoto(
+                      await DeleteExportPhoto(
                         fileName,
                         selectedVehicle.carReg,
                         photos.filter((item) => item !== photos[current - 1])
