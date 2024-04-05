@@ -270,7 +270,7 @@ const BreakingVehicles = () => {
                     </p>
                     <Separator className="my-1" />
                     <div className="flex flex-row gap-1">
-                      <TbEngine className="text-2xl" />
+                      <span className="font-semibold">Engine </span>
                       {vehicle.car.engineCode}
                       <span className="font-semibold">{` - £${vehicle.car.enginePrice}`}</span>
                     </div>
