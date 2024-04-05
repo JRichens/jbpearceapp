@@ -58,6 +58,16 @@ const VehiclesAPI = () => {
                 </div>
               </td>
             </tr>
+            {vehicle.enginePrice && (
+              <tr>
+                <td className="border px-4 py-2 font-semibold text-red-600">
+                  Engine Export
+                </td>
+                <td className="border px-4 py-2 font-semibold">
+                  £ {vehicle.enginePrice}
+                </td>
+              </tr>
+            )}
             {Object.entries(vehicle)
               .filter(
                 ([key, _]) =>
@@ -69,6 +79,7 @@ const VehiclesAPI = () => {
                     "addedToBreaking",
                     "createdAt",
                     "updatedAt",
+                    "enginePrice",
                   ].includes(key)
               )
               .map(([key, value]) => (

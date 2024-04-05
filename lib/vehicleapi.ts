@@ -132,6 +132,18 @@ export default async function getCarDetailsAsJSON(
       } Finished ####`
     )
 
+    // Check for enginePrice
+    if (vehicleCheck?.engineCode) {
+      const enginePrice = await db.enginePrice.findFirst({
+        where: {
+          engineCode: vehicleCheck?.engineCode,
+        },
+      })
+      enginePrice &&
+        vehicleCheck &&
+        (vehicleCheck.enginePrice = enginePrice.price)
+    }
+
     return vehicleCheck
   } else {
     console.log("returning from api")
@@ -174,6 +186,18 @@ export default async function getCarDetailsAsJSON(
         user?.lastName ? user.lastName : ""
       } Finished ####`
     )
+    // Check for enginePrice
+    if (vehicleCheck?.engineCode) {
+      const enginePrice = await db.enginePrice.findFirst({
+        where: {
+          engineCode: vehicleCheck?.engineCode,
+        },
+      })
+      enginePrice &&
+        vehicleCheck &&
+        (vehicleCheck.enginePrice = enginePrice.price)
+    }
+
     return vehicleCheck
   }
 }

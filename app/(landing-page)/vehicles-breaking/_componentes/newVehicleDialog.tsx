@@ -46,7 +46,10 @@ const NewVehicleDialog = ({
 
   return (
     <>
-      <Dialog open={newVehicleDialog}>
+      <Dialog
+        open={newVehicleDialog}
+        onOpenChange={setNewVehicleDialog}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>New Vehicle For Breaking</DialogTitle>

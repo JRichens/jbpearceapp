@@ -68,7 +68,10 @@ const Photos = ({
 
   return (
     <>
-      <Dialog open={open}>
+      <Dialog
+        open={open}
+        onOpenChange={setOpen}
+      >
         <DialogContent className="sm:max-w-[725px]">
           <Carousel
             setApi={setApi}

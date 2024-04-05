@@ -2,6 +2,7 @@ import Image from "next/image"
 
 import { Car } from "@prisma/client"
 import { cn } from "@/lib/utils"
+import { Separator } from "@/components/ui/separator"
 
 type Props = {
   vehicle: Car | null
@@ -83,6 +84,12 @@ const CarBox = ({ vehicle }: Props) => {
               {vehicle.modelSeries?.split(" ")[0]}
               {")"}
             </p>
+            <Separator className="my-1" />
+            <div className="flex flex-row gap-1">
+              <span className="font-semibold">Engine </span>
+              {vehicle.engineCode}
+              <span className="font-semibold">{` - £${vehicle.enginePrice}`}</span>
+            </div>
           </div>
         </div>
       )}
