@@ -146,6 +146,7 @@ const BreakingVehicles = () => {
                   transmission,
                   dvlaYearOfManufacture,
                   modelSeries,
+                  reg,
                 } = vehicle.car
 
                 const modelText = dvlaModel?.split(" ").slice(0, 2).join(" ")
@@ -154,6 +155,7 @@ const BreakingVehicles = () => {
                   ? "AUTO"
                   : transmission
                 const modelSeriesText = modelSeries?.split(" ")[0]
+                const regText = reg.toLowerCase()
 
                 const vehicleText = [
                   dvlaMake,
@@ -163,6 +165,7 @@ const BreakingVehicles = () => {
                   transmissionText,
                   dvlaYearOfManufacture?.toString(),
                   modelSeriesText,
+                  regText,
                 ]
                   .filter(Boolean)
                   .join(" ")
@@ -183,10 +186,11 @@ const BreakingVehicles = () => {
                     rounded-md
                     shadow-sm
                     cursor-pointer
-                    hover:shadow-md`)}
+                    hover:shadow-md
+                    relative`)}
                   key={vehicle.id}
                 >
-                  <div className="flex flex-row flex-grow justify-between">
+                  <div className=" flex flex-row flex-grow justify-between">
                     {/* Check if photos exist otherwise use default */}
                     {vehicle.photos.length > 0 && (
                       <>
@@ -248,6 +252,14 @@ const BreakingVehicles = () => {
                         />
                       </>
                     )}
+                  </div>
+                  {/* Vehicle Reg */}
+                  <div className="absolute top-2 left-24 flex items-center justify-center">
+                    <div className="relative">
+                      <div className="h-[28px] md:h-[32px] text-center rounded-lg opacity-70 bg-white px-1 text-xl font-bold text-black uppercase border-2 border-slate-500 outline-none font-charles-wright">
+                        {vehicle.car.reg}
+                      </div>
+                    </div>
                   </div>
                   <div className="flex flex-col">
                     <p className="font-medium">
