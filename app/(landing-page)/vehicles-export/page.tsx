@@ -284,7 +284,9 @@ const BreakingVehicles = () => {
                     <div className="flex flex-row gap-1">
                       <span className="font-semibold">Engine </span>
                       {vehicle.car.engineCode}
-                      <span className="font-semibold">{` - £${vehicle.car.enginePrice}`}</span>
+                      <span className="font-semibold">{` - £${
+                        vehicle.car.enginePrice ? vehicle.car.enginePrice : ""
+                      }`}</span>
                     </div>
                   </div>
                   <Separator className="my-1" />

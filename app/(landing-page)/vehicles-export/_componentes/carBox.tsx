@@ -88,7 +88,9 @@ const CarBox = ({ vehicle }: Props) => {
             <div className="flex flex-row gap-1">
               <span className="font-semibold">Engine </span>
               {vehicle.engineCode}
-              <span className="font-semibold">{` - £${vehicle.enginePrice}`}</span>
+              <span className="font-semibold">{` - £${
+                vehicle.enginePrice ? vehicle.enginePrice : ""
+              }`}</span>
             </div>
           </div>
         </div>

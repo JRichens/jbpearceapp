@@ -25,7 +25,7 @@ type Props = {
 
 const EnginePrice = ({ priceModal, setPriceModal, selectedVehicle }: Props) => {
   const { data, error } = useSWR("enginePrice", GetEnginePrice)
-  const [enginePrice, setEnginePrice] = useState<number>(0)
+  const [enginePrice, setEnginePrice] = useState<number | undefined>(undefined)
 
   const handleSave = async () => {
     if (enginePrice && selectedVehicle?.car.engineCode) {
@@ -57,10 +57,15 @@ const EnginePrice = ({ priceModal, setPriceModal, selectedVehicle }: Props) => {
             className="text-xl"
             type="number"
             placeholder="Price"
-            value={enginePrice ? enginePrice : 0}
+            value={enginePrice ? enginePrice : undefined}
             onChange={(e) => {
               const value = e.target.value.replace(/^0+/, "")
               setEnginePrice(parseFloat(value))
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleSave()
+              }
             }}
           />
           <DialogFooter>
