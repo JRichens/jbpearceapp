@@ -192,6 +192,7 @@ const BreakingVehicles = () => {
                 >
                   <div className=" flex flex-row flex-grow justify-between">
                     {/* Check if photos exist otherwise use default */}
+
                     {vehicle.photos.length > 0 && (
                       <>
                         <div className="relative w-[145px] h-[100px]">
@@ -212,6 +213,15 @@ const BreakingVehicles = () => {
                             }}
                           />
                         </div>
+                        {vehicle.photos.length === 1 && (
+                          <Image
+                            src={`https://ws.carwebuk.com${vehicle.car.imageUrl}`}
+                            width={140}
+                            height={140}
+                            style={{ transform: "scaleX(-1)" }}
+                            alt=""
+                          />
+                        )}
 
                         {vehicle.photos.length > 1 && (
                           <div className="relative w-[145px] h-[100px]">
