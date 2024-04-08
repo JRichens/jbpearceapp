@@ -67,6 +67,7 @@ const EnginePrice = ({ priceModal, setPriceModal, selectedVehicle }: Props) => {
                 handleSave()
               }
             }}
+            autoComplete="off"
           />
           <DialogFooter>
             <Button
