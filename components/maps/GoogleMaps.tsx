@@ -58,6 +58,7 @@ import { Label } from "../ui/label"
 import { motion } from "framer-motion"
 import { useUser } from "@clerk/nextjs"
 import { GetUser } from "@/actions/get-user"
+import { SendLandNoteEmail } from "@/actionsEmails/send"
 
 const initialCoords: google.maps.LatLngLiteral = {
   lat: 51.397756,
@@ -147,12 +148,10 @@ const GoogleMaps = () => {
       setGettingLandAreas(false)
       // if any of the notesRead in returnedLandAreas = false then set newNote true
       if (returnedLandAreas.some((landArea) => !landArea.notesRead)) {
-        console.log("set newNote true")
         // also log which one is true
         console.log(returnedLandAreas.find((landArea) => !landArea.notesRead))
         setNewNote(true)
       } else {
-        console.log("set newNote false")
         setNewNote(false)
       }
     }
@@ -632,6 +631,16 @@ const GoogleMaps = () => {
                     landArea.notes = noteDetail
                   }
                 })
+
+                // if land user - send email notification
+                {
+                  userType === "land" &&
+                    (await SendLandNoteEmail(
+                      ["mike@jbpearce.co.uk", "john@jbpearce.co.uk"],
+                      currentLandArea?.plotNo ? currentLandArea?.plotNo : "N/A",
+                      noteDetail
+                    ))
+                }
 
                 setCurrentLandArea(null)
                 setNoteDetail("")
