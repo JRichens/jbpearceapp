@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import { auth } from "@clerk/nextjs"
 import { NewLandArea } from "@/types/land-area"
 import { LandArea } from "@prisma/client"
+import { revalidatePath } from "next/cache"
 
 export async function AddLandArea({
   newLandArea,
@@ -134,6 +135,132 @@ export async function UpdateLandArea(
         STid: STid,
         colour: colour,
         area: area,
+      },
+    })
+  } catch (error) {
+    console.log(error)
+    throw error
+  }
+}
+
+export async function UpdateLandAreaNotes(id: string, notes: string) {
+  try {
+    const { userId }: { userId: string | null } = auth()
+    let user
+
+    if (!userId) {
+      throw new Error("User must be authenticated")
+    } else {
+      user = await db.user.findFirst({
+        where: {
+          clerkId: userId,
+        },
+      })
+    }
+    // Check the userType and if land and if notes different, update notesRead
+    const currentNotes = await db.landArea.findFirst({
+      where: {
+        id,
+      },
+      select: {
+        notes: true,
+      },
+    })
+    // If the notes are the same just return
+    if (currentNotes?.notes === notes || (!currentNotes?.notes && !notes)) {
+      return
+    } else {
+      await db.landArea.update({
+        where: {
+          id,
+        },
+        data: {
+          notes: notes,
+        },
+      })
+      // If a land user has modified notes, said notesRead false
+      if (user?.userTypeId === "land") {
+        await db.landArea.update({
+          where: {
+            id: id,
+          },
+          data: {
+            notesRead: false,
+          },
+        })
+      }
+    }
+    return
+  } catch (error) {
+    console.log(error)
+    throw error
+  }
+}
+
+export async function UpdateLandAreasNotesRead(id: string) {
+  try {
+    const { userId }: { userId: string | null } = auth()
+    let user
+
+    if (!userId) {
+      throw new Error("User must be authenticated")
+    } else {
+      user = await db.user.findFirst({
+        where: {
+          clerkId: userId,
+        },
+      })
+    }
+
+    // if the user is a land user, return otherwise, notesRead = true
+    if (user?.userTypeId === "land") {
+      return
+    } else {
+      await db.landArea.update({
+        where: {
+          id,
+        },
+        data: {
+          notesRead: true,
+        },
+      })
+    }
+    revalidatePath("/land-areas")
+  } catch (error) {
+    console.log(error)
+    throw error
+  }
+}
+
+export async function GetLandAreasNotesRead() {
+  try {
+    const { userId }: { userId: string | null } = auth()
+    if (!userId) {
+      throw new Error("User must be authenticated")
+    }
+    return await db.landArea.findMany({
+      where: {
+        notesRead: false,
+      },
+    })
+  } catch (error) {
+    console.log(error)
+    throw error
+  }
+}
+
+export async function GetLandAreaNotes(id: string) {
+  try {
+    const { userId }: { userId: string | null } = auth()
+    if (!userId) {
+      throw new Error("User must be authenticated")
+    }
+    return await db.landArea.findFirst({
+      where: {
+        id,
+      },
+      select: {
+        notes: true,
       },
     })
   } catch (error) {

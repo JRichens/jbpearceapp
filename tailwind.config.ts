@@ -16,6 +16,12 @@ module.exports = {
       },
     },
     extend: {
+      dropShadow: {
+        glowRed: [
+          "0 0px 20px rgba(255,0,0, 0.35)",
+          "0 0px 65px rgba(255,0,0, 0.2)",
+        ],
+      },
       fontFamily: {
         "charles-wright": ["Charles Wright", "sans-serif"],
       },

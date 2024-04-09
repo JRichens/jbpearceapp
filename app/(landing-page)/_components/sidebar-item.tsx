@@ -25,6 +25,7 @@ export const SidebarItem = () => {
   const pathname = usePathname()
   const { isSignedIn, user, isLoaded } = useUser()
   const [userType, setUserType] = useState("")
+  const [landUser, setLandUser] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   const routes = [
@@ -80,7 +81,7 @@ export const SidebarItem = () => {
       label: "Land",
       icon: <MapPinned className="h-6 w-6 mr-2" />,
       href: `/land-areas`,
-      access: ["admin", "super"],
+      access: ["admin", "super", "land"],
     },
     {
       label: "Users",

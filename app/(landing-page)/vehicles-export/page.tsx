@@ -9,6 +9,7 @@ import {
   ImagePlus,
   Loader2,
   Plus,
+  Tag,
   Trash2,
 } from "lucide-react"
 
@@ -36,6 +37,7 @@ import Photos from "./_componentes/photos"
 import { TbEngine } from "react-icons/tb"
 import EnginePrice from "./_componentes/enginePrice"
 import { GetEnginePrice } from "@/actions/enginePrices"
+import { AddReservation } from "@/actions/export-reservations"
 
 const BreakingVehicles = () => {
   const [search, setSearch] = useState("")
@@ -300,9 +302,21 @@ const BreakingVehicles = () => {
                     </div>
                   </div>
                   <Separator className="my-1" />
+                  {/* Bottom section of box */}
                   <div className="flex flex-row justify-between items-center">
                     <p>Added {moment(vehicle.created).fromNow()}</p>
+                    {/* userPlus user conditional rendering */}
+                    <Button
+                      onClick={async () => {
+                        await AddReservation(vehicle.id)
+                        setSelectedVehicle(vehicle)
+                      }}
+                      className="bg-green-700 p-1.5 py-0 h-8 hover:opacity-50 hover:bg-green-700"
+                    >
+                      <Tag className="text-xl" />
+                    </Button>
 
+                    {/* Admin user conditional rendering */}
                     {userType !== "userplus" && (
                       <div className="flex flex-row gap-3 relative">
                         <Button

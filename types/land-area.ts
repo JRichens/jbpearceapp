@@ -53,6 +53,8 @@ export type LocalPolygon = {
   centerLat: number | null
   centerLng: number | null
   coordinates: string[]
+  notes: string | null
+  notesRead: boolean | null
   polygonRef: google.maps.Polygon | null // Add the polygonRef property with its type
 }
 

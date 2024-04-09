@@ -31,6 +31,8 @@ interface PolygonModalProps {
   setPolygonPurchasePrice: Dispatch<SetStateAction<number>>
   polygonName: string
   setPolygonName: Dispatch<SetStateAction<string>>
+  userType: string
+  setShowModal: Dispatch<SetStateAction<boolean>>
 }
 
 const PolygonModal: React.FC<PolygonModalProps> = ({
@@ -54,6 +56,8 @@ const PolygonModal: React.FC<PolygonModalProps> = ({
   setPolygonPurchasePrice,
   polygonName,
   setPolygonName,
+  userType,
+  setShowModal,
 }) => {
   const handleSubmit = () => {
     onSubmit()
@@ -246,19 +250,31 @@ const PolygonModal: React.FC<PolygonModalProps> = ({
         />
 
         <div className="flex justify-between">
-          <Button
-            onClick={handleSubmit}
-            className=""
-          >
-            Ok
-          </Button>
-          <Button
-            onClick={onClose}
-            variant="destructive"
-            className=""
-          >
-            <Trash2 className="w-6 h-6" />
-          </Button>
+          {userType !== "land" && (
+            <>
+              <Button
+                onClick={handleSubmit}
+                className=""
+              >
+                Ok
+              </Button>
+              <Button
+                onClick={onClose}
+                variant="destructive"
+                className=""
+              >
+                <Trash2 className="w-6 h-6" />
+              </Button>
+            </>
+          )}
+          {userType === "land" && (
+            <Button
+              onClick={() => setShowModal(false)}
+              className=""
+            >
+              Close
+            </Button>
+          )}
         </div>
       </div>
     </div>

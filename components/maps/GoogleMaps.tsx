@@ -1,15 +1,27 @@
 "use client"
 
+import useSWR from "swr"
+
 import Typewriter from "typewriter-effect"
 import {
   GetAllLandAreas,
   AddLandArea,
   UpdateLandArea,
   DeleteLandArea,
+  UpdateLandAreaNotes,
+  UpdateLandAreasNotesRead,
+  GetLandAreasNotesRead,
+  GetLandAreaNotes,
 } from "@/actions/landArea"
 import PolygonModal from "./PolygonModal"
 import { NewLandArea, LocalPolygon } from "@/types/land-area"
-import { useState, useRef, useEffect, useCallback } from "react"
+import {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  startTransition,
+} from "react"
 import {
   GoogleMap,
   Polygon,
@@ -42,6 +54,10 @@ import {
 import { cn } from "@/lib/utils"
 import { Separator } from "../ui/separator"
 import { Input } from "../ui/input"
+import { Label } from "../ui/label"
+import { motion } from "framer-motion"
+import { useUser } from "@clerk/nextjs"
+import { GetUser } from "@/actions/get-user"
 
 const initialCoords: google.maps.LatLngLiteral = {
   lat: 51.397756,
@@ -60,6 +76,9 @@ const GoogleMaps = () => {
     useState<google.maps.LatLngLiteral>(initialCoords)
   const [gettingLandAreas, setGettingLandAreas] = useState(false)
   const [landAreas, setLandAreas] = useState<LocalPolygon[]>([])
+  const [currentLandArea, setCurrentLandArea] = useState<LocalPolygon | null>(
+    null
+  )
   const [currentPolygon, setCurrentPolygon] =
     useState<google.maps.Polygon | null>(null)
   const [polygonId, setPolygonId] = useState("")
@@ -83,6 +102,34 @@ const GoogleMaps = () => {
   const [landMenuOpen, setLandMenuOpen] = useState(true)
   const [updatingCreating, setUpdatingCreating] = useState(false)
   const [search, setSearch] = useState("")
+  const [noteDetail, setNoteDetail] = useState("")
+  const [showNote, setShowNote] = useState(false)
+  const [newNote, setNewNote] = useState(false)
+  const [userType, setUserType] = useState<string>("")
+  const [triggerData, setTriggerData] = useState(false)
+
+  const { data, error, isLoading } = useSWR(
+    "/api/land-areas",
+    GetLandAreasNotesRead,
+    {
+      refreshInterval: 1500, // Fetch data every 1.5 seconds
+    }
+  )
+
+  // once data has changed, fill the landAreas with the data
+  useEffect(() => {
+    // look in data for the id of the land area
+    if (data) {
+      data.forEach((landArea) => {
+        const foundLandArea = landAreas.find(
+          (localLandArea) => localLandArea.id === landArea.id
+        )
+        if (foundLandArea) {
+          foundLandArea.notesRead = landArea.notesRead
+        }
+      })
+    }
+  }, [data])
 
   // Grab all the land areas from the database
   useEffect(() => {
@@ -98,9 +145,33 @@ const GoogleMaps = () => {
       )
       setLandAreas(updatedLandAreas)
       setGettingLandAreas(false)
+      // if any of the notesRead in returnedLandAreas = false then set newNote true
+      if (returnedLandAreas.some((landArea) => !landArea.notesRead)) {
+        console.log("set newNote true")
+        // also log which one is true
+        console.log(returnedLandAreas.find((landArea) => !landArea.notesRead))
+        setNewNote(true)
+      } else {
+        console.log("set newNote false")
+        setNewNote(false)
+      }
     }
     fetchLandAreas()
-  }, [])
+    setTriggerData(false)
+  }, [triggerData])
+
+  const { isSignedIn, user, isLoaded: isUserLoaded } = useUser()
+  const userId = isSignedIn ? user?.id : null
+
+  useEffect(() => {
+    const getUserType = async () => {
+      if (userId) {
+        const user = await GetUser()
+        user && setUserType(user.userTypeId)
+      }
+    }
+    getUserType()
+  }, [userId])
 
   const calcCenter = (coordinates: google.maps.LatLngLiteral[]) => {
     const totalLat = coordinates.reduce((sum, coord) => sum + coord.lat, 0)
@@ -410,7 +481,19 @@ const GoogleMaps = () => {
         >
           <div className="drop-shadow-lg flex flex-col sticky top-0 bg-white mb-2">
             <div className="flex flex-col px-3 pb-2">
-              <h2 className="text-lg font-bold mb-2">Land Areas</h2>
+              <div className="flex flex-row items-center justify-between">
+                <h2 className="text-lg font-bold">Land Areas</h2>
+                {data && data?.length > 0 && (
+                  <motion.div
+                    animate={{ opacity: [0.2, 1, 0.2] }}
+                    transition={{ repeat: Infinity, duration: 1.5 }}
+                    className="bg-red-500 text-white px-2 py-1 rounded-md drop-shadow-glowRed"
+                  >
+                    New Notes
+                  </motion.div>
+                )}
+              </div>
+
               <p>Total Areas: {landAreas.length}</p>
               <p>
                 Total Hectares:{" "}
@@ -478,9 +561,36 @@ const GoogleMaps = () => {
                         </div>
                       </div>
                     </div>
-                    <div>{landArea.name}</div>
-                    <div className="hidden hover:block">
-                      {landArea.description}
+                    <div className="flex flex-row items-center justify-between">
+                      <div>{landArea.name}</div>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "h-8 mt-1",
+                          data &&
+                            data.some(
+                              (item) =>
+                                item.id === landArea.id && !item.notesRead
+                            )
+                            ? "bg-red-500 hover:bg-red-700 text-white hover:text-white"
+                            : "bg-white hover:bg-gray-200 text-black hover:text-black"
+                        )}
+                        onClick={async () => {
+                          await UpdateLandAreasNotesRead(landArea.id)
+                          setCurrentLandArea(landArea)
+                          const landAreaNote = await GetLandAreaNotes(
+                            landArea.id
+                          )
+                          landAreaNote &&
+                            setNoteDetail(
+                              landAreaNote.notes ? landAreaNote.notes : ""
+                            )
+                          setShowNote(true)
+                          setTriggerData(true)
+                        }}
+                      >
+                        Notes
+                      </Button>
                     </div>
                   </div>
                 </li>
@@ -489,6 +599,50 @@ const GoogleMaps = () => {
           <ScrollBar />
         </ScrollArea>
         <div className="w-[100%] h-[70px]  relative shadow-[0_-15px_15px_-15px_rgba(0,0,0,0.2)]"></div>
+      </div>
+    )
+  }
+
+  // Render a notes popup that guest user can add notes to
+  const renderNotes = () => {
+    return (
+      <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-30 flex items-center justify-end">
+        <motion.div
+          initial={{ opacity: 0, y: -110 }}
+          animate={{ opacity: 1, y: -80 }}
+          transition={{ ease: "easeInOut", duration: 0.4 }}
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-4 rounded shadow-lg m-4 w-80 h-72"
+        >
+          <h2 className="text-xl font-bold mb-4">{`Notes - ${currentLandArea?.plotNo} - ${currentLandArea?.registryNo}`}</h2>
+          <textarea
+            id="description"
+            value={noteDetail}
+            onChange={(e) => setNoteDetail(e.target.value)}
+            className="w-full h-[165px] max-h-[165px] border border-gray-300 rounded px-2 py-1 mb-2"
+          ></textarea>
+
+          <div className="flex justify-between">
+            <Button
+              onClick={async () => {
+                currentLandArea &&
+                  (await UpdateLandAreaNotes(currentLandArea?.id, noteDetail))
+                // Find the current land area and update its notes
+                landAreas.forEach((landArea) => {
+                  if (landArea.id === currentLandArea?.id) {
+                    landArea.notes = noteDetail
+                  }
+                })
+
+                setCurrentLandArea(null)
+                setNoteDetail("")
+                setShowNote(false)
+              }}
+              className=""
+            >
+              Ok
+            </Button>
+          </div>
+        </motion.div>
       </div>
     )
   }
@@ -576,8 +730,11 @@ const GoogleMaps = () => {
           setPolygonPurchasePrice={setPolygonPurchasePrice}
           polygonName={polygonName}
           setPolygonName={setPolygonName}
+          userType={userType}
+          setShowModal={setShowModal}
         />
       )}
+      {showNote && renderNotes()}
       <Dialog
         open={deleteConfirmOpen}
         onOpenChange={setDeleteConfirmOpen}

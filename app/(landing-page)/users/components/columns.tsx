@@ -46,6 +46,7 @@ export const columns: ColumnDef<User>[] = [
               <SelectItem value="staff">staff</SelectItem>
               <SelectItem value="admin">admin</SelectItem>
               <SelectItem value="super">super</SelectItem>
+              <SelectItem value="land">land</SelectItem>
             </SelectContent>
           </Select>
         </div>
