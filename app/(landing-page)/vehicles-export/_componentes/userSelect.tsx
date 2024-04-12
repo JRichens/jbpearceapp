@@ -139,6 +139,7 @@ const UserSelect = ({ userSelectModal, setUserSelectModal }: Props) => {
                 >
                   {userLists.map((list) => (
                     <motion.li
+                      key={list.id}
                       variants={item}
                       className="w-3/4"
                     >
