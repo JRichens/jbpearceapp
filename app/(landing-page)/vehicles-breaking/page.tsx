@@ -134,6 +134,7 @@ const BreakingVehicles = () => {
                   transmission,
                   dvlaYearOfManufacture,
                   modelSeries,
+                  reg,
                 } = vehicle.car
 
                 const modelText = dvlaModel?.split(" ").slice(0, 2).join(" ")
@@ -151,6 +152,7 @@ const BreakingVehicles = () => {
                   transmissionText,
                   dvlaYearOfManufacture?.toString(),
                   modelSeriesText,
+                  reg,
                 ]
                   .filter(Boolean)
                   .join(" ")

@@ -2,19 +2,27 @@
 
 import useSWR from "swr"
 import { useEffect, useState } from "react"
+import { GetExportVehicles } from "@/actions/get-exportVehicles"
+import { UpdateExportVehicle } from "@/actions/update-exportVehicle"
+import { AddReservation } from "@/actions/export-reservations"
+import { GetUser } from "@/actions/get-user"
+
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
   BadgePoundSterling,
+  ClipboardCopy,
   ImagePlus,
   Loader2,
   Plus,
   Tag,
   Trash2,
 } from "lucide-react"
-
-import { GetExportVehicles } from "@/actions/get-exportVehicles"
-import { UpdateExportVehicle } from "@/actions/update-exportVehicle"
 
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -25,7 +33,6 @@ import { BreakingVehicle } from "@/types/vehicles"
 import { ConfirmDel } from "./_componentes/confirmDel"
 import Typewriter from "typewriter-effect"
 import { ThreeCircles } from "react-loader-spinner"
-import { GetUser } from "@/actions/get-user"
 import { Label } from "@/components/ui/label"
 import CountUp from "react-countup"
 
@@ -34,10 +41,8 @@ import "@uploadthing/react/styles.css"
 
 import Photos from "./_componentes/photos"
 
-import { TbEngine } from "react-icons/tb"
 import EnginePrice from "./_componentes/enginePrice"
-import { GetEnginePrice } from "@/actions/enginePrices"
-import { AddReservation } from "@/actions/export-reservations"
+import UserSelect from "./_componentes/userSelect"
 
 const BreakingVehicles = () => {
   const [search, setSearch] = useState("")
@@ -50,6 +55,7 @@ const BreakingVehicles = () => {
   const [photoModal, setPhotoModal] = useState(false)
   const [modalPhotos, setModalPhotos] = useState<string[]>([])
   const [priceModal, setPriceModal] = useState(false)
+  const [userSelectModal, setUserSelectModal] = useState(false)
 
   useEffect(() => {
     // Fetch user type
@@ -306,74 +312,97 @@ const BreakingVehicles = () => {
                   <div className="flex flex-row justify-between items-center">
                     <p>Added {moment(vehicle.created).fromNow()}</p>
                     {/* userPlus user conditional rendering */}
-                    <Button
-                      onClick={async () => {
-                        await AddReservation(vehicle.id)
-                        setSelectedVehicle(vehicle)
-                      }}
-                      className="bg-green-700 p-1.5 py-0 h-8 hover:opacity-50 hover:bg-green-700"
-                    >
-                      <Tag className="text-xl" />
-                    </Button>
-
+                    {userType === "userplus" && (
+                      <Button
+                        onClick={async () => {
+                          await AddReservation(vehicle.id)
+                          setSelectedVehicle(vehicle)
+                        }}
+                        className="bg-green-700 p-1.5 py-0 h-8 hover:opacity-50 hover:bg-green-700"
+                      >
+                        <Tag className="text-xl" />
+                      </Button>
+                    )}
                     {/* Admin user conditional rendering */}
+
                     {userType !== "userplus" && (
                       <div className="flex flex-row gap-3 relative">
-                        <Button
-                          onClick={() => {
-                            setSelectedVehicle(vehicle)
-                            setPriceModal(true)
-                          }}
-                          className="bg-green-700 p-1.5 py-0 h-8 hover:opacity-50 hover:bg-green-700"
-                        >
-                          <BadgePoundSterling className="text-xl" />
-                        </Button>
-                        {vehicle.photos.length < 2 && (
-                          <UploadButton
-                            content={{
-                              button({ ready }) {
-                                if (ready) {
-                                  return <ImagePlus />
-                                }
-                                return (
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                )
-                              },
-                            }}
-                            appearance={{
-                              button:
-                                "h-8 w-8 text-white ut-ready:bg-green-500 ut-uploading:cursor-not-allowed rounded-r-none  bg-none after:bg-green-500",
-                              container:
-                                "w-max flex-row rounded-md border-cyan-300 bg-slate-800",
-                              allowedContent: "hidden",
-                            }}
-                            key={vehicle.id}
-                            endpoint="imageUploader"
-                            onClientUploadComplete={async (res) => {
-                              // Add the image path to the array of photos in the vehicle
-                              const updatedVehicle = {
-                                id: vehicle.id,
-                                carReg: vehicle.carReg,
-                                photos: [...vehicle.photos, res[0].url],
-                              }
-                              // Then update the vehicle in the database
-                              await UpdateExportVehicle(updatedVehicle)
-                            }}
-                            onUploadError={(error: Error) => {
-                              // Do something with the error.
-                            }}
-                          />
-                        )}
+                        <Popover>
+                          <PopoverTrigger>
+                            <Button variant="secondary">
+                              <Plus className="text-xl" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="flex flex-row items-center gap-4 w-fit">
+                            {/* Move to list button */}
+                            <Button
+                              onClick={() => {
+                                setUserSelectModal(true)
+                              }}
+                              className="bg-darkgold p-1.5 py-0 h-8 hover:opacity-50 hover:bg-darkgold"
+                            >
+                              <ClipboardCopy className="text-xl" />
+                            </Button>
+                            {/* Price modal button */}
+                            <Button
+                              onClick={() => {
+                                setSelectedVehicle(vehicle)
+                                setPriceModal(true)
+                              }}
+                              className="bg-green-700 p-1.5 py-0 h-8 hover:opacity-50 hover:bg-green-700"
+                            >
+                              <BadgePoundSterling className="text-xl" />
+                            </Button>
+                            {/* Upload photo button */}
+                            {vehicle.photos.length < 2 && (
+                              <UploadButton
+                                content={{
+                                  button({ ready }) {
+                                    if (ready) {
+                                      return <ImagePlus />
+                                    }
+                                    return (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    )
+                                  },
+                                }}
+                                appearance={{
+                                  button:
+                                    "h-8 w-8 text-white ut-ready:bg-green-500 ut-uploading:cursor-not-allowed rounded-r-none  bg-none after:bg-green-500",
+                                  container:
+                                    "w-max flex-row rounded-md border-cyan-300 bg-slate-800",
+                                  allowedContent: "hidden",
+                                }}
+                                key={vehicle.id}
+                                endpoint="imageUploader"
+                                onClientUploadComplete={async (res) => {
+                                  // Add the image path to the array of photos in the vehicle
+                                  const updatedVehicle = {
+                                    id: vehicle.id,
+                                    carReg: vehicle.carReg,
+                                    photos: [...vehicle.photos, res[0].url],
+                                  }
+                                  // Then update the vehicle in the database
+                                  await UpdateExportVehicle(updatedVehicle)
+                                }}
+                                onUploadError={(error: Error) => {
+                                  // Do something with the error.
+                                }}
+                              />
+                            )}
 
-                        <Button
-                          onClick={() => {
-                            setConfirmDel(true)
-                            setSelectedVehicle(vehicle)
-                          }}
-                          className="bg-red-700 p-1.5 py-0 h-8 hover:opacity-50 hover:bg-red-600"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </Button>
+                            {/* Delete vehicle button */}
+                            <Button
+                              onClick={() => {
+                                setConfirmDel(true)
+                                setSelectedVehicle(vehicle)
+                              }}
+                              className="bg-red-700 p-1.5 py-0 h-8 hover:opacity-50 hover:bg-red-600"
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </Button>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     )}
                   </div>
@@ -408,6 +437,10 @@ const BreakingVehicles = () => {
         priceModal={priceModal}
         setPriceModal={setPriceModal}
         selectedVehicle={selectedVehicle}
+      />
+      <UserSelect
+        userSelectModal={userSelectModal}
+        setUserSelectModal={setUserSelectModal}
       />
     </>
   )
