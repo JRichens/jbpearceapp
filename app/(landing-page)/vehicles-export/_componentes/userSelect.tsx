@@ -111,6 +111,7 @@ const UserSelect = ({ userSelectModal, setUserSelectModal }: Props) => {
                 >
                   {data?.map((user) => (
                     <motion.li
+                      key={user.id}
                       variants={item}
                       className="w-3/4"
                     >
