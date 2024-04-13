@@ -2,6 +2,8 @@
 
 import useSWR from "swr"
 
+import * as XLSX from "xlsx"
+
 import Typewriter from "typewriter-effect"
 import {
   GetAllLandAreas,
@@ -42,7 +44,7 @@ import {
 import { Button } from "../ui/button"
 import { ThreeCircles } from "react-loader-spinner"
 import { ScrollArea, ScrollBar } from "../ui/scroll-area"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Download, DownloadIcon } from "lucide-react"
 import CountUp from "react-countup"
 import { convertToBNG } from "./convertToBNG"
 
@@ -59,6 +61,7 @@ import { motion } from "framer-motion"
 import { useUser } from "@clerk/nextjs"
 import { GetUser } from "@/actions/get-user"
 import { SendLandNoteEmail } from "@/actionsEmails/send"
+import Link from "next/link"
 
 const initialCoords: google.maps.LatLngLiteral = {
   lat: 51.397756,
@@ -494,13 +497,21 @@ const GoogleMaps = () => {
               </div>
 
               <p>Total Areas: {landAreas.length}</p>
-              <p>
-                Total Hectares:{" "}
-                <CountUp
-                  end={totalArea}
-                  decimals={1.5}
-                />
-              </p>
+              <div className="flex flex-row items-center justify-between">
+                <p>
+                  Total Hectares:{" "}
+                  <CountUp
+                    end={totalArea}
+                    decimals={1.5}
+                  />
+                </p>
+                <Link href="/api/landexport">
+                  <div className="flex flex-row items-center border-solid border-[1px] border-slate-200 rounded-md px-2 py-1 bg-slate-100 hover:bg-slate-200">
+                    <DownloadIcon className="w-5 h-5 mr-1" />
+                    Export
+                  </div>
+                </Link>
+              </div>
             </div>
             <Input
               className="mb-2 ml-2 w-[95%] text-lg"

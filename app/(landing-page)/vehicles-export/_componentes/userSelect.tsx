@@ -6,7 +6,7 @@ import useSWR from "swr"
 
 import { motion, AnimatePresence } from "framer-motion"
 
-import { GetUserPlus, GetUsersLists } from "@/actions/get-users"
+import { AddUserList, GetUserPlus, GetUsersLists } from "@/actions/get-users"
 import { Exporting } from "@prisma/client"
 type UserList = {
   id: string
@@ -26,9 +26,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { ListPlusIcon, User2Icon } from "lucide-react"
+import { ListPlusIcon, PlusIcon, User2Icon } from "lucide-react"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
+import { Input } from "@/components/ui/input"
 
 type Props = {
   userSelectModal: boolean
@@ -40,6 +41,7 @@ const UserSelect = ({ userSelectModal, setUserSelectModal }: Props) => {
   const [formState, setFormState] = useState(0)
   const [selectedUserId, setSelectedUserId] = useState("")
   const [userLists, setUserLists] = useState<UserList[]>([])
+  const [typedListName, setTypedListName] = useState("")
 
   const list = {
     visible: {
@@ -76,6 +78,14 @@ const UserSelect = ({ userSelectModal, setUserSelectModal }: Props) => {
     hidden: { opacity: 0, x: -10 },
   }
 
+  const handleClose = () => {
+    setFormState(0)
+    setSelectedUserId("")
+    setUserLists([])
+    setTypedListName("")
+    setUserSelectModal(false)
+  }
+
   const handleUserSelect = async (userId: string) => {
     setSelectedUserId(userId)
     // retrieve the user lists
@@ -84,21 +94,41 @@ const UserSelect = ({ userSelectModal, setUserSelectModal }: Props) => {
     setFormState(1)
   }
 
+  const handleCreateList = async () => {
+    if (typedListName) {
+      const list = await AddUserList(selectedUserId, typedListName)
+      // retrieve the user lists
+      const lists = await GetUsersLists(selectedUserId)
+      lists && setUserLists(lists)
+      setFormState(1)
+    }
+  }
+
   return (
     <>
       <Dialog
         open={userSelectModal}
         onOpenChange={setUserSelectModal}
       >
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] overflow-hidden">
           <DialogHeader>
-            <DialogTitle>Send to List</DialogTitle>
+            <DialogTitle>
+              {formState === 0 || formState === 1
+                ? "Send to List"
+                : formState === 2
+                ? "New List Name"
+                : "Send to List"}
+            </DialogTitle>
             <DialogDescription>
-              Select the user who is buying the engine
+              {formState === 0 || formState === 1
+                ? "Select the user who is buying the engine"
+                : formState === 2
+                ? "Enter a suitable name for the list"
+                : "Select the user who is buying the engine"}
             </DialogDescription>
             <Separator />
           </DialogHeader>
-          <ScrollArea className="h-[200px] relative">
+          <div className="relative h-[200px]">
             {/* State 0 - Select User */}
             <AnimatePresence>
               {formState === 0 && (
@@ -107,7 +137,7 @@ const UserSelect = ({ userSelectModal, setUserSelectModal }: Props) => {
                   animate="visible"
                   exit="exit"
                   variants={list}
-                  className="absolute top-0 left-0 w-full h-full flex flex-col items-center gap-2"
+                  className="overflow-y-auto absolute top-0 left-0 w-full h-full flex flex-col items-center gap-2"
                 >
                   {data?.map((user) => (
                     <motion.li
@@ -136,9 +166,22 @@ const UserSelect = ({ userSelectModal, setUserSelectModal }: Props) => {
                   animate="visible"
                   exit="exit"
                   variants={list}
-                  className="absolute top-0 left-0 w-full h-full flex flex-col items-center gap-2"
+                  className="overflow-y-auto absolute top-0 left-0 w-full h-full flex flex-col items-center gap-2"
                 >
-                  {userLists.map((list) => (
+                  <motion.li
+                    variants={item}
+                    className="w-3/4"
+                  >
+                    <Button
+                      variant={"secondary"}
+                      className="w-full"
+                      onClick={() => setFormState(2)}
+                    >
+                      <PlusIcon className="mr-2 h-5 w-5" /> New List
+                    </Button>
+                  </motion.li>
+
+                  {userLists.reverse().map((list) => (
                     <motion.li
                       key={list.id}
                       variants={item}
@@ -157,17 +200,46 @@ const UserSelect = ({ userSelectModal, setUserSelectModal }: Props) => {
                 </motion.ul>
               )}
             </AnimatePresence>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
+            {/* State 2 - New List */}
+            <AnimatePresence>
+              {formState === 2 && (
+                <motion.ul
+                  initial="hiddenFromRight"
+                  animate="visible"
+                  exit="exit"
+                  variants={list}
+                  className="absolute top-0 left-0 w-full h-full flex flex-col items-center gap-2"
+                >
+                  <motion.li
+                    variants={item}
+                    className="w-3/4"
+                  >
+                    <Input
+                      placeholder="List Name"
+                      value={typedListName}
+                      onChange={(e) => setTypedListName(e.target.value)}
+                      autoFocus
+                      className="w-full my-1"
+                    />
+                  </motion.li>
+                  <motion.li
+                    variants={item}
+                    className="w-3/4"
+                  >
+                    <Button
+                      variant={"secondary"}
+                      onClick={handleCreateList}
+                      className="w-full"
+                    >
+                      Create
+                    </Button>
+                  </motion.li>
+                </motion.ul>
+              )}
+            </AnimatePresence>
+          </div>
           <DialogFooter>
-            <Button
-              onClick={() => {
-                setUserSelectModal(false)
-                setFormState(0)
-              }}
-            >
-              Close
-            </Button>
+            <Button onClick={handleClose}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

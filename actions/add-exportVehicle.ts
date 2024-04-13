@@ -13,11 +13,26 @@ export async function AddExportVehicle(reg: string) {
 
   // Update the user in the database
   try {
+    // First see if exists in breaking vehicle
+    const breakingVehicle = await db.breaking.findUnique({
+      where: {
+        carReg: reg,
+      },
+    })
+
     const exportVehicle = await db.exporting.create({
       data: {
         carReg: reg,
       },
     })
+
+    if (breakingVehicle && exportVehicle) {
+      await db.breaking.delete({
+        where: {
+          carReg: reg,
+        },
+      })
+    }
     revalidatePath("/vehicles-export")
     return exportVehicle
   } catch (error) {
