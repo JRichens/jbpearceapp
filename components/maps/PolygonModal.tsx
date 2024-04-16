@@ -31,6 +31,8 @@ interface PolygonModalProps {
   setPolygonPurchasePrice: Dispatch<SetStateAction<number>>
   polygonName: string
   setPolygonName: Dispatch<SetStateAction<string>>
+  polygonOwnership: string
+  setPolygonOwnership: Dispatch<SetStateAction<string>>
   userType: string
   setShowModal: Dispatch<SetStateAction<boolean>>
 }
@@ -56,6 +58,8 @@ const PolygonModal: React.FC<PolygonModalProps> = ({
   setPolygonPurchasePrice,
   polygonName,
   setPolygonName,
+  polygonOwnership,
+  setPolygonOwnership,
   userType,
   setShowModal,
 }) => {
@@ -122,7 +126,7 @@ const PolygonModal: React.FC<PolygonModalProps> = ({
             </Label>
             <Input
               id="registryNo"
-              className="text-lg w-[210px] border border-gray-300 rounded px-2 py-1 mb-2"
+              className="text-lg w-[215px] border border-gray-300 rounded px-2 py-1 mb-2"
               value={polygonRegNo}
               onChange={(e) => setPolygonRegNo(e.target.value)}
             />
@@ -143,6 +147,19 @@ const PolygonModal: React.FC<PolygonModalProps> = ({
         />
 
         <Label
+          htmlFor="ownership"
+          className="block mb-1"
+        >
+          Ownership
+        </Label>
+        <Input
+          id="ownership"
+          className="text-lg w-full border border-gray-300 rounded px-2 py-1 mb-2"
+          value={polygonOwnership}
+          onChange={(e) => setPolygonOwnership(e.target.value)}
+        />
+
+        <Label
           htmlFor="description"
           className="block mb-1"
         >
@@ -155,57 +172,62 @@ const PolygonModal: React.FC<PolygonModalProps> = ({
           className="w-full border border-gray-300 rounded px-2 py-1 mb-2"
         ></textarea>
 
-        <div>
-          <Label
-            htmlFor="purchaseDate"
-            className="block mb-1"
-          >
-            Purchase Date
-          </Label>
-          <DatePicker
-            id="purchaseDate"
-            selected={selectedDate}
-            onChange={(date) => {
-              console.log("date: " + date)
-              const formattedDate = date ? date.toLocaleDateString("en-GB") : ""
-              console.log("formattedDate: " + formattedDate)
-              setPolygonPurchaseDate(formattedDate)
-              setSelectedDate(date)
-            }}
-            dateFormat="dd-MM-yyyy"
-            showMonthDropdown
-            showYearDropdown
-            dropdownMode="select"
-            className="w-[150px] border border-gray-300 rounded px-2 py-1 mb-2 text-md"
-          />
-        </div>
-
-        <Label
-          htmlFor="purchasePrice"
-          className="block mb-1"
-        >
-          Purchase Price
-        </Label>
-        <div className="relative">
-          <div className="absolute left-0 top-0 mt-[1px] ml-[1px] text-lg pt-[7px] pb-[3px] px-2 bg-slate-100 rounded-l-md">
-            £
+        <div className="flex flex-row items-center gap-3">
+          <div>
+            <Label
+              htmlFor="purchaseDate"
+              className="block mb-1"
+            >
+              Purchase Date
+            </Label>
+            <DatePicker
+              id="purchaseDate"
+              selected={selectedDate}
+              onChange={(date) => {
+                console.log("date: " + date)
+                const formattedDate = date
+                  ? date.toLocaleDateString("en-GB")
+                  : ""
+                console.log("formattedDate: " + formattedDate)
+                setPolygonPurchaseDate(formattedDate)
+                setSelectedDate(date)
+              }}
+              dateFormat="dd-MM-yyyy"
+              showMonthDropdown
+              showYearDropdown
+              dropdownMode="select"
+              className="w-[120px] h-[40px] border border-gray-300 rounded px-2 py-1 mb-2 text-lg"
+            />
           </div>
-          <Input
-            id="purchasePrice"
-            className="text-lg pl-8 w-[150px] border border-gray-300 rounded pr-2 py-1 mb-2"
-            value={polygonPurchasePrice.toLocaleString()}
-            onChange={(e) => {
-              const value = e.target.value.replace(/,/g, "")
-              if (value === "") {
-                setPolygonPurchasePrice(0)
-              } else {
-                const parsedValue = parseFloat(value)
-                if (!isNaN(parsedValue)) {
-                  setPolygonPurchasePrice(parsedValue)
-                }
-              }
-            }}
-          />
+          <div>
+            <Label
+              htmlFor="purchasePrice"
+              className="block mb-1"
+            >
+              Purchase Price
+            </Label>
+            <div className="relative">
+              <div className="absolute left-0 top-0 mt-[1px] ml-[1px] text-lg pt-[7px] pb-[3px] px-2 bg-slate-100 rounded-l-md">
+                £
+              </div>
+              <Input
+                id="purchasePrice"
+                className="text-lg pl-8 w-[150px] border border-gray-300 rounded pr-2 py-1 mb-2"
+                value={polygonPurchasePrice.toLocaleString()}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/,/g, "")
+                  if (value === "") {
+                    setPolygonPurchasePrice(0)
+                  } else {
+                    const parsedValue = parseFloat(value)
+                    if (!isNaN(parsedValue)) {
+                      setPolygonPurchasePrice(parsedValue)
+                    }
+                  }
+                }}
+              />
+            </div>
+          </div>
         </div>
 
         <Label

@@ -179,6 +179,7 @@ model LandArea {
   purchaseDate  String @default("01-01-2000")
   purchasePrice Float @default(0)
   name          String @default("Land Name")
+  ownership     String?
   description   String @default("Land Description")
   area          String
   colour        String @default("#008B02")

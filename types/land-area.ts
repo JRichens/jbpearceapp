@@ -46,6 +46,7 @@ export type LocalPolygon = {
   purchaseDate: string
   purchasePrice: number
   name: string
+  ownership: string | null
   STid: string | null
   description: string
   area: string
@@ -65,6 +66,7 @@ export type NewLandArea = {
   purchaseDate: string
   purchasePrice: number
   name: string
+  ownership: string
   STid: string
   description: string
   area: string

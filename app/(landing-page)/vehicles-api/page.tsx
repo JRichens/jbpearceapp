@@ -58,7 +58,7 @@ const VehiclesAPI = () => {
                 </div>
               </td>
             </tr>
-            {vehicle.enginePrice && (
+            {vehicle.enginePrice ? (
               <tr>
                 <td className="border px-4 py-2 font-semibold text-red-600">
                   Engine Export
@@ -67,7 +67,7 @@ const VehiclesAPI = () => {
                   £ {vehicle.enginePrice}
                 </td>
               </tr>
-            )}
+            ) : null}
             {Object.entries(vehicle)
               .filter(
                 ([key, _]) =>

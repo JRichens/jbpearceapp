@@ -90,6 +90,7 @@ const GoogleMaps = () => {
   const [polygonRegNo, setPolygonRegNo] = useState("")
   const [polygonPurchaseDate, setPolygonPurchaseDate] = useState("")
   const [polygonPurchasePrice, setPolygonPurchasePrice] = useState(0)
+  const [polygonOwnership, setPolygonOwnership] = useState("")
   const [polygonName, setPolygonName] = useState("")
   const [polygonSTid, setPolygonSTid] = useState("")
   const [polygonDescription, setPolygonDescription] = useState("")
@@ -244,6 +245,7 @@ const GoogleMaps = () => {
           polygonPlotNo,
           polygonRegNo,
           polygonName,
+          polygonOwnership,
           polygonPurchaseDate,
           polygonPurchasePrice,
           polygonSTid,
@@ -272,6 +274,7 @@ const GoogleMaps = () => {
           purchaseDate: polygonPurchaseDate,
           purchasePrice: polygonPurchasePrice,
           name: polygonName,
+          ownership: polygonOwnership,
           STid: polygonSTid,
           description: polygonDescription,
           area: polygonArea,
@@ -312,6 +315,7 @@ const GoogleMaps = () => {
       setPolygonPlotNo("")
       setPolygonRegNo("")
       setPolygonName("")
+      setPolygonOwnership("")
       setPolygonDescription("")
       setPolygonPurchaseDate("")
       setPolygonPurchasePrice(0)
@@ -342,6 +346,7 @@ const GoogleMaps = () => {
     setPolygonPurchaseDate(landArea.purchaseDate)
     setPolygonPurchasePrice(landArea.purchasePrice)
     setPolygonName(landArea.name)
+    setPolygonOwnership(landArea.ownership ? landArea.ownership : "")
 
     setPolygonPaths(
       landArea.coordinates.map((coord) => {
@@ -531,6 +536,7 @@ const GoogleMaps = () => {
                   landArea.purchasePrice.toString(),
                   landArea.name,
                   landArea.description,
+                  landArea.ownership ? landArea.ownership : "",
                 ]
                 return searchFields.some((field) =>
                   field.toLowerCase().includes(search.toLowerCase())
@@ -540,7 +546,7 @@ const GoogleMaps = () => {
               .map((landArea, index) => (
                 <li
                   key={landArea.id}
-                  className="mb-1 cursor-pointer  hover:shadow-lg "
+                  className="mb-1 cursor-pointer hover:shadow-lg "
                   onClick={() => {
                     if (landArea.polygonRef) {
                       const bounds = new window.google.maps.LatLngBounds()
@@ -602,6 +608,11 @@ const GoogleMaps = () => {
                         Notes
                       </Button>
                     </div>
+                    {landArea.ownership && (
+                      <div className="px-2 mt-1 border-slate-300 border-t-[1px]   ">
+                        {landArea.ownership}
+                      </div>
+                    )}
                   </div>
                 </li>
               ))}
@@ -750,6 +761,8 @@ const GoogleMaps = () => {
           setPolygonPurchasePrice={setPolygonPurchasePrice}
           polygonName={polygonName}
           setPolygonName={setPolygonName}
+          polygonOwnership={polygonOwnership}
+          setPolygonOwnership={setPolygonOwnership}
           userType={userType}
           setShowModal={setShowModal}
         />

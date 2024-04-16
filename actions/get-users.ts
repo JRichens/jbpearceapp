@@ -38,7 +38,7 @@ export async function GetUserPlus() {
       },
     })
     revalidatePath("/vehicles-export")
-    return users
+    return users.reverse()
   } catch (error) {
     console.log(error)
   }

@@ -120,8 +120,10 @@ const UserSelect = ({ userSelectModal, setUserSelectModal }: Props) => {
                 : "Send to List"}
             </DialogTitle>
             <DialogDescription>
-              {formState === 0 || formState === 1
+              {formState === 0
                 ? "Select the user who is buying the engine"
+                : formState === 1
+                ? "Select the list for the user"
                 : formState === 2
                 ? "Enter a suitable name for the list"
                 : "Select the user who is buying the engine"}
@@ -181,7 +183,7 @@ const UserSelect = ({ userSelectModal, setUserSelectModal }: Props) => {
                     </Button>
                   </motion.li>
 
-                  {userLists.reverse().map((list) => (
+                  {userLists.map((list) => (
                     <motion.li
                       key={list.id}
                       variants={item}
