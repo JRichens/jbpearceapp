@@ -20,7 +20,7 @@ export async function AddBreakingVehicle(reg: string) {
       },
     })
 
-    const breakingVehicle = await db.exporting.create({
+    const breakingVehicle = await db.breaking.create({
       data: {
         carReg: reg,
       },
