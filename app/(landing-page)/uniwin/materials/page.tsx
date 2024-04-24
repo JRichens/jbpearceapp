@@ -46,6 +46,8 @@ const MaterialsPage = () => {
     </div>
   ))
 
+  ComponentToPrint.displayName = "ComponentToPrint"
+
   const componentRef = useRef<HTMLDivElement>(null)
 
   return (
