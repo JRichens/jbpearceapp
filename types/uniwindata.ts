@@ -3,6 +3,7 @@ export type Materials = {
   string24: string
   number4: number
   number5: number
+  number3: number
 }
 
 export type PaidTickets = {

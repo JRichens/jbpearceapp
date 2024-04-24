@@ -259,7 +259,7 @@ const GoogleMaps = () => {
         }
         setLandAreas((prevLandAreas) =>
           prevLandAreas.map((landArea) =>
-            landArea.STid === updatedPolygon.STid ? updatedPolygon : landArea
+            landArea.id === updatedPolygon.id ? updatedPolygon : landArea
           )
         )
       } else {
