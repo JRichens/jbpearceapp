@@ -28,7 +28,7 @@ export const printColumns: ColumnDef<Materials>[] = [
       const calculatedValue = (number4Value / 1000).toFixed(2)
 
       return (
-        <div className="w-12 text-right py-1 -my-[6px]">
+        <div className="w-12 py-1 -my-[6px]">
           <span className="text-slate-950 text-md">{calculatedValue}</span>
         </div>
       )

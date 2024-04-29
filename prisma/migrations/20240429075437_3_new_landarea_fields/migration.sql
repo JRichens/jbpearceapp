@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "LandArea" ADD COLUMN     "agValue" DOUBLE PRECISION,
+ADD COLUMN     "hopeValue" DOUBLE PRECISION,
+ADD COLUMN     "type" TEXT;

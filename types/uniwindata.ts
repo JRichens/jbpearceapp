@@ -1,9 +1,9 @@
 export type Materials = {
-  code: string
-  string24: string
-  number4: number
-  number5: number
-  number3: number
+  code: string //code
+  string24: string //description
+  number4: number //buy price
+  number5: number //sell price
+  number3: number //margin
 }
 
 export type PaidTickets = {

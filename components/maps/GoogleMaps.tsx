@@ -96,6 +96,9 @@ const GoogleMaps = () => {
   const [polygonDescription, setPolygonDescription] = useState("")
   const [polygonColour, setPolygonColour] = useState("#008B02")
   const [polygonArea, setPolygonArea] = useState("")
+  const [polygonAgValue, setPolygonAgValue] = useState(0)
+  const [polygonHopeValue, setPolygonHopeValue] = useState(0)
+  const [polygonType, setPolygonType] = useState("")
   const [polygonPaths, setPolygonPaths] = useState<google.maps.LatLngLiteral[]>(
     []
   )
@@ -153,7 +156,7 @@ const GoogleMaps = () => {
       // if any of the notesRead in returnedLandAreas = false then set newNote true
       if (returnedLandAreas.some((landArea) => !landArea.notesRead)) {
         // also log which one is true
-        console.log(returnedLandAreas.find((landArea) => !landArea.notesRead))
+        // console.log(returnedLandAreas.find((landArea) => !landArea.notesRead))
         setNewNote(true)
       } else {
         setNewNote(false)
@@ -166,6 +169,7 @@ const GoogleMaps = () => {
   const { isSignedIn, user, isLoaded: isUserLoaded } = useUser()
   const userId = isSignedIn ? user?.id : null
 
+  // Get the user
   useEffect(() => {
     const getUserType = async () => {
       if (userId) {
@@ -251,7 +255,10 @@ const GoogleMaps = () => {
           polygonSTid,
           polygonDescription,
           polygonColour,
-          polygonArea
+          polygonArea,
+          polygonAgValue,
+          polygonHopeValue,
+          polygonType
         )
         const updatedPolygon: LocalPolygon = {
           ...returnedUpdatedLandArea,
@@ -274,7 +281,6 @@ const GoogleMaps = () => {
           purchaseDate: polygonPurchaseDate,
           purchasePrice: polygonPurchasePrice,
           name: polygonName,
-          ownership: polygonOwnership,
           STid: polygonSTid,
           description: polygonDescription,
           area: polygonArea,
@@ -282,10 +288,17 @@ const GoogleMaps = () => {
           centerLat: center.lat,
           centerLng: center.lng,
           coordinates: databasePaths,
+          ownership: polygonOwnership,
+          agValue: polygonAgValue,
+          hopeValue: polygonHopeValue,
+          type: polygonType,
         }
 
         // Update the database with the new LandArea object
         const returnedNewPolygon = await AddLandArea({ newLandArea })
+
+        // Remove the temp drawn polygon from its ref
+        currentPolygon && currentPolygon.setMap(null)
 
         const newPolygon: LocalPolygon = {
           ...returnedNewPolygon,
@@ -323,6 +336,9 @@ const GoogleMaps = () => {
       setPolygonColour("")
       setPolygonArea("")
       setPolygonPaths([])
+      setPolygonAgValue(0)
+      setPolygonHopeValue(0)
+      setPolygonType("")
       setCurrentPolygon(null)
     }
   }
@@ -347,6 +363,9 @@ const GoogleMaps = () => {
     setPolygonPurchasePrice(landArea.purchasePrice)
     setPolygonName(landArea.name)
     setPolygonOwnership(landArea.ownership ? landArea.ownership : "")
+    setPolygonAgValue(landArea.agValue ? landArea.agValue : 0)
+    setPolygonHopeValue(landArea.hopeValue ? landArea.hopeValue : 0)
+    setPolygonType(landArea.type ? landArea.type : "")
 
     setPolygonPaths(
       landArea.coordinates.map((coord) => {
@@ -411,6 +430,10 @@ const GoogleMaps = () => {
       setPolygonPurchasePrice(0)
       setPolygonName("")
       setPolygonColour("")
+      setPolygonOwnership("")
+      setPolygonAgValue(0)
+      setPolygonHopeValue(0)
+      setPolygonType("")
       setDatabasePaths([])
       setShowModal(false)
       setDeleteConfirmOpen(false)
@@ -763,6 +786,12 @@ const GoogleMaps = () => {
           setPolygonName={setPolygonName}
           polygonOwnership={polygonOwnership}
           setPolygonOwnership={setPolygonOwnership}
+          polygonAgValue={polygonAgValue}
+          setPolygonAgValue={setPolygonAgValue}
+          polygonHopeValue={polygonHopeValue}
+          setPolygonHopeValue={setPolygonHopeValue}
+          polygonType={polygonType}
+          setPolygonType={setPolygonType}
           userType={userType}
           setShowModal={setShowModal}
         />

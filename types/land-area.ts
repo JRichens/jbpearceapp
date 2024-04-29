@@ -56,6 +56,9 @@ export type LocalPolygon = {
   coordinates: string[]
   notes: string | null
   notesRead: boolean | null
+  agValue: number | null
+  hopeValue: number | null
+  type: string | null
   polygonRef: google.maps.Polygon | null // Add the polygonRef property with its type
 }
 
@@ -74,6 +77,9 @@ export type NewLandArea = {
   centerLat: number
   centerLng: number
   coordinates: string[]
+  agValue: number
+  hopeValue: number
+  type: string
 }
 // // TAKEN FROM
 // model LandArea {

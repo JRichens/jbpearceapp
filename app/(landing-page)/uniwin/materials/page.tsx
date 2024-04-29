@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button"
 import { PrinterIcon } from "lucide-react"
 
 import { Materials } from "@/types/uniwindata"
+import MaterialsComponent from "./table"
 
 const fetcher = (url: string) =>
   fetch(url, {
@@ -77,14 +78,8 @@ const MaterialsPage = () => {
           </div>
         </div>
       </CardHeader>
-      <div className="px-4 md:px-6 pb-3">
-        <ScrollArea>
-          <DataTable
-            columns={columns}
-            data={data ? data : []}
-          />
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+      <div className="px-6 pb-6">
+        {data && <MaterialsComponent passedData={data} />}
       </div>
     </Card>
   )

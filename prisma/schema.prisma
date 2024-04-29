@@ -188,6 +188,9 @@ model LandArea {
   coordinates   String[]
   notes         String?
   notesRead     Boolean? @default(true)
+  agValue       Float?
+  hopeValue     Float?
+  type          String?
 }
 
 model PageView {

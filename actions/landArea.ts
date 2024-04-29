@@ -25,6 +25,10 @@ export async function AddLandArea({
     centerLat,
     centerLng,
     coordinates,
+    ownership,
+    agValue,
+    hopeValue,
+    type,
   } = newLandArea
   try {
     const { userId }: { userId: string | null } = auth()
@@ -46,6 +50,10 @@ export async function AddLandArea({
         centerLat: centerLat,
         centerLng: centerLng,
         coordinates: coordinates,
+        ownership: ownership,
+        agValue: agValue,
+        hopeValue: hopeValue,
+        type: type,
       },
     })
   } catch (error) {
@@ -115,7 +123,10 @@ export async function UpdateLandArea(
   STid: string,
   description: string,
   colour: string,
-  area: string
+  area: string,
+  agValue: number,
+  hopeValue: number,
+  type: string
 ) {
   try {
     const { userId }: { userId: string | null } = auth()
@@ -137,6 +148,9 @@ export async function UpdateLandArea(
         STid: STid,
         colour: colour,
         area: area,
+        agValue: agValue,
+        hopeValue: hopeValue,
+        type: type,
       },
     })
   } catch (error) {
