@@ -249,9 +249,9 @@ const UniWin = () => {
           <CardHeader>
             <CardTitle>This Week Total Est. Gross Profit</CardTitle>
             <CardDescription>
-              Compare this weeks total estimate gross profits against the 2023's
-              averages using the margin in the Product file. Excludes complete
-              ELVs.
+              Compare this weeks total estimate gross profits against the
+              2023&apos;s averages using the margin in the Product file.
+              Excludes complete ELVs.
             </CardDescription>
           </CardHeader>
           <DailyProfitBars data={currWeekTotals.weeklyProfits} />
@@ -260,9 +260,9 @@ const UniWin = () => {
           <CardHeader>
             <CardTitle>Last Week Total Est. Gross Profit</CardTitle>
             <CardDescription>
-              Compare last weeks total estimate gross profit against the 2023's
-              averages using the margin in the Product file. Excludes complete
-              ELVs.
+              Compare last weeks total estimate gross profit against the
+              2023&apos;s averages using the margin in the Product file.
+              Excludes complete ELVs.
             </CardDescription>
           </CardHeader>
           <DailyProfitBars data={prevWeekTotals.weeklyProfits} />

@@ -24,10 +24,6 @@ type Props = {
 }
 
 const MaterialsComponent = ({ tableData, setTableData }: Props) => {
-  useEffect(() => {
-    console.log("Table data: ", tableData)
-  }, [tableData])
-
   const columns = useMemo<MRT_ColumnDef<Materials>[]>(
     () => [
       {
