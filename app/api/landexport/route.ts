@@ -22,7 +22,7 @@ export async function GET(data: any) {
         Type: landArea.type,
         Purchase_Date: landArea.purchaseDate,
         Purchase_Price: landArea.purchasePrice,
-        Ag_Value: landArea.agValue,
+        Value: landArea.agValue,
         Hope_Value: landArea.hopeValue,
         ST_Coords: landArea.STid,
         Area: Number(landArea.area).toFixed(2),

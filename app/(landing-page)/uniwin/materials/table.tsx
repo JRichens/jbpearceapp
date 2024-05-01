@@ -8,8 +8,7 @@ import {
   type MRT_Cell,
 } from "material-react-table"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Save } from "lucide-react"
+import SellingInput from "./sellingInput"
 
 type Materials = {
   code: string
@@ -19,36 +18,18 @@ type Materials = {
   number3: number
 }
 
-type MaterialsWithId = {
-  id: number
-  code: string
-  string24: string
-  number4: number
-  number5: number
-  number3: number
-}
-
 type Props = {
-  passedData: Materials[]
+  tableData: Materials[]
+  setTableData: React.Dispatch<React.SetStateAction<Materials[]>>
 }
 
-const MaterialsComponent = ({ passedData }: Props) => {
-  // first asign a number id to each Material in the passedData
-  const dataWithIds: MaterialsWithId[] = passedData.map((material, index) => ({
-    ...material,
-    id: index,
-  }))
-
-  const [data, setData] = useState<MaterialsWithId[]>(dataWithIds)
-  const [sellingChanging, setSellingChanging] = useState(false)
+const MaterialsComponent = ({ tableData, setTableData }: Props) => {
+  useEffect(() => {
+    console.log("Table data: ", tableData)
+  }, [tableData])
 
   const columns = useMemo<MRT_ColumnDef<Materials>[]>(
     () => [
-      {
-        header: "ID",
-        accessorKey: "id",
-        size: 20,
-      },
       {
         header: "Code",
         accessorKey: "code",
@@ -64,18 +45,11 @@ const MaterialsComponent = ({ passedData }: Props) => {
         size: 30,
         Cell: ({ cell, row }) => (
           <div className="flex gap-2">
-            <Input
-              className="w-20 no-spinners textRight"
-              type="number"
-              value={cell.getValue<number>()}
-              onChange={(e) => {
-                setSellingChanging(true)
-                const newSellingPrice = parseFloat(e.target.value || "0")
-                row.original.number5 = newSellingPrice
-                row.original.number4 =
-                  Math.floor((newSellingPrice - row.original.number3) / 5) * 5 // toFloor nearest 5 pound
-                setData([...data])
-              }}
+            <SellingInput
+              cell={cell}
+              row={row}
+              data={tableData}
+              setData={setTableData}
             />
           </div>
         ),
@@ -94,7 +68,7 @@ const MaterialsComponent = ({ passedData }: Props) => {
               row.original.number3 = newMargin
               row.original.number4 =
                 Math.floor((row.original.number5 - newMargin) / 5) * 5 // toFloor nearest 5 pound
-              setData([...data])
+              setTableData([...tableData])
             }}
           />
         ),
@@ -110,14 +84,14 @@ const MaterialsComponent = ({ passedData }: Props) => {
         ),
       },
     ],
-    [data]
+    [tableData]
   )
 
   return (
     <>
       <MaterialReactTable
         columns={columns}
-        data={data}
+        data={tableData}
         initialState={{
           density: "compact",
           pagination: { pageIndex: 0, pageSize: 100 },

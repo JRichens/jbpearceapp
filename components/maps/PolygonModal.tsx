@@ -264,7 +264,7 @@ const PolygonModal: React.FC<PolygonModalProps> = ({
                 htmlFor="agValue"
                 className="block mb-1"
               >
-                Ag Value
+                Value
               </Label>
               <div className="relative">
                 <div className="absolute left-0 top-0 mt-[1px] ml-[1px] text-lg pt-[7px] pb-[3px] px-2 bg-slate-100 rounded-l-md">

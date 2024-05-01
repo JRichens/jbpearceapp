@@ -69,6 +69,21 @@ body,
     var(--tw-sepia) var(--tw-drop-shadow);
 }
 
+@keyframes fadeOutGreen {
+  0% {
+    border-color: rgb(46, 232, 46);
+    box-shadow: 0 0 10px rgb(46, 232, 46);
+  }
+  100% {
+    border-color: grey;
+    box-shadow: 0 0 10px grey;
+  }
+}
+
+.animate-fadeOut-green {
+  animation: fadeOutGreen 1s ease-out;
+}
+
 @layer utilities {
   .no-spinners::-webkit-inner-spin-button,
   .no-spinners::-webkit-outer-spin-button {

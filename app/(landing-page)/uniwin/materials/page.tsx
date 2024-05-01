@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef } from "react"
 import useSWR from "swr"
 import {
   Card,
@@ -8,9 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 
-import { columns } from "./_components/columns"
 import { printColumns } from "./_components/printColumns"
 import { DataTable } from "./_components/data-table"
 import { NavMenu } from "../nav-menu"
@@ -22,6 +20,7 @@ import { PrinterIcon } from "lucide-react"
 
 import { Materials } from "@/types/uniwindata"
 import MaterialsComponent from "./table"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const fetcher = (url: string) =>
   fetch(url, {
@@ -33,16 +32,22 @@ const fetcher = (url: string) =>
   }).then((res) => res.json())
 
 const MaterialsPage = () => {
-  const { data, error } = useSWR<Materials[]>(
+  const { data, isLoading, error } = useSWR<Materials[]>(
     "https://genuine-calf-newly.ngrok-free.app/materials",
     fetcher
   )
+
+  const [tableData, setTableData] = React.useState<Materials[]>([])
+
+  useEffect(() => {
+    if (data) setTableData(data)
+  }, [data])
 
   const ComponentToPrint = React.forwardRef<HTMLDivElement>((_, ref) => (
     <div ref={ref}>
       <DataTable
         columns={printColumns}
-        data={data ? data : []}
+        data={tableData}
       />
     </div>
   ))
@@ -79,7 +84,38 @@ const MaterialsPage = () => {
         </div>
       </CardHeader>
       <div className="px-6 pb-6">
-        {data && <MaterialsComponent passedData={data} />}
+        {error && <div>failed to load</div>}
+        {isLoading && (
+          <div className="flex flex-col gap-2 border border-slate-200 rounded-md shadow-sm p-4">
+            <div className="flex flex-row gap-4">
+              <Skeleton className="w-[25%] h-10 rounded-md" />
+              <Skeleton className="w-[40%] h-10 rounded-md" />
+              <Skeleton className="w-[10%] h-10 rounded-md" />
+              <Skeleton className="w-[10%] h-10 rounded-md" />
+              <Skeleton className="w-[10%] h-10 rounded-md" />
+            </div>
+            <div className="flex flex-row gap-4">
+              <Skeleton className="w-[25%] h-10 rounded-md" />
+              <Skeleton className="w-[40%] h-10 rounded-md" />
+              <Skeleton className="w-[10%] h-10 rounded-md" />
+              <Skeleton className="w-[10%] h-10 rounded-md" />
+              <Skeleton className="w-[10%] h-10 rounded-md" />
+            </div>
+            <div className="flex flex-row gap-4">
+              <Skeleton className="w-[25%] h-10 rounded-md" />
+              <Skeleton className="w-[40%] h-10 rounded-md" />
+              <Skeleton className="w-[10%] h-10 rounded-md" />
+              <Skeleton className="w-[10%] h-10 rounded-md" />
+              <Skeleton className="w-[10%] h-10 rounded-md" />
+            </div>
+          </div>
+        )}
+        {data && (
+          <MaterialsComponent
+            tableData={tableData}
+            setTableData={setTableData}
+          />
+        )}
       </div>
     </Card>
   )

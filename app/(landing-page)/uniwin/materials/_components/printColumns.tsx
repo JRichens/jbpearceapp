@@ -9,17 +9,15 @@ export const printColumns: ColumnDef<Materials>[] = [
     header: "Description",
     cell: ({ cell }) => {
       return (
-        <div className="w-[160px] py-1 -my-2">
-          <span className="w-20 text-slate-950 text-md">
-            {cell.getValue() as number}
-          </span>
+        <div className="w-40 h-[18px] text-slate-950">
+          {cell.getValue() as number}
         </div>
       )
     },
   },
   {
     id: "calculatedColumn",
-    header: "Paying kg",
+    header: "KG",
     cell: ({ row }) => {
       const number4Value = row.getValue("number4")
       if (typeof number4Value !== "number") return null
@@ -36,7 +34,7 @@ export const printColumns: ColumnDef<Materials>[] = [
   },
   {
     accessorKey: "number4",
-    header: "Paying tonne",
+    header: "Tonne",
     cell: ({ cell }) => {
       if (typeof cell.getValue() !== "number") return
       return (

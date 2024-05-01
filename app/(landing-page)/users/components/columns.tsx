@@ -26,8 +26,8 @@ export const columns: ColumnDef<User>[] = [
     header: "Initials",
   },
   {
-    accessorKey: "userTypeId",
     header: "User Type",
+    accessorKey: "userTypeId",
     cell: ({ cell }) => {
       return (
         <div className="">
