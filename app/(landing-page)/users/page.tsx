@@ -74,7 +74,6 @@ const UserPage = () => {
                 <SelectItem value="userplus">userplus</SelectItem>
                 <SelectItem value="staff">staff</SelectItem>
                 <SelectItem value="admin">admin</SelectItem>
-                <SelectItem value="super">super</SelectItem>
                 <SelectItem value="land">land</SelectItem>
               </SelectContent>
             </Select>

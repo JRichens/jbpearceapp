@@ -81,7 +81,7 @@ export const SidebarItem = () => {
       label: "Land",
       icon: <MapPinned className="h-6 w-6 mr-2" />,
       href: `/land-areas`,
-      access: ["admin", "super", "land"],
+      access: ["super", "land"],
     },
     {
       label: "Users",

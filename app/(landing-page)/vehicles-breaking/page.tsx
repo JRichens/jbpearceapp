@@ -278,13 +278,20 @@ const BreakingVehicles = () => {
                             }}
                             appearance={{
                               button:
-                                "h-8 w-8  text-white  ut-ready:bg-green-500 ut-uploading:cursor-not-allowed rounded-r-none  bg-none after:bg-green-500",
+                                "h-8 w-8 text-white ut-ready:bg-green-500 ut-uploading:cursor-not-allowed rounded-r-none bg-none after:bg-green-500",
                               container:
                                 "w-max flex-row rounded-md border-cyan-300 bg-slate-800",
                               allowedContent: "hidden",
                             }}
                             key={vehicle.id}
                             endpoint="imageUploader"
+                            onBeforeUploadBegin={async (res) => {
+                              // Do something before the upload begins
+                              console.log("onBeforeUploadBegin", res)
+                              // Reduce the image size by 80% effectively compressing it's size
+
+                              return res
+                            }}
                             onClientUploadComplete={async (res) => {
                               // Add the image path to the array of photos in the vehicle
                               const updatedVehicle = {
