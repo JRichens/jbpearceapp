@@ -187,7 +187,7 @@ const UniWin = () => {
         )
 
         const prevWeekData: WeeklyData = await prevWeekRes.json()
-        console.log("prevWeekData", prevWeekData)
+        // console.log("prevWeekData", prevWeekData)
         setPrevWeekTotals(prevWeekData)
 
         // Fetch data for the current week
@@ -202,6 +202,7 @@ const UniWin = () => {
           }
         )
         const currWeekData: WeeklyData = await currWeekRes.json()
+        console.log("currWeekData", currWeekData)
         setCurrWeekTotals(currWeekData)
       } catch (error) {}
     }
