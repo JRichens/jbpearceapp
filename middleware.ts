@@ -2,6 +2,9 @@ import { authMiddleware, redirectToSignIn } from "@clerk/nextjs"
 
 export default authMiddleware({
   debug: true,
+  afterAuth: redirectToSignIn({
+    returnBackUrl: "/sign-in",
+  }),
   publicRoutes: [
     "/api/dailychecks",
     "/api/uploadthing",
