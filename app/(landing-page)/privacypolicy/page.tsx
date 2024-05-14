@@ -29,10 +29,10 @@ const PrivacyPolicy = () => {
       <h3 className="text-xl font-bold mt-6 mb-2">Types of Data Collected</h3>
       <h4 className="text-lg font-bold mt-4 mb-2">Personal Data</h4>
       <p>
-        While using our Service, we may ask you to provide us with certain
+        {`While using our Service, we may ask you to provide us with certain
         personally identifiable information that can be used to contact or
         identify you ("Personal Data"). Personally identifiable information may
-        include, but is not limited to:
+        include, but is not limited to:`}
       </p>
       <ul className="list-disc list-inside mb-4">
         <li>Full Name</li>
@@ -41,12 +41,12 @@ const PrivacyPolicy = () => {
 
       <h4 className="text-lg font-bold mt-4 mb-2">Usage Data</h4>
       <p>
-        We may also collect information on how the Service is accessed and used
+        {`We may also collect information on how the Service is accessed and used
         ("Usage Data"). This Usage Data may include information such as your
         computer's Internet Protocol address (e.g., IP address), browser type,
         browser version, the pages of our Service that you visit, the time and
         date of your visit, the time spent on those pages, and other diagnostic
-        data.
+        data.`}
       </p>
 
       <h3 className="text-xl font-bold mt-6 mb-2">Use of Data</h3>
@@ -114,9 +114,9 @@ const PrivacyPolicy = () => {
         of any changes by posting the new Privacy Policy on this page.
       </p>
       <p>
-        We will let you know via email and/or a prominent notice on our Service,
+        {`We will let you know via email and/or a prominent notice on our Service,
         prior to the change becoming effective and update the "effective date"
-        at the top of this Privacy Policy.
+        at the top of this Privacy Policy.`}
       </p>
       <p>
         You are advised to review this Privacy Policy periodically for any
