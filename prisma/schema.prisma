@@ -193,6 +193,23 @@ model LandArea {
   type          String?
 }
 
+model FarmLandArea {
+  id            String @id @default(cuid())
+  parcelId      String?
+  created       DateTime @default(now())
+  modified      DateTime @updatedAt
+  STid          String?
+  name          String @default("Land Name")
+  description   String @default("Land Description")
+  activityCode  String?
+  hectares      String
+  acres         String
+  colour        String @default("#008B02")
+  centerLat     Float?
+  centerLng     Float?
+  coordinates   String[]
+}
+
 model PageView {
   id        String        @id @default(cuid())
   page      String

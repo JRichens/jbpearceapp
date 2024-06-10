@@ -16,6 +16,7 @@ import {
   UserCog2Icon,
   Truck,
   MapPinned,
+  Tractor,
 } from "lucide-react"
 import { BiCar } from "react-icons/bi"
 import { Button } from "@/components/ui/button"
@@ -76,6 +77,12 @@ export const SidebarItem = () => {
       icon: <DatabaseZap className="h-6 w-6 mr-2" />,
       href: `/uniwin`,
       access: ["admin", "super"],
+    },
+    {
+      label: "Farm Land",
+      icon: <Tractor className="h-6 w-6 mr-2" />,
+      href: `/farm-land`,
+      access: ["admin", "super", "staff"],
     },
     {
       label: "Land",

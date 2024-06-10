@@ -62,6 +62,24 @@ export type LocalPolygon = {
   polygonRef: google.maps.Polygon | null // Add the polygonRef property with its type
 }
 
+export type LocalFarmPolygon = {
+  id: string
+  parcelId: string | null
+  created: Date
+  modified: Date
+  STid: string | null
+  name: string
+  description: string
+  activityCode: string | null
+  hectares: string
+  acres: string
+  colour: string
+  centerLat: number | null
+  centerLng: number | null
+  coordinates: string[]
+  polygonRef: google.maps.Polygon | null // Add the polygonRef property with its type
+}
+
 export type NewLandArea = {
   issuedDate: string
   plotNo: string
@@ -81,6 +99,21 @@ export type NewLandArea = {
   hopeValue: number
   type: string
 }
+
+export type NewFarmLandArea = {
+  parcelId: string
+  STid: string | null
+  name: string
+  description: string
+  activityCode: string | null
+  hectares: string
+  acres: string
+  colour: string
+  centerLat: number | null
+  centerLng: number | null
+  coordinates: string[]
+}
+
 // // TAKEN FROM
 // model LandArea {
 //   id          String @id @default(cuid())

@@ -11,7 +11,7 @@ const StaticSidebar = () => {
     console.log("Pathname: ", pathname)
   }, [])
 
-  if (pathname === "/land-areas") return null
+  if (pathname === "/land-areas" || pathname === "/farm-land") return null
   else {
     return (
       <>
