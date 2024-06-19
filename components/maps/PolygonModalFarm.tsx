@@ -28,6 +28,8 @@ interface PolygonModalProps {
   setPolygonHectares: Dispatch<SetStateAction<string>>
   polygonAcres: string
   setPolygonAcres: Dispatch<SetStateAction<string>>
+  polygonSBIno: string
+  setPolygonSBIno: Dispatch<SetStateAction<string>>
   polygonColour: string
   setPolygonColour: Dispatch<SetStateAction<string>>
   userType: string
@@ -51,6 +53,8 @@ const PolygonModal: React.FC<PolygonModalProps> = ({
   setPolygonHectares,
   polygonAcres,
   setPolygonAcres,
+  polygonSBIno,
+  setPolygonSBIno,
   polygonColour,
   setPolygonColour,
   userType,
@@ -139,7 +143,7 @@ const PolygonModal: React.FC<PolygonModalProps> = ({
                 id="area"
                 value={parseFloat(polygonHectares).toFixed(2).toString()}
                 onChange={(e) => setPolygonHectares(e.target.value)}
-                className="text-lg w-[150px] border border-gray-300 rounded px-2 py-1 mb-2"
+                className="text-lg w-[70px] border border-gray-300 rounded px-2 py-1 mb-2"
               />
             </div>
             <div>
@@ -154,6 +158,21 @@ const PolygonModal: React.FC<PolygonModalProps> = ({
                 id="acres"
                 value={parseFloat(polygonAcres).toFixed(2).toString()}
                 onChange={(e) => setPolygonAcres(e.target.value)}
+                className="text-lg w-[70px] border border-gray-300 rounded px-2 py-1 mb-2"
+              />
+            </div>
+            <div>
+              <Label
+                htmlFor="SBIno"
+                className="block mb-1"
+              >
+                SBI No.
+              </Label>
+              <Input
+                type="text"
+                id="SBIno"
+                value={polygonSBIno}
+                onChange={(e) => setPolygonSBIno(e.target.value)}
                 className="text-lg w-[150px] border border-gray-300 rounded px-2 py-1 mb-2"
               />
             </div>

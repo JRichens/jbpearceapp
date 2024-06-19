@@ -73,6 +73,7 @@ export type LocalFarmPolygon = {
   activityCode: string | null
   hectares: string
   acres: string
+  SBIno: string | null
   colour: string
   centerLat: number | null
   centerLng: number | null
@@ -108,6 +109,7 @@ export type NewFarmLandArea = {
   activityCode: string | null
   hectares: string
   acres: string
+  SBIno: string | null
   colour: string
   centerLat: number | null
   centerLng: number | null

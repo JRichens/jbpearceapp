@@ -86,6 +86,7 @@ export async function UpdateLandArea(
   activityCode: string,
   hectares: string,
   acres: string,
+  SBIno: string,
   colour: string
 ) {
   try {
@@ -105,6 +106,7 @@ export async function UpdateLandArea(
         activityCode: activityCode,
         hectares: hectares,
         acres: acres,
+        SBIno: SBIno,
         colour: colour,
       },
     })

@@ -204,6 +204,7 @@ model FarmLandArea {
   activityCode  String?
   hectares      String
   acres         String
+  SBIno         String?
   colour        String @default("#008B02")
   centerLat     Float?
   centerLng     Float?

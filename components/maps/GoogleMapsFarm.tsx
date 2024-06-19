@@ -1,7 +1,5 @@
 "use client"
 
-import * as XLSX from "xlsx"
-
 import Typewriter from "typewriter-effect"
 import {
   GetAllLandAreas,
@@ -87,6 +85,7 @@ const GoogleMapsFarm = () => {
   const [polygonActivityCode, setPolygonActivityCode] = useState("")
   const [polygonHectares, setPolygonHectares] = useState("")
   const [polygonAcres, setPolygonAcres] = useState("")
+  const [polygonSBIno, setPolygonSBIno] = useState("")
   const [polygonColour, setPolygonColour] = useState("#008B02")
 
   const [polygonPaths, setPolygonPaths] = useState<google.maps.LatLngLiteral[]>(
@@ -232,6 +231,7 @@ const GoogleMapsFarm = () => {
           polygonActivityCode,
           polygonHectares,
           polygonAcres,
+          polygonSBIno,
           polygonColour
         )
 
@@ -257,6 +257,7 @@ const GoogleMapsFarm = () => {
           activityCode: polygonActivityCode,
           hectares: polygonHectares,
           acres: polygonAcres,
+          SBIno: polygonSBIno,
           colour: polygonColour,
           centerLat: center.lat,
           centerLng: center.lng,
@@ -304,6 +305,7 @@ const GoogleMapsFarm = () => {
       setPolygonHectares("")
       setPolygonAcres("")
       setPolygonColour("")
+      setPolygonSBIno("")
       setPolygonPaths([])
       setCurrentPolygon(null)
     }
@@ -326,6 +328,7 @@ const GoogleMapsFarm = () => {
     setPolygonActivityCode(landArea.activityCode ? landArea.activityCode : "")
     setPolygonHectares(landArea.hectares)
     setPolygonAcres(landArea.acres)
+    setPolygonSBIno(landArea.SBIno ? landArea.SBIno : "")
     setPolygonColour(landArea.colour)
     setPolygonPaths(
       landArea.coordinates.map((coord) => {
@@ -463,7 +466,7 @@ const GoogleMapsFarm = () => {
     return (
       <div className="">
         <ScrollArea
-          className="mt-2 h-[calc(100vh-70px)] overflow-auto"
+          className="mt-2 h-[calc(100vh-90px)] overflow-auto"
           type="scroll"
         >
           <div className="drop-shadow-lg flex flex-col sticky top-0 bg-white mb-2">
@@ -481,7 +484,7 @@ const GoogleMapsFarm = () => {
                     decimals={1.5}
                   />
                 </p>
-                <Link href="/api/landexport">
+                <Link href="/api/farmlandexport">
                   <div className="flex flex-row items-center border-solid border-[1px] border-slate-200 rounded-md px-2 py-1 bg-slate-100 hover:bg-slate-200">
                     <DownloadIcon className="w-5 h-5 mr-1" />
                     Export
@@ -640,6 +643,8 @@ const GoogleMapsFarm = () => {
           setPolygonHectares={setPolygonHectares}
           polygonAcres={polygonAcres}
           setPolygonAcres={setPolygonAcres}
+          polygonSBIno={polygonSBIno}
+          setPolygonSBIno={setPolygonSBIno}
           polygonColour={polygonColour}
           setPolygonColour={setPolygonColour}
           userType={userType}
