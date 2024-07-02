@@ -57,18 +57,27 @@ export async function GetAllLandAreas() {
   }
 }
 
-export async function UpdateLandAreaColour(id: string, colour: string) {
+export async function UpdateLandAreaSTid(
+  featureId: string,
+  SHEET_ID: string,
+  PARCEL_ID: string
+) {
   try {
     const { userId }: { userId: string | null } = auth()
     if (!userId) {
       throw new Error("User must be authenticated")
     }
+    let farmLandArea = await db.farmLandArea.findFirst({
+      where: {
+        parcelId: featureId,
+      },
+    })
     return await db.farmLandArea.update({
       where: {
-        id,
+        id: farmLandArea?.id,
       },
       data: {
-        colour: colour,
+        STid: SHEET_ID + " " + PARCEL_ID,
       },
     })
   } catch (error) {
