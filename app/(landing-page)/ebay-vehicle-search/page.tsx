@@ -29,11 +29,10 @@ import { Separator } from '@/components/ui/separator'
 import { Form } from '../_components/reg-form'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
+import { Progress } from '@/components/ui/progress'
 import { AlertTriangle, Bot, Brain, Lightbulb, Loader2 } from 'lucide-react'
 import { ThreeCircles } from 'react-loader-spinner'
+import { cn } from '@/lib/utils'
 
 function calculatePercentile(arr: number[], percentile: number): number {
     const sorted = arr.slice().sort((a, b) => a - b)
@@ -80,6 +79,7 @@ function processData(input: InputItem[]): OutputItem[] {
 
             return {
                 itemName: item.itemName,
+                itemCategory: item.category,
                 dateFrom: dateFrom.toISOString().split('T')[0],
                 dateTo: dateTo.toISOString().split('T')[0],
                 priceFrom: roundToNearest5(calculatePercentile(prices, 20)),
@@ -92,6 +92,7 @@ function processData(input: InputItem[]): OutputItem[] {
 
 interface InputItem {
     itemName: string
+    category: string
     data: {
         title: string
         soldPrice: string
@@ -100,6 +101,7 @@ interface InputItem {
 }
 interface OutputItem {
     itemName: string
+    itemCategory: string
     dateFrom: string
     dateTo: string
     priceFrom: number
@@ -136,7 +138,11 @@ const EbayVehicleSearch = () => {
     const [deepScrappedObject, setdeepScrappedObject] = useState<OutputItem[]>(
         []
     )
+    const [totalDeepScraped, setTotalDeepScraped] = useState(0)
     const [currentTab, setCurrentTab] = useState('aiscrape')
+    const [progressDescription, setProgressDescription] = useState('')
+    const [progressValue, setProgressValue] = useState(0)
+    const [colorClass, setColorClass] = useState('')
 
     useEffect(() => {
         if (carScrappeAccumulation) {
@@ -184,6 +190,43 @@ const EbayVehicleSearch = () => {
             fetchData()
         }
     }, [vehicle])
+
+    useEffect(() => {
+        const listings = parseInt(
+            numberOfListings.split(' ')[0].replace(/,/g, ''),
+            10
+        )
+
+        if (listings < 100) {
+            setProgressDescription('Extremely Unpopular')
+            setProgressValue(10)
+            setColorClass('bg-red-500')
+        } else if (listings < 250) {
+            setProgressDescription('Very Unpopular')
+            setProgressValue(20)
+            setColorClass('bg-red-400')
+        } else if (listings < 500) {
+            setProgressDescription('Unpopular')
+            setProgressValue(35)
+            setColorClass('bg-red-300')
+        } else if (listings < 1000) {
+            setProgressDescription('Reasonably Popular')
+            setProgressValue(50)
+            setColorClass('bg-green-600')
+        } else if (listings < 1500) {
+            setProgressDescription('Popular')
+            setProgressValue(70)
+            setColorClass('bg-green-500')
+        } else if (listings < 3000) {
+            setProgressDescription('Very Popular')
+            setProgressValue(85)
+            setColorClass('bg-green-400')
+        } else {
+            setProgressDescription('Extremely Popular')
+            setProgressValue(100)
+            setColorClass('bg-green-300')
+        }
+    }, [numberOfListings])
 
     const openEbayUrl = () => {
         //https://www.ebay.co.uk/sch/131090/i.html?_from=R40&_nkw=FORD%20KUGA%20MK1%202009&_fsrp=1&LH_Complete=1&LH_Sold=1&LH_ItemCondition=4&_ipg=240&rt=nc&_udlo=40
@@ -255,15 +298,24 @@ const EbayVehicleSearch = () => {
     const deepAnalysis = async (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault()
         setDeepScraping(true)
+        console.log(
+            '### Deep Scraping Started ###',
+            new Date().toLocaleString()
+        )
         const deepScrapedData = await WebScrapeIndividualItems(searchInput)
+        console.log(
+            '### Deep Scraping Complete ###',
+            new Date().toLocaleString()
+        )
 
-        console.log('deepScrapedData: ', deepScrapedData)
-        let totalItems = 0
+        const totalItems = deepScrapedData.reduce(
+            (sum, item) => sum + item.data.length,
+            0
+        )
 
-        for (let i = 0; i < deepScrapedData.length; i++) {
-            totalItems += deepScrapedData[i].data.length
-        }
-        console.log('total deep items', totalItems)
+        setTotalDeepScraped(totalItems)
+
+        console.log('Total deep items:', totalItems)
 
         // Create an object with the data
         const processedData = processData(deepScrapedData)
@@ -308,12 +360,31 @@ const EbayVehicleSearch = () => {
                             <strong>Reg:</strong> {vehicle.reg}
                         </p>
 
-                        <div className="flex flex-row gap-1">
-                            <strong>Listings:</strong>{' '}
+                        <div className="flex flex-row gap-1 items-center">
+                            <strong>Sold Items:</strong>{' '}
                             {listCounting ? (
                                 <Loader2 className="h-4 w-4 animate-spin mt-1" />
                             ) : (
                                 numberOfListings.split(' ')[0]
+                            )}
+                            {!listCounting && (
+                                <div className="relative">
+                                    <Progress
+                                        value={progressValue}
+                                        className="ml-4 w-[200px]"
+                                        color={colorClass}
+                                    />
+                                    <p
+                                        className={cn(
+                                            'w-full text-center absolute -top-6',
+                                            {
+                                                colorClass,
+                                            }
+                                        )}
+                                    >
+                                        {progressDescription}
+                                    </p>
+                                </div>
                             )}
                         </div>
 
@@ -325,10 +396,13 @@ const EbayVehicleSearch = () => {
                             <Lightbulb className="h-5 w-5" /> Tip! - Try using
                             year instead of MK
                         </div>
+
                         <Input
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
+                            className="w-[375px]"
                         />
+
                         <div className="flex flex-row gap-4 mt-2 items-center">
                             <Button onClick={openEbayUrl} className="">
                                 Open on eBay
@@ -382,7 +456,11 @@ const EbayVehicleSearch = () => {
                                 AI Scrape
                             </TabsTrigger>
                             <TabsTrigger value="deepscrape">
-                                Deep Scrape
+                                {`Deep Scrape ${
+                                    totalDeepScraped > 0
+                                        ? `(${totalDeepScraped})`
+                                        : ''
+                                }`}
                             </TabsTrigger>
                         </TabsList>
                         <TabsContent value="aiscrape">
@@ -504,7 +582,7 @@ const EbayVehicleSearch = () => {
                                                                 // Open another browser window linking to the item
                                                                 // https://www.ebay.co.uk/sch/131090/i.html?_from=R40&_nkw=${searchInput} ${item.item}&_fsrp=1&LH_Complete=1&LH_Sold=1&LH_ItemCondition=4&_ipg=240&rt=nc&_udlo=40
                                                                 window.open(
-                                                                    `https://www.ebay.co.uk/sch/131090/i.html?_from=R0&_nkw=${searchInput} ${item.itemName}&_fsrp=1&LH_Complete=1&LH_Sold=1&LH_ItemCondition=4&_ipg=240&rt=nc&_udlo=40`,
+                                                                    `https://www.ebay.co.uk/sch/${item.itemCategory}/i.html?_from=R0&_nkw=${searchInput} ${item.itemName}&_fsrp=1&LH_Complete=1&LH_Sold=1&LH_ItemCondition=4&_ipg=240&rt=nc`,
                                                                     '_blank'
                                                                 )
                                                             }}

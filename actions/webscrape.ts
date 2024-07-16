@@ -12,6 +12,7 @@ interface eBayItem {
 
 interface ScrapedItemResult {
     itemName: string
+    category: string
     data: eBayItem[]
 }
 
@@ -286,6 +287,11 @@ export async function WebScrapeIndividualItems(vehicleSearchTerm: string) {
             extraSearch: '',
         },
         {
+            item: 'radiator pack',
+            category: '6030',
+            extraSearch: '',
+        },
+        {
             item: 'Bonnet',
             category: '33646',
             extraSearch: '',
@@ -325,6 +331,26 @@ export async function WebScrapeIndividualItems(vehicleSearchTerm: string) {
             category: '262245',
             extraSearch: '',
         },
+        {
+            item: 'Window Regulator',
+            category: '33706',
+            extraSearch: '',
+        },
+        {
+            item: 'Air Con Pump',
+            category: '33543',
+            extraSearch: '',
+        },
+        {
+            item: 'Ignition Barrel',
+            category: '6030',
+            extraSearch: '',
+        },
+        {
+            item: 'Front grille',
+            category: '33645',
+            extraSearch: '',
+        },
     ]
 
     const results: ScrapedItemResult[] = []
@@ -346,13 +372,17 @@ export async function WebScrapeIndividualItems(vehicleSearchTerm: string) {
             )
             results.push({
                 itemName: param.item,
+                category: param.category,
                 data: itemResults,
             })
-            console.log(`Scraped ${itemResults.length} items for ${param.item}`)
+            console.log(
+                `Scraped ${itemResults.length} items for ${param.item} category ${param.category}`
+            )
         } catch (error) {
             console.error(`Error scraping ${param.item}:`, error)
             results.push({
                 itemName: param.item,
+                category: param.category,
                 data: [],
             })
         }
@@ -360,6 +390,8 @@ export async function WebScrapeIndividualItems(vehicleSearchTerm: string) {
         // Add a delay to avoid overwhelming the server
         await new Promise((resolve) => setTimeout(resolve, 100))
     }
+
+    console.log('## Returning deep scrape results ##')
 
     return results
 }
