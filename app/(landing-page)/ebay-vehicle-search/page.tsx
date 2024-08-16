@@ -11,6 +11,8 @@ import {
     WebScrapeIndividualItems,
 } from '@/actions/webscrape'
 
+import { askClaude } from '@/actions/claude-ai/askClaude'
+
 import Typewriter from 'typewriter-effect'
 
 import { format, parseISO } from 'date-fns'
@@ -240,7 +242,7 @@ const EbayVehicleSearch = () => {
         setCarScrapedAnalysis('')
         setcarScrappedObject(null)
         // Create the URL to pass to the server action
-        const url = `https://www.ebay.co.uk/sch/131090/i.html?_from=R40&_nkw=${searchInput}&_fsrp=1&LH_Complete=1&LH_Sold=1&LH_ItemCondition=4&_ipg=240&rt=nc&_udlo=40`
+        const url = `https://www.ebay.co.uk/sch/131090/i.html?_from=R20&_nkw=${searchInput}&_fsrp=1&LH_Complete=1&LH_Sold=1&LH_ItemCondition=4&_ipg=240&rt=nc&_udlo=40`
 
         setCarScraping(true)
         const numberOfListings = await WebScrapeCountListings(url)
@@ -256,42 +258,54 @@ const EbayVehicleSearch = () => {
             searchInput
         )
 
-        // // Console log first item of the array of objects
-        // console.log('First item of the array of objects: ', scrapedData[0])
-        // // Console log last item of the array of objects
-        // console.log(
-        //     'Last item of the array of objects: ',
-        //     scrapedData[scrapedData.length - 1]
-        // )
-
-        // console.log('Total number of listings: ', scrapedData.length)
-
-        // console.log('All items of the array of objects: ', scrapedData)
-
         // Then call the AI Streaming API
-        const response = await fetch('/api/anthropic-stream', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                content: scrapedData,
-                vehicleSearchTerm: searchInput,
-                totalItems: scrapedData.length,
-            }),
-        })
-        const reader = response.body?.getReader()
-        const decoder = new TextDecoder()
-        let done = false
+        try {
+            const response = await askClaude(
+                JSON.stringify(scrapedData),
+                searchInput,
+                scrapedData.length.toString()
+            )
 
-        setCarScraping(false)
-        setCarTableBuilding(true)
+            // const response = await fetch('/api/anthropic-stream', {
+            //     method: 'POST',
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //     },
+            //     body: JSON.stringify({
+            //         content: scrapedData,
+            //         vehicleSearchTerm: searchInput,
+            //         totalItems: scrapedData.length,
+            //     }),
+            // })
 
-        while (!done) {
-            const { value, done: readerDone } = await reader?.read()!
-            done = readerDone
-            const newData = decoder.decode(value)
-            setCarScrappeAccumulation((prev) => prev + newData)
+            // if (!response.ok) {
+            //     throw new Error(`HTTP error! status: ${response.status}`)
+            // }
+
+            // const reader = response.body?.getReader()
+            // if (!reader) {
+            //     throw new Error('Response body is not readable')
+            // }
+
+            // const decoder = new TextDecoder()
+            // let done = false
+
+            setCarScraping(false)
+            setCarTableBuilding(true)
+            setCarScrappeAccumulation(response)
+
+            // while (!done) {
+            //     const { value, done: readerDone } = await reader.read()
+            //     done = readerDone
+            //     if (value) {
+            //         const newData = decoder.decode(value)
+            //         setCarScrappeAccumulation((prev) => prev + newData)
+            //     }
+            // }
+        } catch (error) {
+            console.error('Error in carAnalysis:', error)
+            setCarScraping(false)
+            setCarTableBuilding(false)
         }
     }
 

@@ -229,3 +229,33 @@ model PageViewDay {
   users       User[]
 }
 
+enum MOTStatus {
+  Valid
+  Expired
+  Upcoming
+  Booked
+  Ignore
+}
+
+enum TAXStatus {
+  Taxed
+  Untaxed
+  Upcoming
+  Ignore
+  SORN
+}
+
+model CompanyVehicles {
+  id            String @id @default(cuid())
+  created       DateTime @default(now())
+  modified      DateTime @updatedAt
+  company       String
+  registration  String
+  description   String
+  MOTdate       String @default("2020-01-01")
+  MOTstatus     MOTStatus @default(Ignore)
+  MOTdays       Int @default(60)
+  TAXdate       String @default("2020-01-01")
+  TAXstatus     TAXStatus @default(Ignore)
+  TAXdays       Int @default(60)
+}
