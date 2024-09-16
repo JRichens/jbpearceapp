@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Loader2, Plus } from 'lucide-react'
+import { Loader2, PlusIcon } from 'lucide-react'
 
 type Props = {
     open: boolean
@@ -50,8 +50,8 @@ const AddVehiclePopup = ({ open, setOpen }: Props) => {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="w-32">
-                    <Plus className="mr-2 h-5 w-5" />
+                <Button className="w-36 flex flex-row">
+                    <PlusIcon className="mr-2 h-5 w-5" />
                     Add Vehicle
                 </Button>
             </DialogTrigger>

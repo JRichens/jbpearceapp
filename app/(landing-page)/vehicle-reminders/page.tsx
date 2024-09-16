@@ -50,8 +50,8 @@ const VehicleReminders = () => {
         checkDvlaData()
 
         // Refresh data every 3 seconds
-        const interval = setInterval(fetchData, 3000)
-        return () => clearInterval(interval)
+        // const interval = setInterval(fetchData, 3000)
+        // return () => clearInterval(interval)
     }, [])
 
     const columns = useMemo<MRT_ColumnDef<CompanyVehicles>[]>(
