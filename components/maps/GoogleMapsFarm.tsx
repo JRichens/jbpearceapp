@@ -217,6 +217,25 @@ const GoogleMapsFarm = () => {
         const currentLandArea = landAreas.find(
             (landArea) => landArea.id === polygonId
         )
+        // If the user is farmland, then do not update just close
+        if (userType === 'farmland') {
+            setUpdatingCreating(false)
+            setShowModal(false)
+            setPolygonId('')
+            setPolygonParcelId('')
+            setPolygonSTid('')
+            setPolygonName('')
+            setPolygonDescription('')
+            setPolygonActivityCode('')
+            setPolygonHectares('')
+            setPolygonAcres('')
+            setPolygonColour('')
+            setPolygonSBIno('')
+            setPolygonPaths([])
+            setCurrentPolygon(null)
+            return
+        }
+
         // If there is a database entry, then update it
         try {
             setUpdatingCreating(true)

@@ -61,11 +61,7 @@ const PolygonModal: React.FC<PolygonModalProps> = ({
     setShowModal,
 }) => {
     const handleSubmit = () => {
-        if (userType === 'farmland') {
-            return
-        } else {
-            onSubmit()
-        }
+        onSubmit()
     }
 
     return (
@@ -188,11 +184,7 @@ const PolygonModal: React.FC<PolygonModalProps> = ({
                     />
                 </div>
                 <div className="flex w-full px-4 pt-3 pb-4 justify-between bg-white sticky bottom-0 drop-shadow-up-md">
-                    <Button
-                        disabled={userType === 'farmland'}
-                        onClick={handleSubmit}
-                        className=""
-                    >
+                    <Button onClick={handleSubmit} className="">
                         Ok
                     </Button>
                     <Button
