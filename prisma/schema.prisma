@@ -114,6 +114,17 @@ model TaskDetails {
   description    String
 }
 
+model Event {
+  id             String @default(cuid()) @id
+  type           String
+  name           String
+  date           String
+  description    String
+  attachments    String[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
 model User {
   id            String         @id @default(cuid())
   createdAt     DateTime       @default(now())

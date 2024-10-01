@@ -68,9 +68,9 @@ export const SidebarItem = () => {
             access: ['staff', 'admin', 'super'],
         },
         {
-            label: 'Daily Site Checks',
+            label: 'Health & Safety',
             icon: <ClipboardCheck className="h-6 w-6 mr-2" />,
-            href: `/daily-site-checks`,
+            href: `/health-and-safety`,
             access: ['staff', 'admin', 'super'],
         },
         {
