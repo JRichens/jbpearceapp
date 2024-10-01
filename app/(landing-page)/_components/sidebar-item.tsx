@@ -89,7 +89,7 @@ export const SidebarItem = () => {
             label: 'Farm Land',
             icon: <Tractor className="h-6 w-6 mr-2" />,
             href: `/farm-land`,
-            access: ['admin', 'super', 'staff'],
+            access: ['admin', 'super', 'staff', 'farmland'],
         },
         {
             label: 'Land',
