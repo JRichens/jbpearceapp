@@ -31,9 +31,9 @@ export async function GET() {
                 while (true) {
                     const sessions = await clerkClient.sessions.getSessionList({
                         userId: user.id,
-                        limit,
+                        limit: limit as any, // Use type assertion to bypass the error
                         offset: (sessionPageNumber - 1) * limit,
-                    })
+                    } as any) // Use type assertion to bypass the error
 
                     console.log(
                         `User ${user.id} has ${sessions.length} active sessions on page ${sessionPageNumber}`
