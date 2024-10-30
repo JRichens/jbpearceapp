@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { GetAllCompanyVehicles } from '@/actions/companyVehicles/company-vehicle'
 import { CompanyVehicles } from '@prisma/client'
 
-import AddVehiclePopup from './add-vehicle-popup'
 import {
     MaterialReactTable,
     type MRT_ColumnDef,
@@ -12,50 +11,77 @@ import {
     type MRT_Cell,
 } from 'material-react-table'
 import { Separator } from '@/components/ui/separator'
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectLabel,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
+
+import { BellPlus, Pencil } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import AddVehiclePopup from './add-vehicle-popup'
+import ModifyVehiclePopup from './modify-vehicle-popup'
+import AddReminderPopup from './add-reminder-popup'
 
 const VehicleReminders = () => {
     const [data, setData] = useState<CompanyVehicles[]>([])
     const [open, setOpen] = useState(false)
-    const [companyFilter, setCompanyFilter] = useState('')
+    const [modifyOpen, setModifyOpen] = useState(false)
+    const [remindersOpen, setRemindersOpen] = useState(false)
+    const [selectedVehicle, setSelectedVehicle] =
+        useState<CompanyVehicles | null>(null)
 
     // Get data
     useEffect(() => {
+        if (open || modifyOpen || remindersOpen) return
         const fetchData = async () => {
             const data = await GetAllCompanyVehicles()
             setData(data ? data : [])
         }
         fetchData()
-
-        const checkDvlaData = async () => {
-            for (const vehicle of data) {
-                // Loop through each vehicle and call the API to get the MOT and TAX dates
-                const response = await fetch(
-                    `/api/companyvehicles/${vehicle.registration}`,
-                    {
-                        method: 'GET',
-                    }
-                )
-            }
-        }
-
-        checkDvlaData()
-
-        // Refresh data every 3 seconds
-        // const interval = setInterval(fetchData, 3000)
-        // return () => clearInterval(interval)
-    }, [])
+    }, [open, modifyOpen, remindersOpen])
 
     const columns = useMemo<MRT_ColumnDef<CompanyVehicles>[]>(
         () => [
+            {
+                accessorKey: 'reminder',
+                header: 'Reminder',
+                size: 50,
+                enableSorting: false,
+                enableColumnActions: false,
+                Cell: ({ row }) => (
+                    <div className="flex items-center justify-center w-full">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                                setSelectedVehicle(row.original)
+                                setRemindersOpen(true)
+                            }}
+                            className="-my-2 -p-1 hover:text-red-700"
+                        >
+                            <BellPlus className="h-5 w-5" />
+                        </Button>
+                    </div>
+                ),
+            },
+            {
+                accessorKey: 'actions',
+                header: 'Modify',
+                size: 50,
+                enableSorting: false,
+                enableColumnActions: false,
+                Cell: ({ row }) => (
+                    <div className="flex items-center justify-center w-full">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                                setSelectedVehicle(row.original)
+                                setModifyOpen(true)
+                            }}
+                            className="-my-2 -p-1 hover:text-blue-700"
+                        >
+                            <Pencil className="h-5 w-5" />
+                        </Button>
+                    </div>
+                ),
+            },
             {
                 accessorKey: 'registration',
                 header: 'Registration',
@@ -116,22 +142,6 @@ const VehicleReminders = () => {
                 {' '}
                 <div className="flex flex-row gap-2">
                     <AddVehiclePopup open={open} setOpen={setOpen} />
-                    <Select>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Select Company" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectItem value="J B Pearce">
-                                    J B Pearce
-                                </SelectItem>
-                                <SelectItem value="Gradeacre">
-                                    Gradeacre
-                                </SelectItem>
-                                <SelectItem value="Farm">Farm</SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
                 </div>
                 <MaterialReactTable
                     columns={columns}
@@ -140,6 +150,40 @@ const VehicleReminders = () => {
                         density: 'compact',
                         pagination: { pageIndex: 0, pageSize: 50 },
                     }}
+                    muiTableContainerProps={{
+                        sx: {
+                            maxHeight: '500px', // Set your desired height
+                        },
+                    }}
+                    muiTableHeadProps={{
+                        sx: {
+                            position: 'sticky',
+                            top: 0,
+                            backgroundColor: 'white', // Or any color that matches your design
+                            zIndex: 1,
+                        },
+                    }}
+                    muiTableBodyRowProps={({ row, table }) => ({
+                        sx: {
+                            backgroundColor:
+                                table.getRowModel().rows.indexOf(row) % 2 === 0
+                                    ? 'inherit'
+                                    : 'rgba(0, 0, 0, 0.02)',
+                            '&:hover': {
+                                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                            },
+                        },
+                    })}
+                />
+                <ModifyVehiclePopup
+                    open={modifyOpen}
+                    setOpen={setModifyOpen}
+                    vehicleData={selectedVehicle}
+                />
+                <AddReminderPopup
+                    open={remindersOpen}
+                    setOpen={setRemindersOpen}
+                    vehicleData={selectedVehicle}
                 />
             </div>
         </div>
