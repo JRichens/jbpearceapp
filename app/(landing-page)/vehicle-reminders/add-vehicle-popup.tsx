@@ -4,6 +4,8 @@ import { useState } from 'react'
 
 import { AddCompanyVehicle } from '@/actions/companyVehicles/company-vehicle'
 
+import { useToast } from '@/components/ui/use-toast'
+
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
@@ -22,7 +24,7 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Loader2, PlusIcon } from 'lucide-react'
+import { Check, Loader2, PlusIcon } from 'lucide-react'
 
 type Props = {
     open: boolean
@@ -35,13 +37,45 @@ const AddVehiclePopup = ({ open, setOpen }: Props) => {
     const [desc, setDesc] = useState('')
     const [company, setCompany] = useState('')
 
+    const { toast } = useToast()
+
     const handleSave = async () => {
-        if (reg && desc && company) {
+        try {
             setSaving(true)
-            await AddCompanyVehicle(reg, desc, company)
-            setReg('')
-            setDesc('')
-            setCompany('')
+            if (reg && desc && company) {
+                await AddCompanyVehicle(reg, desc, company)
+                setReg('')
+                setDesc('')
+                setCompany('')
+                toast({
+                    title: 'Vehicle added successfully',
+                    variant: 'default',
+                    className: 'bg-green-500 text-white border-none',
+                })
+            } else {
+                toast({
+                    title: 'Failed to add vehicle',
+                    description: 'Please fill in all required fields',
+                    variant: 'destructive',
+                })
+            }
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                console.error('Error adding vehicle:', error)
+                toast({
+                    title: 'Failed to add vehicle',
+                    description: error.message,
+                    variant: 'destructive',
+                })
+            } else {
+                console.error('Unknown error:', error)
+                toast({
+                    title: 'Failed to add vehicle',
+                    description: 'An unknown error occurred',
+                    variant: 'destructive',
+                })
+            }
+        } finally {
             setSaving(false)
             setOpen(false)
         }

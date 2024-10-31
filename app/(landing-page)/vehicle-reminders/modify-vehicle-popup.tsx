@@ -1,6 +1,6 @@
 'use client'
 
-import { toast } from 'sonner'
+import { useToast } from '@/components/ui/use-toast'
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
@@ -14,8 +14,12 @@ import {
 } from '@mui/material'
 import { CompanyVehicles, MOTStatus, TAXStatus } from '@prisma/client'
 import { useEffect, useState } from 'react'
-import { UpdateCompanyVehicle } from '@/actions/companyVehicles/company-vehicle'
-import { Loader2 } from 'lucide-react'
+import {
+    DeleteCompanyVehicle,
+    UpdateCompanyVehicle,
+} from '@/actions/companyVehicles/company-vehicle'
+import { Loader2, Trash } from 'lucide-react'
+import { toast } from 'sonner'
 
 const COMPANY_OPTIONS = ['J B Pearce', 'Farm', 'Gradeacre'] as const
 type CompanyType = (typeof COMPANY_OPTIONS)[number]
@@ -32,6 +36,7 @@ const ModifyVehiclePopup = ({
     vehicleData,
 }: ModifyVehiclePopupProps) => {
     const [isSaving, setIsSaving] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
     const [formData, setFormData] = useState({
         registration: '',
         company: '' as CompanyType | '',
@@ -44,6 +49,8 @@ const ModifyVehiclePopup = ({
 
     const motStatusOptions = Object.values(MOTStatus)
     const taxStatusOptions = Object.values(TAXStatus)
+
+    const { toast } = useToast()
 
     useEffect(() => {
         if (vehicleData) {
@@ -95,20 +102,62 @@ const ModifyVehiclePopup = ({
             })
 
             if (result) {
-                toast.success('Vehicle updated successfully')
                 setOpen(false)
-                // Optionally refresh the data or update local state
-                // You might want to call a refresh function here
+                toast({
+                    title: 'Vehicle updated successfully',
+                    variant: 'default',
+                })
             }
-        } catch (error) {
-            console.error('Error updating vehicle:', error)
-            toast.error(
-                error instanceof Error
-                    ? error.message
-                    : 'Failed to update vehicle'
-            )
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                console.error('Error updating vehicle:', error)
+                toast({
+                    title: 'Failed to update vehicle',
+                    description: error.message,
+                    variant: 'destructive',
+                })
+            } else {
+                console.error('Unknown error:', error)
+                toast({
+                    title: 'Failed to update vehicle',
+                    description: 'An unknown error occurred',
+                    variant: 'destructive',
+                })
+            }
         } finally {
             setIsSaving(false)
+        }
+    }
+
+    const handleDelete = async () => {
+        try {
+            // Show loading state
+            setIsDeleting(true)
+            await DeleteCompanyVehicle(formData.registration)
+            toast({
+                title: 'Vehicle deleted successfully',
+                variant: 'default',
+                className: 'bg-green-500 text-white border-none',
+            })
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                console.error('Error deleting vehicle:', error)
+                toast({
+                    title: 'Failed to delete vehicle',
+                    description: error.message,
+                    variant: 'destructive',
+                })
+            } else {
+                console.error('Unknown error:', error)
+                toast({
+                    title: 'Failed to delete vehicle',
+                    description: 'An unknown error occurred',
+                    variant: 'destructive',
+                })
+            }
+        } finally {
+            setIsDeleting(false)
+            setOpen(false)
         }
     }
 
@@ -189,7 +238,7 @@ const ModifyVehiclePopup = ({
                         />
                         <TextField
                             id="MOTdays"
-                            label="MOT Days"
+                            label="MOT Days Remaining"
                             variant="outlined"
                             value={vehicleData?.MOTdays ?? ''}
                             InputProps={{ readOnly: true }}
@@ -228,15 +277,26 @@ const ModifyVehiclePopup = ({
                         />
                         <TextField
                             id="TAXdays"
-                            label="Tax Days"
+                            label="Tax Days Remaining"
                             variant="outlined"
                             value={vehicleData?.TAXdays ?? ''}
                             InputProps={{ readOnly: true }}
                             className="w-1/3"
                         />
                     </div>
-                    {/* Cancel Save Buttons */}
+                    {/* Delete Cancel Save Buttons */}
                     <div className="flex flex-row justify-end gap-4 mt-4">
+                        <Button
+                            variant="destructive"
+                            onClick={handleDelete}
+                            className="w-16 flex items-center justify-center"
+                        >
+                            {isDeleting ? (
+                                <Loader2 className="animate-spin mr-2" />
+                            ) : (
+                                <Trash className="h-4 w-4 m-auto" />
+                            )}
+                        </Button>
                         <Button
                             variant="outline"
                             onClick={handleClose}

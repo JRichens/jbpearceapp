@@ -19,6 +19,7 @@ import ModifyVehiclePopup from './modify-vehicle-popup'
 import AddReminderPopup from './add-reminder-popup'
 
 const VehicleReminders = () => {
+    const [isLoading, setIsLoading] = useState(false)
     const [data, setData] = useState<CompanyVehicles[]>([])
     const [open, setOpen] = useState(false)
     const [modifyOpen, setModifyOpen] = useState(false)
@@ -30,8 +31,15 @@ const VehicleReminders = () => {
     useEffect(() => {
         if (open || modifyOpen || remindersOpen) return
         const fetchData = async () => {
-            const data = await GetAllCompanyVehicles()
-            setData(data ? data : [])
+            setIsLoading(true) // Set loading to true before fetching
+            try {
+                const data = await GetAllCompanyVehicles()
+                setData(data ? data : [])
+            } catch (error) {
+                console.error('Error fetching data:', error)
+            } finally {
+                setIsLoading(false) // Set loading to false after fetching
+            }
         }
         fetchData()
     }, [open, modifyOpen, remindersOpen])
@@ -146,6 +154,18 @@ const VehicleReminders = () => {
                 <MaterialReactTable
                     columns={columns}
                     data={data}
+                    renderEmptyRowsFallback={() => (
+                        <div className="flex items-center justify-center h-[400px]">
+                            {isLoading ? (
+                                <div className="flex flex-col items-center gap-2 mt-4">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+                                    <p>Loading vehicles...</p>
+                                </div>
+                            ) : (
+                                <p>No vehicles found</p>
+                            )}
+                        </div>
+                    )}
                     initialState={{
                         density: 'compact',
                         pagination: { pageIndex: 0, pageSize: 50 },
