@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
+import { useReactToPrint } from 'react-to-print'
 import { GetAllCompanyVehicles } from '@/actions/companyVehicles/company-vehicle'
 import { CompanyVehicles } from '@prisma/client'
 
@@ -12,11 +13,12 @@ import {
 } from 'material-react-table'
 import { Separator } from '@/components/ui/separator'
 
-import { BellPlus, Pencil } from 'lucide-react'
+import { BellPlus, Pencil, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import AddVehiclePopup from './add-vehicle-popup'
 import ModifyVehiclePopup from './modify-vehicle-popup'
 import AddReminderPopup from './add-reminder-popup'
+import PrintableVehicleTable from './print-table'
 
 const VehicleReminders = () => {
     const [isLoading, setIsLoading] = useState(false)
@@ -43,6 +45,20 @@ const VehicleReminders = () => {
         }
         fetchData()
     }, [open, modifyOpen, remindersOpen])
+
+    const componentRef = useRef(null)
+
+    const handlePrint = useReactToPrint({
+        content: () => componentRef.current,
+        pageStyle: `
+            @page {
+                size: landscape;
+                margin: 20mm;
+            }
+        `,
+        removeAfterPrint: true,
+        suppressErrors: true,
+    })
 
     const columns = useMemo<MRT_ColumnDef<CompanyVehicles>[]>(
         () => [
@@ -140,73 +156,93 @@ const VehicleReminders = () => {
     )
 
     return (
-        <div className="mb-6 px-4 md:px-8 py-4 mx-4 md:mx-8 shadow-md rounded-md bg-white border">
-            <h1 className="font-bold text-2xl">Vehicle Reminders</h1>
-            <p>
-                Create email and text reminders for MOT, Tax, servicing and more
-            </p>
-            <Separator className="my-2" />
-            <div className="flex flex-col gap-2">
+        <>
+            <div className="mb-6 px-4 md:px-8 py-4 mx-4 md:mx-8 shadow-md rounded-md bg-white border">
                 {' '}
-                <div className="flex flex-row gap-2">
-                    <AddVehiclePopup open={open} setOpen={setOpen} />
-                </div>
-                <MaterialReactTable
-                    columns={columns}
-                    data={data}
-                    renderEmptyRowsFallback={() => (
-                        <div className="flex items-center justify-center h-[400px]">
-                            {isLoading ? (
-                                <div className="flex flex-col items-center gap-2 mt-4">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
-                                    <p>Loading vehicles...</p>
-                                </div>
-                            ) : (
-                                <p>No vehicles found</p>
-                            )}
-                        </div>
-                    )}
-                    initialState={{
-                        density: 'compact',
-                        pagination: { pageIndex: 0, pageSize: 50 },
-                    }}
-                    muiTableContainerProps={{
-                        sx: {
-                            maxHeight: '500px', // Set your desired height
-                        },
-                    }}
-                    muiTableHeadProps={{
-                        sx: {
-                            position: 'sticky',
-                            top: 0,
-                            backgroundColor: 'white', // Or any color that matches your design
-                            zIndex: 1,
-                        },
-                    }}
-                    muiTableBodyRowProps={({ row, table }) => ({
-                        sx: {
-                            backgroundColor:
-                                table.getRowModel().rows.indexOf(row) % 2 === 0
-                                    ? 'inherit'
-                                    : 'rgba(0, 0, 0, 0.02)',
-                            '&:hover': {
-                                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                <h1 className="font-bold text-2xl">Vehicle Reminders</h1>
+                <p>
+                    Create email and text reminders for MOT, Tax, servicing and
+                    more
+                </p>
+                <Separator className="my-2" />
+                <div className="flex flex-col gap-2">
+                    {' '}
+                    <div className="flex flex-row gap-2">
+                        <AddVehiclePopup open={open} setOpen={setOpen} />
+                        <Button
+                            variant="outline"
+                            onClick={handlePrint}
+                            className="flex items-center gap-2"
+                        >
+                            <Printer className="h-4 w-4" />
+                            Print List
+                        </Button>
+                    </div>
+                    <MaterialReactTable
+                        columns={columns}
+                        data={data}
+                        renderEmptyRowsFallback={() => (
+                            <div className="flex items-center justify-center h-[400px]">
+                                {isLoading ? (
+                                    <div className="flex flex-col items-center gap-2 mt-4">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+                                        <p>Loading vehicles...</p>
+                                    </div>
+                                ) : (
+                                    <p>No vehicles found</p>
+                                )}
+                            </div>
+                        )}
+                        initialState={{
+                            density: 'compact',
+                            pagination: { pageIndex: 0, pageSize: 50 },
+                        }}
+                        muiTableContainerProps={{
+                            sx: {
+                                maxHeight: '500px', // Set your desired height
                             },
-                        },
-                    })}
-                />
-                <ModifyVehiclePopup
-                    open={modifyOpen}
-                    setOpen={setModifyOpen}
-                    vehicleData={selectedVehicle}
-                />
-                <AddReminderPopup
-                    open={remindersOpen}
-                    setOpen={setRemindersOpen}
-                    vehicleData={selectedVehicle}
-                />
+                        }}
+                        muiTableHeadProps={{
+                            sx: {
+                                position: 'sticky',
+                                top: 0,
+                                backgroundColor: 'white', // Or any color that matches your design
+                                zIndex: 1,
+                            },
+                        }}
+                        muiTableBodyRowProps={({ row, table }) => ({
+                            sx: {
+                                backgroundColor:
+                                    table.getRowModel().rows.indexOf(row) %
+                                        2 ===
+                                    0
+                                        ? 'inherit'
+                                        : 'rgba(0, 0, 0, 0.02)',
+                                '&:hover': {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                                },
+                            },
+                        })}
+                    />
+                    <ModifyVehiclePopup
+                        open={modifyOpen}
+                        setOpen={setModifyOpen}
+                        vehicleData={selectedVehicle}
+                    />
+                    <AddReminderPopup
+                        open={remindersOpen}
+                        setOpen={setRemindersOpen}
+                        vehicleData={selectedVehicle}
+                    />
+                </div>
             </div>
-        </div>
+            {/* Hide the printable component */}
+            <div style={{ display: 'none' }}>
+                <div ref={componentRef}>
+                    <PrintableVehicleTable data={data} />
+                </div>
+            </div>
+        </>
     )
 }
 
