@@ -91,8 +91,35 @@ export async function GetAllCompanyVehicles() {
                     return null
                 }
 
-                // Handle MOT Ignores
-                if (vehicle.MOTstatus === 'Ignore') {
+                // Handle TRADE PLATES
+                if (vehicle.registration.toUpperCase().includes('TRADE')) {
+                    const TAXdays = Math.round(
+                        (new Date(vehicle.TAXdate).getTime() - Date.now()) /
+                            (1000 * 60 * 60 * 24)
+                    )
+                    const TAXstatus = TAXdays > 0 ? 'Taxed' : 'Untaxed'
+                    results.success.push({
+                        registration: vehicle.registration,
+                        company: vehicle.company,
+                    })
+                    // We still need to calculate tax days, but no MOT
+                    await db.companyVehicles.update({
+                        where: { id: vehicle.id },
+                        data: {
+                            MOTstatus: 'NA',
+                            MOTdate: 'No date',
+                            MOTdays: 0,
+                            TAXstatus,
+                            TAXdays,
+                        },
+                    })
+                }
+
+                // Handle MOT Ignores and NA
+                if (
+                    vehicle.MOTstatus === 'Ignore' ||
+                    vehicle.MOTstatus === 'NA'
+                ) {
                     results.motIgnored.push({
                         registration: vehicle.registration,
                         company: vehicle.company,
@@ -149,7 +176,10 @@ export async function GetAllCompanyVehicles() {
                     const data = await response.json()
 
                     // Process MOT Status
-                    if (vehicle.MOTstatus !== 'Ignore') {
+                    if (
+                        vehicle.MOTstatus !== 'Ignore' &&
+                        vehicle.MOTstatus !== 'NA'
+                    ) {
                         if (
                             data.motExpiryDate ||
                             vehicle.MOTdate !== 'No date'
@@ -308,7 +338,7 @@ export async function GetAllCompanyVehicles() {
     }
 }
 
-const COMPANY_OPTIONS = ['J B Pearce', 'Farm', 'Gradeacre'] as const
+const COMPANY_OPTIONS = ['J B Pearce', 'JBP Ltd', 'Farm', 'Gradeacre'] as const
 type CompanyType = (typeof COMPANY_OPTIONS)[number]
 
 export async function UpdateCompanyVehicle({

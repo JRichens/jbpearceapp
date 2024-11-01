@@ -245,6 +245,7 @@ enum MOTStatus {
   Expired
   Upcoming
   Booked
+  NA
   Ignore
 }
 
@@ -263,10 +264,10 @@ model CompanyVehicles {
   company       String
   registration  String
   description   String
-  MOTdate       String @default("2020-01-01")
-  MOTstatus     MOTStatus @default(Ignore)
-  MOTdays       Int @default(60)
-  TAXdate       String @default("2020-01-01")
-  TAXstatus     TAXStatus @default(Ignore)
-  TAXdays       Int @default(60)
+  MOTdate       String @default("")
+  MOTstatus     MOTStatus @default(Valid)
+  MOTdays       Int @default(0)
+  TAXdate       String @default("")
+  TAXstatus     TAXStatus @default(Taxed)
+  TAXdays       Int @default(0)
 }

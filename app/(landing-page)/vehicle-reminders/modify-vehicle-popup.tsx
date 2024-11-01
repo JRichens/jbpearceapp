@@ -21,7 +21,7 @@ import {
 import { Loader2, Trash } from 'lucide-react'
 import { toast } from 'sonner'
 
-const COMPANY_OPTIONS = ['J B Pearce', 'Farm', 'Gradeacre'] as const
+const COMPANY_OPTIONS = ['J B Pearce', 'JBP Ltd', 'Farm', 'Gradeacre'] as const
 type CompanyType = (typeof COMPANY_OPTIONS)[number]
 
 interface ModifyVehiclePopupProps {
@@ -106,6 +106,7 @@ const ModifyVehiclePopup = ({
                 toast({
                     title: 'Vehicle updated successfully',
                     variant: 'default',
+                    className: 'bg-green-500 text-white border-none',
                 })
             }
         } catch (error: unknown) {

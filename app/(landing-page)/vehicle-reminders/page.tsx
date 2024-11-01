@@ -199,7 +199,7 @@ const VehicleReminders = () => {
                         }}
                         muiTableContainerProps={{
                             sx: {
-                                maxHeight: '500px', // Set your desired height
+                                maxHeight: '66vh', // Set your desired height
                             },
                         }}
                         muiTableHeadProps={{
