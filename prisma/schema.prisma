@@ -245,15 +245,14 @@ enum MOTStatus {
   Expired
   Upcoming
   Booked
+  Agri
   NA
-  Ignore
 }
 
 enum TAXStatus {
   Taxed
   Untaxed
   Upcoming
-  Ignore
   SORN
 }
 

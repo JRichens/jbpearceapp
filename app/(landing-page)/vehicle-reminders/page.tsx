@@ -60,6 +60,20 @@ const VehicleReminders = () => {
         suppressErrors: true,
     })
 
+    // Utility function that handles 'No date' case
+    const formatDate = (dateString: string | null) => {
+        if (!dateString || dateString === 'No date') return 'No date'
+        try {
+            return new Date(dateString).toLocaleDateString('en-GB', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+            })
+        } catch (error) {
+            return 'No date'
+        }
+    }
+
     const columns = useMemo<MRT_ColumnDef<CompanyVehicles>[]>(
         () => [
             {
@@ -130,6 +144,7 @@ const VehicleReminders = () => {
                 accessorKey: 'MOTdate',
                 header: 'MOT Date',
                 size: 40,
+                Cell: ({ cell }) => formatDate(cell.getValue<string>()),
             },
             {
                 accessorKey: 'MOTdays',
@@ -145,6 +160,7 @@ const VehicleReminders = () => {
                 accessorKey: 'TAXdate',
                 header: 'TAX Date',
                 size: 40,
+                Cell: ({ cell }) => formatDate(cell.getValue<string>()),
             },
             {
                 accessorKey: 'TAXdays',

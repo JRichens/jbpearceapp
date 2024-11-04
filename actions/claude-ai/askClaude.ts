@@ -31,7 +31,7 @@ export async function askClaude(
         try {
             const contentStringify = JSON.stringify(content)
             const response = await anthropic.messages.create({
-                model: 'claude-3-5-sonnet-20240620',
+                model: 'claude-3-5-sonnet-20241022',
                 max_tokens: 4000,
                 system: `
         You have expertise in analyzing eBay vehicle parts sold listings in a javascript object in this format. You can then present the information back as an object in JSON after analysing the data and grouping similar items.
