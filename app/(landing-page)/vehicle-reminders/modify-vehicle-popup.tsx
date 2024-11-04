@@ -19,7 +19,6 @@ import {
     UpdateCompanyVehicle,
 } from '@/actions/companyVehicles/company-vehicle'
 import { Loader2, Trash } from 'lucide-react'
-import { toast } from 'sonner'
 
 const COMPANY_OPTIONS = ['J B Pearce', 'JBP Ltd', 'Farm', 'Gradeacre'] as const
 type CompanyType = (typeof COMPANY_OPTIONS)[number]

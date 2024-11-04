@@ -46,6 +46,43 @@ const VehicleReminders = () => {
         fetchData()
     }, [open, modifyOpen, remindersOpen])
 
+    // Sort the data
+    const sortedData = useMemo(() => {
+        return [...data].sort((a, b) => {
+            const getEffectiveMOTDays = (vehicle: CompanyVehicles): number => {
+                // Ignore MOT days for both 'Agri' and 'NA' statuses
+                if (
+                    vehicle.MOTstatus === 'Agri' ||
+                    vehicle.MOTstatus === 'NA'
+                ) {
+                    return Infinity
+                }
+                return typeof vehicle.MOTdays === 'number'
+                    ? vehicle.MOTdays
+                    : Infinity
+            }
+
+            const getMinDays = (vehicle: CompanyVehicles): number => {
+                const motDays = getEffectiveMOTDays(vehicle)
+                const taxDays =
+                    typeof vehicle.TAXdays === 'number'
+                        ? vehicle.TAXdays
+                        : Infinity
+                return Math.min(motDays, taxDays)
+            }
+
+            const aMinDays = getMinDays(a)
+            const bMinDays = getMinDays(b)
+
+            // Handle edge cases where values might be Infinity
+            if (aMinDays === Infinity && bMinDays === Infinity) return 0
+            if (aMinDays === Infinity) return 1
+            if (bMinDays === Infinity) return -1
+
+            return aMinDays - bMinDays
+        })
+    }, [data])
+
     const componentRef = useRef(null)
 
     const handlePrint = useReactToPrint({
@@ -196,7 +233,7 @@ const VehicleReminders = () => {
                     </div>
                     <MaterialReactTable
                         columns={columns}
-                        data={data}
+                        data={sortedData}
                         renderEmptyRowsFallback={() => (
                             <div className="flex items-center justify-center h-[400px]">
                                 {isLoading ? (
