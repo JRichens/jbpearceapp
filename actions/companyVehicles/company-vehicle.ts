@@ -117,7 +117,7 @@ export async function GetAllCompanyVehicles() {
 
                 // Handle MOT Ignores and NA
                 if (
-                    vehicle.MOTstatus === 'Ignore' ||
+                    vehicle.MOTstatus === 'Agri' ||
                     vehicle.MOTstatus === 'NA'
                 ) {
                     results.motIgnored.push({
@@ -129,21 +129,6 @@ export async function GetAllCompanyVehicles() {
                         data: {
                             MOTdate: 'No date',
                             MOTdays: 0,
-                        },
-                    })
-                }
-
-                // Handle TAX Ignores
-                if (vehicle.TAXstatus === 'Ignore') {
-                    results.taxIgnored.push({
-                        registration: vehicle.registration,
-                        company: vehicle.company,
-                    })
-                    return await db.companyVehicles.update({
-                        where: { id: vehicle.id },
-                        data: {
-                            TAXdate: 'No date',
-                            TAXdays: 0,
                         },
                     })
                 }
@@ -177,7 +162,7 @@ export async function GetAllCompanyVehicles() {
 
                     // Process MOT Status
                     if (
-                        vehicle.MOTstatus !== 'Ignore' &&
+                        vehicle.MOTstatus !== 'Agri' &&
                         vehicle.MOTstatus !== 'NA'
                     ) {
                         if (
