@@ -35,6 +35,7 @@ const NewAccount = () => {
     const [idData, setIdData] = useState<IdData | null>(null)
     const [error, setError] = useState<string | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const [isSubmitting, setIsSubmitting] = useState(false)
     const [formValues, setFormValues] = useState<IdData>({
         code: '',
         fullName: '',
@@ -62,7 +63,13 @@ const NewAccount = () => {
     }
 
     const handleFormSubmit = async () => {
+        if (!isFormValid()) {
+            setError('Please fill all required fields correctly')
+            return
+        }
+
         try {
+            setIsSubmitting(true)
             const response = await fetch(
                 'https://genuine-calf-newly.ngrok-free.app/customers',
                 {
@@ -79,21 +86,50 @@ const NewAccount = () => {
                         reg: formValues.registration,
                         paymenttype: formValues.paymentType,
                         tel: formValues.telephone,
-                        account: formValues.accountNo,
-                        sortcode: formValues.sortCode,
+                        account:
+                            formValues.paymentType === 'BACS'
+                                ? formValues.accountNo
+                                : '',
+                        sortcode:
+                            formValues.paymentType === 'BACS'
+                                ? formValues.sortCode
+                                : '',
                     }),
                 }
             )
 
             if (!response.ok) {
-                throw new Error('Network response was not ok')
+                const errorData = await response.json()
+                throw new Error(errorData.message || 'Submission failed')
             }
 
-            // Handle successful submission
-            // You might want to show a success message or redirect
+            // Show success message
+            setError(null)
+            // Reset form or redirect
+            // You might want to add a success state and message
+            alert('Customer created successfully')
+
+            // Optional: Reset form
+            setFormValues({
+                code: '',
+                fullName: '',
+                firstLineAddress: '',
+                postcode: '',
+                registration: '',
+                paymentType: 'BACS',
+                telephone: '',
+                accountNo: '',
+                sortCode: '',
+            })
+            setSelectedImage(null)
+            setIdData(null)
         } catch (error) {
-            setError('Failed to submit form')
-            console.error('Failed to submit form:', error)
+            setError(
+                error instanceof Error ? error.message : 'Failed to submit form'
+            )
+            console.error('Form submission error:', error)
+        } finally {
+            setIsSubmitting(false)
         }
     }
 
@@ -454,11 +490,23 @@ const NewAccount = () => {
                                 </div>
                                 <Button
                                     onClick={handleFormSubmit}
-                                    disabled={!isFormValid()}
+                                    disabled={!isFormValid() || isSubmitting}
                                     className="w-full mt-6"
                                 >
-                                    Submit Form
+                                    {isSubmitting ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Submitting...
+                                        </>
+                                    ) : (
+                                        'Submit Form'
+                                    )}
                                 </Button>
+                                {error && (
+                                    <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
+                                        {error}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
