@@ -1,15 +1,21 @@
 'use client'
 
 import { useState, useRef, useEffect, ChangeEvent } from 'react'
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { askClaudeId } from '@/actions/claude-ai/askClaudeId'
-import { Camera, Loader2 } from 'lucide-react'
+import { Camera, ChevronDown, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TextField } from '@mui/material'
 import { useToast } from '@/components/ui/use-toast'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 declare global {
     interface Window {
@@ -29,9 +35,23 @@ type IdData = {
     telephone: string
     accountNo: string
     sortCode: string
+    image1?: string
+    image2?: string
+}
+
+type ApiResponse = {
+    success: boolean
+    count: number
+    data: IdData[]
 }
 
 const NewAccount = () => {
+    const [searchQuery, setSearchQuery] = useState('')
+    const [gettingCustomers, setGettingCustomers] = useState(false)
+    const [customers, setCustomers] = useState<IdData[]>([])
+    const [selectedCustomer, setSelectedCustomer] = useState<IdData | null>(
+        null
+    )
     const [selectedImage, setSelectedImage] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(false)
     const [idData, setIdData] = useState<IdData | null>(null)
@@ -51,6 +71,47 @@ const NewAccount = () => {
     })
 
     const { toast } = useToast()
+
+    const filteredCustomers = customers
+        .filter((customer) =>
+            customer.fullName.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .slice(0, 15) // This limits the results to first 10 matches
+
+    // Get customers from express-server api
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                setGettingCustomers(true)
+                const response = await fetch(
+                    'https://genuine-calf-newly.ngrok-free.app/customers',
+                    {
+                        method: 'GET',
+                        headers: {
+                            'ngrok-skip-browser-warning': '69420',
+                            'Content-Type': 'application/json',
+                        },
+                    }
+                )
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok')
+                }
+
+                const result: ApiResponse = await response.json()
+                // Set customers with the data array from the response
+                setCustomers(result.data)
+            } catch (err) {
+                setError(
+                    err instanceof Error ? err.message : 'An error occurred'
+                )
+            } finally {
+                setGettingCustomers(false)
+            }
+        }
+
+        fetchData()
+    }, [])
 
     const isFormValid = (): boolean => {
         return (
@@ -298,11 +359,11 @@ const NewAccount = () => {
     }, [formValues.fullName])
 
     return (
-        <div className="container mx-auto p-4 max-w-2xl bg-white">
-            <Tabs defaultValue="newaccount" className="w-[400px]">
+        <div className="container mx-auto p-4 max-w-2xl bg-white h-full">
+            <Tabs defaultValue="newaccount" className="w-[400px] h-full">
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="newaccount">New Account</TabsTrigger>
-                    <TabsTrigger value="updateaccount">Update</TabsTrigger>
+                    <TabsTrigger value="updateid">Update ID</TabsTrigger>
                 </TabsList>
                 <TabsContent value="newaccount">
                     <Card className="p-6 space-y-6">
@@ -582,8 +643,169 @@ const NewAccount = () => {
                         </div>
                     </Card>
                 </TabsContent>
-                <TabsContent value="updateaccount">
-                    Updating Account Here
+                <TabsContent value="updateid">
+                    <Card className="p-6 space-y-6 h-full">
+                        <h1 className="text-2xl font-bold text-center">
+                            Update ID
+                        </h1>
+                        {!gettingCustomers &&
+                        customers &&
+                        customers.length > 0 ? (
+                            <div className="space-y-4">
+                                <TextField
+                                    id="search"
+                                    label="Search Customers"
+                                    variant="outlined"
+                                    fullWidth
+                                    value={searchQuery}
+                                    onChange={(e) =>
+                                        setSearchQuery(e.target.value)
+                                    }
+                                    placeholder="Type to search..."
+                                    InputProps={{
+                                        className: 'bg-white',
+                                    }}
+                                />
+
+                                <ScrollArea className="h-[60vh] w-full rounded-md">
+                                    {filteredCustomers.map((customer) => (
+                                        <Popover key={customer.code}>
+                                            <PopoverTrigger asChild>
+                                                <Card
+                                                    // Remove the onClick handler from here
+                                                    className={`p-4 transition-colors cursor-pointer flex flex-row items-center ${
+                                                        selectedCustomer &&
+                                                        selectedCustomer.code ===
+                                                            customer.code
+                                                            ? 'bg-blue-50'
+                                                            : 'hover:bg-gray-50'
+                                                    }`}
+                                                >
+                                                    <button
+                                                        // Add a button wrapper with the onClick handler
+                                                        onClick={() => {
+                                                            setSelectedCustomer(
+                                                                (
+                                                                    prevSelected
+                                                                ) =>
+                                                                    prevSelected &&
+                                                                    prevSelected.code ===
+                                                                        customer.code
+                                                                        ? null
+                                                                        : customer
+                                                            )
+                                                        }}
+                                                        className="w-full flex flex-row items-center"
+                                                        type="button"
+                                                    >
+                                                        <div className="mr-4">
+                                                            <ChevronDown className="h-8 w-8" />
+                                                        </div>
+                                                        <div className="flex flex-col items-start text-left">
+                                                            <span className="font-medium">
+                                                                {
+                                                                    customer.fullName
+                                                                }
+                                                            </span>
+                                                            <span className="text-sm text-gray-500">
+                                                                {
+                                                                    customer.firstLineAddress
+                                                                }
+                                                            </span>
+                                                            <span className="text-sm text-gray-500">
+                                                                {
+                                                                    customer.postcode
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                    </button>
+                                                </Card>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-80">
+                                                <div className="grid gap-4">
+                                                    <div className="gap-4 flex flex-row justify-evenly items-center">
+                                                        <Card className="flex flex-col items-center py-2 px-5">
+                                                            <Camera className="h-8 w-8 mb-2" />
+                                                            <span className="font-medium">
+                                                                Photo 1
+                                                            </span>
+                                                        </Card>
+                                                        <Card className="flex flex-col items-center py-2 px-5">
+                                                            <Camera className="h-8 w-8 mb-2" />
+                                                            <span className="font-medium">
+                                                                Photo 2
+                                                            </span>
+                                                        </Card>
+                                                    </div>
+                                                    <div className="grid gap-2">
+                                                        <div className="grid grid-cols-3 items-center gap-4">
+                                                            <Label>Code:</Label>
+                                                            <span className="col-span-2">
+                                                                {customer.code}
+                                                            </span>
+                                                        </div>
+                                                        <div className="grid grid-cols-3 items-center gap-4">
+                                                            <Label>
+                                                                Payment:
+                                                            </Label>
+                                                            <span className="col-span-2">
+                                                                {
+                                                                    customer.paymentType
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                        {customer.telephone && (
+                                                            <div className="grid grid-cols-3 items-center gap-4">
+                                                                <Label>
+                                                                    Tel:
+                                                                </Label>
+                                                                <span className="col-span-2">
+                                                                    {
+                                                                        customer.telephone
+                                                                    }
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        {customer.paymentType ===
+                                                            'BACS' && (
+                                                            <>
+                                                                <div className="grid grid-cols-3 items-center gap-4">
+                                                                    <Label>
+                                                                        Account
+                                                                        No:
+                                                                    </Label>
+                                                                    <span className="col-span-2">
+                                                                        {
+                                                                            customer.accountNo
+                                                                        }
+                                                                    </span>
+                                                                </div>
+                                                                <div className="grid grid-cols-3 items-center gap-4">
+                                                                    <Label>
+                                                                        Sort
+                                                                        Code:
+                                                                    </Label>
+                                                                    <span className="col-span-2">
+                                                                        {
+                                                                            customer.sortCode
+                                                                        }
+                                                                    </span>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
+                                    ))}
+                                </ScrollArea>
+                            </div>
+                        ) : (
+                            <div className="text-center p-4">
+                                <p>No customers found</p>
+                            </div>
+                        )}
+                    </Card>
                 </TabsContent>
             </Tabs>
         </div>

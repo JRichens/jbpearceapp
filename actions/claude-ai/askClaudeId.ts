@@ -51,8 +51,8 @@ Example format:
 Input Section 1: "SMITH"
 Input Section 2: "MR JOHN MICHAEL"
 Output: "JOHN SMITH"
-- firstLineAddress: Extract only the first line of the address
-- postcode: Take the postcode from the end of section 8
+- firstLineAddress: Extract only the first line of the address found on the DRIVING LICENCE from section 8
+- postcode: Take the postcode from the end of the address found on the DRIVING LICENCE from section 8
 
 3. IMPORTANT:
 - Do not include any other text or explanations
