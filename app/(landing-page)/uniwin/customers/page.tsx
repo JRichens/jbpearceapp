@@ -3,12 +3,13 @@
 import { useState, useRef, useEffect, ChangeEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { askClaudeId } from '@/actions/claude-ai/askClaudeId'
-import { Loader2 } from 'lucide-react'
+import { Camera, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { TextField } from '@mui/material'
+import { useToast } from '@/components/ui/use-toast'
 
 declare global {
     interface Window {
@@ -49,6 +50,8 @@ const NewAccount = () => {
         sortCode: '',
     })
 
+    const { toast } = useToast()
+
     const isFormValid = (): boolean => {
         return (
             formValues.code.length > 0 &&
@@ -56,8 +59,8 @@ const NewAccount = () => {
             formValues.firstLineAddress.length > 0 &&
             formValues.postcode.length > 0 &&
             formValues.registration.length > 0 &&
-            formValues.telephone.length === 11 &&
             ((formValues.paymentType === 'BACS' &&
+                formValues.telephone.length > 0 &&
                 formValues.accountNo.length === 8 &&
                 formValues.sortCode.length === 6) ||
                 formValues.paymentType !== 'BACS')
@@ -115,12 +118,20 @@ const NewAccount = () => {
 
             if (!response.ok) {
                 const errorData = await response.json()
-                throw new Error(errorData.message || 'Submission failed')
+                toast({
+                    title: 'Error',
+                    description: errorData.message,
+                    className: 'bg-red-500 text-white border-none',
+                })
             }
 
             // Handle success
             setError(null)
-            alert('Customer created successfully')
+            toast({
+                title: 'Customer Created',
+                description: 'New customer created successfully in UniWin.',
+                className: 'bg-green-500 text-white border-none',
+            })
 
             // Reset form
             setFormValues({
@@ -316,7 +327,8 @@ const NewAccount = () => {
                                     }
                                     variant="outline"
                                 >
-                                    Select ID Image
+                                    <Camera className="mr-2 h-5 w-5" /> Take
+                                    Photo
                                 </Button>
 
                                 {selectedImage && (
@@ -361,69 +373,59 @@ const NewAccount = () => {
                                     </h2>
 
                                     <div className="space-y-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="code">Code</Label>
-                                            <Input
-                                                id="code"
-                                                value={formValues.code}
-                                                onChange={handleInputChange(
-                                                    'code'
-                                                )}
-                                                placeholder="CODE"
-                                                className="uppercase"
-                                            />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="fullName">
-                                                Full Name
-                                            </Label>
-                                            <Input
-                                                id="fullName"
-                                                value={formValues.fullName}
-                                                onChange={handleInputChange(
-                                                    'fullName'
-                                                )}
-                                                placeholder="Full Name"
-                                            />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="address">
-                                                Address
-                                            </Label>
-                                            <Input
-                                                id="address"
-                                                value={
-                                                    formValues.firstLineAddress
-                                                }
-                                                onChange={handleInputChange(
-                                                    'firstLineAddress'
-                                                )}
-                                                placeholder="Address"
-                                            />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="postcode">
-                                                Postcode
-                                            </Label>
-                                            <Input
+                                        <TextField
+                                            id="code"
+                                            label="Code"
+                                            variant="outlined"
+                                            fullWidth
+                                            value={formValues.code}
+                                            onChange={handleInputChange('code')}
+                                            placeholder="CODE"
+                                            inputProps={{
+                                                style: {
+                                                    textTransform: 'uppercase',
+                                                },
+                                            }}
+                                        />
+                                        <TextField
+                                            id="fullName"
+                                            label="Full Name"
+                                            variant="outlined"
+                                            fullWidth
+                                            value={formValues.fullName}
+                                            onChange={handleInputChange(
+                                                'fullName'
+                                            )}
+                                            placeholder="Full Name"
+                                        />
+                                        <TextField
+                                            id="address"
+                                            label="Address"
+                                            variant="outlined"
+                                            fullWidth
+                                            value={formValues.firstLineAddress}
+                                            onChange={handleInputChange(
+                                                'firstLineAddress'
+                                            )}
+                                            placeholder="Address"
+                                        />
+                                        <div className="flex flex-row items-center w-full gap-2">
+                                            <TextField
                                                 id="postcode"
+                                                label="Postcode"
+                                                variant="outlined"
+                                                fullWidth
                                                 value={formValues.postcode}
                                                 onChange={handleInputChange(
                                                     'postcode'
                                                 )}
                                                 placeholder="Postcode"
                                             />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="registration">
-                                                Registration
-                                            </Label>
-                                            <Input
+                                            <TextField
                                                 id="registration"
+                                                label="Registration"
+                                                variant="outlined"
+                                                fullWidth
                                                 value={formValues.registration
                                                     .toUpperCase()
                                                     .replace(/[^A-Z0-9]/g, '')}
@@ -475,94 +477,84 @@ const NewAccount = () => {
                                         </div>
                                         {formValues.paymentType === 'BACS' && (
                                             <>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="telephone">
-                                                        Telephone No
-                                                    </Label>
-                                                    <Input
-                                                        id="telephone"
-                                                        type="tel"
-                                                        inputMode="numeric"
-                                                        pattern="[0-9]{11}"
-                                                        maxLength={11}
-                                                        value={
-                                                            formValues.telephone
-                                                        }
-                                                        onChange={handleInputChange(
-                                                            'telephone'
-                                                        )}
-                                                        placeholder="11 digit number"
-                                                        // Optional: Add validation styling
-                                                        className={`${
+                                                <TextField
+                                                    id="telephone"
+                                                    label="Telephone No"
+                                                    variant="outlined"
+                                                    fullWidth
+                                                    type="tel"
+                                                    inputMode="numeric"
+                                                    inputProps={{
+                                                        pattern: '[0-9]{11}',
+                                                        maxLength: 11,
+                                                    }}
+                                                    value={formValues.telephone}
+                                                    onChange={handleInputChange(
+                                                        'telephone'
+                                                    )}
+                                                    placeholder="11 digit number"
+                                                    error={
+                                                        !!(
                                                             formValues.telephone &&
                                                             formValues.telephone
                                                                 .length !== 11
-                                                                ? 'border-red-500 focus:ring-red-500'
-                                                                : ''
-                                                        }`}
-                                                    />
-                                                </div>
+                                                        )
+                                                    }
+                                                />
 
                                                 <div className="flex flex-row space-x-2">
-                                                    <div className="space-y-2 flex-1">
-                                                        <Label htmlFor="accountNo">
-                                                            Account No.
-                                                        </Label>
-                                                        <Input
-                                                            id="accountNo"
-                                                            type="text" // Changed to text for better control
-                                                            inputMode="numeric" // Shows numeric keyboard on mobile
-                                                            pattern="[0-9]*"
-                                                            value={
-                                                                formValues.accountNo
-                                                            }
-                                                            onChange={handleInputChange(
-                                                                'accountNo'
-                                                            )}
-                                                            placeholder="8 digit number"
-                                                            className={`${
-                                                                formValues.accountNo &&
-                                                                formValues
-                                                                    .accountNo
-                                                                    .length !==
-                                                                    8
-                                                                    ? 'border-red-500 focus:ring-red-500'
-                                                                    : ''
-                                                            }`}
-                                                        />
-                                                    </div>
+                                                    <TextField
+                                                        id="accountNo"
+                                                        label="Account No."
+                                                        variant="outlined"
+                                                        fullWidth
+                                                        inputMode="numeric"
+                                                        inputProps={{
+                                                            pattern: '[0-9]*',
+                                                        }}
+                                                        value={
+                                                            formValues.accountNo
+                                                        }
+                                                        onChange={handleInputChange(
+                                                            'accountNo'
+                                                        )}
+                                                        placeholder="8 digit number"
+                                                        error={
+                                                            formValues.accountNo &&
+                                                            formValues.accountNo
+                                                                .length !== 8
+                                                                ? true
+                                                                : undefined
+                                                        }
+                                                    />
 
-                                                    <div className="space-y-2 flex-1">
-                                                        <Label htmlFor="sortCode">
-                                                            Sort Code
-                                                        </Label>
-                                                        <Input
-                                                            id="sortCode"
-                                                            type="text" // Changed to text for better control
-                                                            inputMode="numeric" // Shows numeric keyboard on mobile
-                                                            pattern="[0-9]*"
-                                                            value={
-                                                                formValues.sortCode
-                                                            }
-                                                            onChange={handleInputChange(
-                                                                'sortCode'
-                                                            )}
-                                                            placeholder="6 digit number"
-                                                            className={`${
-                                                                formValues.sortCode &&
-                                                                formValues
-                                                                    .sortCode
-                                                                    .length !==
-                                                                    6
-                                                                    ? 'border-red-500 focus:ring-red-500'
-                                                                    : ''
-                                                            }`}
-                                                        />
-                                                    </div>
+                                                    <TextField
+                                                        id="sortCode"
+                                                        label="Sort Code"
+                                                        variant="outlined"
+                                                        fullWidth
+                                                        inputMode="numeric"
+                                                        inputProps={{
+                                                            pattern: '[0-9]*',
+                                                        }}
+                                                        value={
+                                                            formValues.sortCode
+                                                        }
+                                                        onChange={handleInputChange(
+                                                            'sortCode'
+                                                        )}
+                                                        placeholder="6 digit number"
+                                                        error={
+                                                            formValues.sortCode &&
+                                                            formValues.sortCode
+                                                                .length !== 6
+                                                                ? true
+                                                                : undefined
+                                                        }
+                                                    />
                                                 </div>
                                             </>
                                         )}
-
                                         <Button
                                             onClick={handleFormSubmit}
                                             disabled={
@@ -573,10 +565,10 @@ const NewAccount = () => {
                                             {isSubmitting ? (
                                                 <>
                                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                    Submitting...
+                                                    Creating...
                                                 </>
                                             ) : (
-                                                'Submit Form'
+                                                'Create Account'
                                             )}
                                         </Button>
                                         {error && (
