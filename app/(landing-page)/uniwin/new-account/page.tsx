@@ -70,31 +70,44 @@ const NewAccount = () => {
 
         try {
             setIsSubmitting(true)
+
+            // Create FormData object
+            const formData = new FormData()
+
+            // Append all form fields
+            formData.append('code', formValues.code)
+            formData.append('name', formValues.fullName)
+            formData.append('address', formValues.firstLineAddress)
+            formData.append('postcode', formValues.postcode)
+            formData.append('reg', formValues.registration)
+            formData.append('paymenttype', formValues.paymentType)
+            formData.append('tel', formValues.telephone)
+            formData.append(
+                'account',
+                formValues.paymentType === 'BACS' ? formValues.accountNo : ''
+            )
+            formData.append(
+                'sortcode',
+                formValues.paymentType === 'BACS' ? formValues.sortCode : ''
+            )
+
+            // Append the image if it exists
+            if (selectedImage) {
+                // Convert base64 to blob
+                const response = await fetch(selectedImage)
+                const blob = await response.blob()
+                formData.append('image', blob, 'customer-id.jpg')
+            }
+
             const response = await fetch(
                 'https://genuine-calf-newly.ngrok-free.app/customers',
                 {
                     method: 'POST',
                     headers: {
                         'ngrok-skip-browser-warning': '69420',
-                        'Content-Type': 'application/json',
+                        // Remove Content-Type header - it will be set automatically with boundary
                     },
-                    body: JSON.stringify({
-                        code: formValues.code,
-                        name: formValues.fullName,
-                        address: formValues.firstLineAddress,
-                        postcode: formValues.postcode,
-                        reg: formValues.registration,
-                        paymenttype: formValues.paymentType,
-                        tel: formValues.telephone,
-                        account:
-                            formValues.paymentType === 'BACS'
-                                ? formValues.accountNo
-                                : '',
-                        sortcode:
-                            formValues.paymentType === 'BACS'
-                                ? formValues.sortCode
-                                : '',
-                    }),
+                    body: formData,
                 }
             )
 
@@ -103,13 +116,11 @@ const NewAccount = () => {
                 throw new Error(errorData.message || 'Submission failed')
             }
 
-            // Show success message
+            // Handle success
             setError(null)
-            // Reset form or redirect
-            // You might want to add a success state and message
             alert('Customer created successfully')
 
-            // Optional: Reset form
+            // Reset form
             setFormValues({
                 code: '',
                 fullName: '',
