@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { askClaudeId } from '@/actions/claude-ai/askClaudeId'
 import { Loader2 } from 'lucide-react'
 import Image from 'next/image'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 declare global {
     interface Window {
@@ -246,23 +247,36 @@ const NewAccount = () => {
 
     const handleInputChange =
         (field: string) => (e: ChangeEvent<HTMLInputElement>) => {
-            if (field === 'telephone') {
-                // Remove all non-numeric characters
-                const value = e.target.value.replace(/\D/g, '')
-                // Limit to 11 digits
-                const truncatedValue = value.slice(0, 11)
+            // Remove all non-numeric characters
+            const value = e.target.value.replace(/\D/g, '')
 
-                setFormValues((prev) => ({
-                    ...prev,
-                    [field]: truncatedValue,
-                }))
-            } else {
-                // Handle other fields
-                setFormValues((prev) => ({
-                    ...prev,
-                    [field]: e.target.value,
-                }))
+            let maxLength: number
+            switch (field) {
+                case 'telephone':
+                    maxLength = 11
+                    break
+                case 'accountNo':
+                    maxLength = 8
+                    break
+                case 'sortCode':
+                    maxLength = 6
+                    break
+                default:
+                    // For other fields, just use the original value without truncation
+                    setFormValues((prev) => ({
+                        ...prev,
+                        [field]: e.target.value,
+                    }))
+                    return
             }
+
+            // Truncate the value based on the maxLength
+            const truncatedValue = value.slice(0, maxLength)
+
+            setFormValues((prev) => ({
+                ...prev,
+                [field]: truncatedValue,
+            }))
         }
 
     useEffect(() => {
@@ -273,257 +287,313 @@ const NewAccount = () => {
     }, [formValues.fullName])
 
     return (
-        <div className="container mx-auto p-4 max-w-2xl">
-            <Card className="p-6 space-y-6">
-                <h1 className="text-2xl font-bold text-center">
-                    New Account Setup
-                </h1>
+        <div className="container mx-auto p-4 max-w-2xl bg-white">
+            <Tabs defaultValue="newaccount" className="w-[400px]">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="newaccount">New Account</TabsTrigger>
+                    <TabsTrigger value="updateaccount">Update</TabsTrigger>
+                </TabsList>
+                <TabsContent value="newaccount">
+                    <Card className="p-6 space-y-6">
+                        <h1 className="text-2xl font-bold text-center">
+                            New Account Setup
+                        </h1>
 
-                <div className="space-y-4">
-                    <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageSelect}
-                        ref={fileInputRef}
-                        className="hidden"
-                        capture="environment"
-                    />
-
-                    <div className="flex flex-col gap-4 items-center">
-                        <Button
-                            onClick={() => fileInputRef.current?.click()}
-                            variant="outline"
-                        >
-                            Select ID Image
-                        </Button>
-
-                        {selectedImage && (
-                            <div className="relative w-full h-[200px]">
-                                <Image
-                                    src={selectedImage}
-                                    alt="Selected ID"
-                                    fill
-                                    className="object-contain rounded-lg"
-                                />
-                            </div>
-                        )}
-
-                        {selectedImage && (
-                            <Button
-                                onClick={handleSubmit}
-                                disabled={isLoading}
-                                className="w-full"
-                            >
-                                {isLoading ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Processing...
-                                    </>
-                                ) : (
-                                    'Process ID'
-                                )}
-                            </Button>
-                        )}
-                    </div>
-
-                    {error && (
-                        <div className="text-red-500 text-center p-2">
-                            {error}
-                        </div>
-                    )}
-
-                    {idData && (
                         <div className="space-y-4">
-                            <h2 className="font-semibold text-lg">
-                                Extracted Information:
-                            </h2>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageSelect}
+                                ref={fileInputRef}
+                                className="hidden"
+                                capture="environment"
+                            />
 
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="code">Code</Label>
-                                    <Input
-                                        id="code"
-                                        value={formValues.code}
-                                        onChange={handleInputChange('code')}
-                                        placeholder="CODE"
-                                        className="uppercase"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="fullName">Full Name</Label>
-                                    <Input
-                                        id="fullName"
-                                        value={formValues.fullName}
-                                        onChange={handleInputChange('fullName')}
-                                        placeholder="Full Name"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="address">Address</Label>
-                                    <Input
-                                        id="address"
-                                        value={formValues.firstLineAddress}
-                                        onChange={handleInputChange(
-                                            'firstLineAddress'
-                                        )}
-                                        placeholder="Address"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="postcode">Postcode</Label>
-                                    <Input
-                                        id="postcode"
-                                        value={formValues.postcode}
-                                        onChange={handleInputChange('postcode')}
-                                        placeholder="Postcode"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="registration">
-                                        Registration
-                                    </Label>
-                                    <Input
-                                        id="registration"
-                                        value={formValues.registration
-                                            .toUpperCase()
-                                            .replace(/[^A-Z0-9]/g, '')}
-                                        onChange={(e) =>
-                                            setFormValues((prev) => ({
-                                                ...prev,
-                                                registration: e.target.value
-                                                    .toUpperCase()
-                                                    .replace(/[^A-Z0-9]/g, ''),
-                                            }))
-                                        }
-                                        placeholder="Registration"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="paymentType">
-                                        Payment Type
-                                    </Label>
-                                    <select
-                                        id="paymentType"
-                                        value={formValues.paymentType}
-                                        onChange={(e) =>
-                                            setFormValues((prev) => ({
-                                                ...prev,
-                                                paymentType: e.target.value as
-                                                    | 'ACCINV'
-                                                    | 'BACS'
-                                                    | 'CHEQUE',
-                                            }))
-                                        }
-                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        <option value="ACCINV">ACCINV</option>
-                                        <option value="BACS">BACS</option>
-                                        <option value="CHEQUE">CHEQUE</option>
-                                    </select>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="telephone">
-                                        Telephone No
-                                    </Label>
-                                    <Input
-                                        id="telephone"
-                                        type="tel"
-                                        inputMode="numeric"
-                                        pattern="[0-9]{11}"
-                                        maxLength={11}
-                                        value={formValues.telephone}
-                                        onChange={handleInputChange(
-                                            'telephone'
-                                        )}
-                                        placeholder="11 digit number"
-                                        // Optional: Add validation styling
-                                        className={`${
-                                            formValues.telephone &&
-                                            formValues.telephone.length !== 11
-                                                ? 'border-red-500 focus:ring-red-500'
-                                                : ''
-                                        }`}
-                                    />
-                                </div>
-
-                                <div className="flex flex-row space-x-2">
-                                    <div className="space-y-2 flex-1">
-                                        <Label htmlFor="accountNo">
-                                            Account No.
-                                        </Label>
-                                        <Input
-                                            id="accountNo"
-                                            type="text" // Changed to text for better control
-                                            inputMode="numeric" // Shows numeric keyboard on mobile
-                                            pattern="[0-9]*"
-                                            value={formValues.accountNo}
-                                            onChange={handleInputChange(
-                                                'accountNo'
-                                            )}
-                                            placeholder="8 digit number"
-                                            className={`${
-                                                formValues.accountNo &&
-                                                formValues.accountNo.length !==
-                                                    8
-                                                    ? 'border-red-500 focus:ring-red-500'
-                                                    : ''
-                                            }`}
-                                        />
-                                    </div>
-
-                                    <div className="space-y-2 flex-1">
-                                        <Label htmlFor="sortCode">
-                                            Sort Code
-                                        </Label>
-                                        <Input
-                                            id="sortCode"
-                                            type="text" // Changed to text for better control
-                                            inputMode="numeric" // Shows numeric keyboard on mobile
-                                            pattern="[0-9]*"
-                                            value={formValues.sortCode}
-                                            onChange={handleInputChange(
-                                                'sortCode'
-                                            )}
-                                            placeholder="6 digit number"
-                                            className={`${
-                                                formValues.sortCode &&
-                                                formValues.sortCode.length !== 6
-                                                    ? 'border-red-500 focus:ring-red-500'
-                                                    : ''
-                                            }`}
-                                        />
-                                    </div>
-                                </div>
+                            <div className="flex flex-col gap-4 items-center">
                                 <Button
-                                    onClick={handleFormSubmit}
-                                    disabled={!isFormValid() || isSubmitting}
-                                    className="w-full mt-6"
+                                    onClick={() =>
+                                        fileInputRef.current?.click()
+                                    }
+                                    variant="outline"
                                 >
-                                    {isSubmitting ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Submitting...
-                                        </>
-                                    ) : (
-                                        'Submit Form'
-                                    )}
+                                    Select ID Image
                                 </Button>
-                                {error && (
-                                    <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
-                                        {error}
+
+                                {selectedImage && (
+                                    <div className="relative w-full h-[200px]">
+                                        <Image
+                                            src={selectedImage}
+                                            alt="Selected ID"
+                                            fill
+                                            className="object-contain rounded-lg"
+                                        />
                                     </div>
                                 )}
+
+                                {selectedImage && (
+                                    <Button
+                                        onClick={handleSubmit}
+                                        disabled={isLoading}
+                                        className="w-full"
+                                    >
+                                        {isLoading ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Processing...
+                                            </>
+                                        ) : (
+                                            'Process ID'
+                                        )}
+                                    </Button>
+                                )}
                             </div>
+
+                            {error && (
+                                <div className="text-red-500 text-center p-2">
+                                    {error}
+                                </div>
+                            )}
+
+                            {idData && (
+                                <div className="space-y-4">
+                                    <h2 className="font-semibold text-lg">
+                                        Extracted Information:
+                                    </h2>
+
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="code">Code</Label>
+                                            <Input
+                                                id="code"
+                                                value={formValues.code}
+                                                onChange={handleInputChange(
+                                                    'code'
+                                                )}
+                                                placeholder="CODE"
+                                                className="uppercase"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="fullName">
+                                                Full Name
+                                            </Label>
+                                            <Input
+                                                id="fullName"
+                                                value={formValues.fullName}
+                                                onChange={handleInputChange(
+                                                    'fullName'
+                                                )}
+                                                placeholder="Full Name"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="address">
+                                                Address
+                                            </Label>
+                                            <Input
+                                                id="address"
+                                                value={
+                                                    formValues.firstLineAddress
+                                                }
+                                                onChange={handleInputChange(
+                                                    'firstLineAddress'
+                                                )}
+                                                placeholder="Address"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="postcode">
+                                                Postcode
+                                            </Label>
+                                            <Input
+                                                id="postcode"
+                                                value={formValues.postcode}
+                                                onChange={handleInputChange(
+                                                    'postcode'
+                                                )}
+                                                placeholder="Postcode"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="registration">
+                                                Registration
+                                            </Label>
+                                            <Input
+                                                id="registration"
+                                                value={formValues.registration
+                                                    .toUpperCase()
+                                                    .replace(/[^A-Z0-9]/g, '')}
+                                                onChange={(e) =>
+                                                    setFormValues((prev) => ({
+                                                        ...prev,
+                                                        registration:
+                                                            e.target.value
+                                                                .toUpperCase()
+                                                                .replace(
+                                                                    /[^A-Z0-9]/g,
+                                                                    ''
+                                                                ),
+                                                    }))
+                                                }
+                                                placeholder="Registration"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="paymentType">
+                                                Payment Type
+                                            </Label>
+                                            <select
+                                                id="paymentType"
+                                                value={formValues.paymentType}
+                                                onChange={(e) =>
+                                                    setFormValues((prev) => ({
+                                                        ...prev,
+                                                        paymentType: e.target
+                                                            .value as
+                                                            | 'ACCINV'
+                                                            | 'BACS'
+                                                            | 'CHEQUE',
+                                                    }))
+                                                }
+                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                            >
+                                                <option value="ACCINV">
+                                                    ACCINV
+                                                </option>
+                                                <option value="BACS">
+                                                    BACS
+                                                </option>
+                                                <option value="CHEQUE">
+                                                    CHEQUE
+                                                </option>
+                                            </select>
+                                        </div>
+                                        {formValues.paymentType === 'BACS' && (
+                                            <>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="telephone">
+                                                        Telephone No
+                                                    </Label>
+                                                    <Input
+                                                        id="telephone"
+                                                        type="tel"
+                                                        inputMode="numeric"
+                                                        pattern="[0-9]{11}"
+                                                        maxLength={11}
+                                                        value={
+                                                            formValues.telephone
+                                                        }
+                                                        onChange={handleInputChange(
+                                                            'telephone'
+                                                        )}
+                                                        placeholder="11 digit number"
+                                                        // Optional: Add validation styling
+                                                        className={`${
+                                                            formValues.telephone &&
+                                                            formValues.telephone
+                                                                .length !== 11
+                                                                ? 'border-red-500 focus:ring-red-500'
+                                                                : ''
+                                                        }`}
+                                                    />
+                                                </div>
+
+                                                <div className="flex flex-row space-x-2">
+                                                    <div className="space-y-2 flex-1">
+                                                        <Label htmlFor="accountNo">
+                                                            Account No.
+                                                        </Label>
+                                                        <Input
+                                                            id="accountNo"
+                                                            type="text" // Changed to text for better control
+                                                            inputMode="numeric" // Shows numeric keyboard on mobile
+                                                            pattern="[0-9]*"
+                                                            value={
+                                                                formValues.accountNo
+                                                            }
+                                                            onChange={handleInputChange(
+                                                                'accountNo'
+                                                            )}
+                                                            placeholder="8 digit number"
+                                                            className={`${
+                                                                formValues.accountNo &&
+                                                                formValues
+                                                                    .accountNo
+                                                                    .length !==
+                                                                    8
+                                                                    ? 'border-red-500 focus:ring-red-500'
+                                                                    : ''
+                                                            }`}
+                                                        />
+                                                    </div>
+
+                                                    <div className="space-y-2 flex-1">
+                                                        <Label htmlFor="sortCode">
+                                                            Sort Code
+                                                        </Label>
+                                                        <Input
+                                                            id="sortCode"
+                                                            type="text" // Changed to text for better control
+                                                            inputMode="numeric" // Shows numeric keyboard on mobile
+                                                            pattern="[0-9]*"
+                                                            value={
+                                                                formValues.sortCode
+                                                            }
+                                                            onChange={handleInputChange(
+                                                                'sortCode'
+                                                            )}
+                                                            placeholder="6 digit number"
+                                                            className={`${
+                                                                formValues.sortCode &&
+                                                                formValues
+                                                                    .sortCode
+                                                                    .length !==
+                                                                    6
+                                                                    ? 'border-red-500 focus:ring-red-500'
+                                                                    : ''
+                                                            }`}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        <Button
+                                            onClick={handleFormSubmit}
+                                            disabled={
+                                                !isFormValid() || isSubmitting
+                                            }
+                                            className="w-full mt-6"
+                                        >
+                                            {isSubmitting ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    Submitting...
+                                                </>
+                                            ) : (
+                                                'Submit Form'
+                                            )}
+                                        </Button>
+                                        {error && (
+                                            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
+                                                {error}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
-            </Card>
+                    </Card>
+                </TabsContent>
+                <TabsContent value="updateaccount">
+                    Updating Account Here
+                </TabsContent>
+            </Tabs>
         </div>
     )
 }
