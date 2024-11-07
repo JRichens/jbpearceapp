@@ -42,7 +42,15 @@ You are extracting specific information from a UK driving licence. Follow these 
 }
 
 2. FIELD RULES:
-- fullName: Take ONLY the first name from section 2 (after MR/MRS, ignore any middle names) + surname from section 1 (without any titles). For example, if MR JOE RICHENS, just take use JOE.
+- fullName: Extract two components:
+  1. FIRSTNAME: Take ONLY the first word after MR/MRS/MS from section 2 (ignore any middle names)
+  2. SURNAME: Take the full surname from section 1 (remove any titles like DR, MR, MRS, MS)
+  Combine as "FIRSTNAME SURNAME"
+
+Example format:
+Input Section 1: "SMITH"
+Input Section 2: "MR JOHN MICHAEL"
+Output: "JOHN SMITH"
 - firstLineAddress: Extract only the first line of the address
 - postcode: Take the postcode from the end of section 8
 
