@@ -18,9 +18,22 @@ import {
     MapPinned,
     Tractor,
     BellRing,
+    UserCircle2,
 } from 'lucide-react'
 import { BiCar } from 'react-icons/bi'
 import { Button } from '@/components/ui/button'
+
+const MenuItemSkeleton = () => {
+    return (
+        <div className="w-full p-2 flex items-center justify-between rounded-md bg-slate-100 animate-pulse">
+            <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-md bg-slate-200" />
+                <div className="h-4 w-32 bg-slate-200 rounded" />
+            </div>
+            <div className="w-4 h-4 rounded bg-slate-200" />
+        </div>
+    )
+}
 
 export const SidebarItem = () => {
     const router = useRouter()
@@ -29,6 +42,7 @@ export const SidebarItem = () => {
     const [userType, setUserType] = useState('')
     const [landUser, setLandUser] = useState(false)
     const [isPending, startTransition] = useTransition()
+    const [loadingMenu, setLoadingMenu] = useState(false)
 
     const routes = [
         {
@@ -44,11 +58,17 @@ export const SidebarItem = () => {
             access: ['userplus', 'staff', 'admin', 'super'],
         },
         {
-            label: 'Transport PODs',
-            icon: <Truck className="h-6 w-6 mr-2" />,
-            href: `/transport-pods`,
+            label: 'UniWin Customers',
+            icon: <UserCircle2 className="h-6 w-6 mr-2" />,
+            href: `/uniwin/customers`,
             access: ['staff', 'admin', 'super'],
         },
+        // {
+        //     label: 'Transport PODs',
+        //     icon: <Truck className="h-6 w-6 mr-2" />,
+        //     href: `/transport-pods`,
+        //     access: ['staff', 'admin', 'super'],
+        // },
         {
             label: 'Weighbridge',
             icon: <Scale className="h-6 w-6 mr-2" />,
@@ -123,8 +143,15 @@ export const SidebarItem = () => {
         getUserType()
     }, [userId])
 
-    if (!userType) {
-        return null
+    // Show loading state when user type is not yet loaded
+    if (!isLoaded || !userType) {
+        return (
+            <div className="flex flex-col items-center w-full gap-2 px-2">
+                {[...Array(8)].map((_, index) => (
+                    <MenuItemSkeleton key={index} />
+                ))}
+            </div>
+        )
     }
 
     return (

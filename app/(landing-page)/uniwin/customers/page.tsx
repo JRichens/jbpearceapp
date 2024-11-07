@@ -47,6 +47,7 @@ const NewAccount = () => {
         accountNo: '',
         sortCode: '',
     })
+
     const isFormValid = (): boolean => {
         return (
             formValues.code.length > 0 &&
