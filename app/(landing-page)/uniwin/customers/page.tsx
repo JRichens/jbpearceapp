@@ -45,7 +45,15 @@ type ApiResponse = {
     data: IdData[]
 }
 
+interface UpdateImageProps {
+    customerCode: string
+    imagePathNumber: 1 | 2
+}
+
 const NewAccount = () => {
+    const [isUpdating, setIsUpdating] = useState(false)
+    const [updateImageRef, setUpdateImageRef] =
+        useState<HTMLInputElement | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
     const [gettingCustomers, setGettingCustomers] = useState(false)
     const [customers, setCustomers] = useState<IdData[]>([])
@@ -314,6 +322,125 @@ const NewAccount = () => {
             console.error(err)
         } finally {
             setIsLoading(false)
+        }
+    }
+
+    // Function to update customer ID
+    const updateCustomerId = async (
+        customerCode: string,
+        imagePathNumber: 1 | 2,
+        imageData: string
+    ) => {
+        try {
+            // Create FormData object
+            const formData = new FormData()
+
+            // Append the customer code and image path number
+            formData.append('customerCode', customerCode)
+            formData.append('imagePathNumber', imagePathNumber.toString())
+
+            // Convert base64 to blob and append image
+            if (imageData) {
+                const response = await fetch(imageData)
+                const blob = await response.blob()
+                formData.append('image', blob, 'customer-id.jpg')
+            }
+
+            const response = await fetch(
+                'https://genuine-calf-newly.ngrok-free.app/customers',
+                {
+                    method: 'PUT',
+                    headers: {
+                        'ngrok-skip-browser-warning': '69420',
+                    },
+                    body: formData,
+                }
+            )
+
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.message || 'Update failed')
+            }
+
+            const data = await response.json()
+            return data
+        } catch (error) {
+            console.error('Error updating customer ID:', error)
+            throw error
+        }
+    }
+
+    const handleUpdateId = async (customer: IdData, imagePathNumber: 1 | 2) => {
+        try {
+            setIsUpdating(true)
+
+            // Create a file input element
+            const input = document.createElement('input')
+            input.type = 'file'
+            input.accept = 'image/*'
+            input.capture = 'environment'
+
+            // Handle file selection
+            input.onchange = async (e) => {
+                const file = (e.target as HTMLInputElement).files?.[0]
+                if (file) {
+                    try {
+                        // Compress the image
+                        const compressedImage = await compressImage(file)
+
+                        // Update the customer ID
+                        await updateCustomerId(
+                            customer.code,
+                            imagePathNumber,
+                            compressedImage
+                        )
+
+                        // Show success message
+                        toast({
+                            title: 'Success',
+                            description: `ID ${imagePathNumber} updated successfully`,
+                            className: 'bg-green-500 text-white border-none',
+                        })
+
+                        // Refresh the customers list
+                        // You might want to add a function to refresh only the specific customer
+                        const response = await fetch(
+                            'https://genuine-calf-newly.ngrok-free.app/customers',
+                            {
+                                method: 'GET',
+                                headers: {
+                                    'ngrok-skip-browser-warning': '69420',
+                                    'Content-Type': 'application/json',
+                                },
+                            }
+                        )
+
+                        if (response.ok) {
+                            const result: ApiResponse = await response.json()
+                            setCustomers(result.data)
+                        }
+                    } catch (error) {
+                        console.error('Error updating ID:', error)
+                        toast({
+                            title: 'Error',
+                            description: 'Failed to update ID',
+                            className: 'bg-red-500 text-white border-none',
+                        })
+                    }
+                }
+            }
+
+            // Trigger file input
+            input.click()
+        } catch (error) {
+            console.error('Error in handleUpdateId:', error)
+            toast({
+                title: 'Error',
+                description: 'Failed to process update',
+                className: 'bg-red-500 text-white border-none',
+            })
+        } finally {
+            setIsUpdating(false)
         }
     }
 
@@ -722,20 +849,52 @@ const NewAccount = () => {
                                                 </Card>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-80">
-                                                <div className="grid gap-4">
-                                                    <div className="gap-4 flex flex-row justify-evenly items-center">
-                                                        <Card className="flex flex-col items-center py-2 px-5">
-                                                            <Camera className="h-8 w-8 mb-2" />
+                                                <div className="grid gap-2">
+                                                    <div className="gap-2 flex flex-row justify-evenly items-center">
+                                                        <Button
+                                                            variant="outline"
+                                                            className="flex flex-row items-center justify-center gap-1"
+                                                            onClick={() =>
+                                                                handleUpdateId(
+                                                                    customer,
+                                                                    1
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                isUpdating
+                                                            }
+                                                        >
+                                                            {isUpdating ? (
+                                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                            ) : (
+                                                                <Camera className="h-6 w-6" />
+                                                            )}
                                                             <span className="font-medium">
-                                                                Photo 1
+                                                                Update ID 1
                                                             </span>
-                                                        </Card>
-                                                        <Card className="flex flex-col items-center py-2 px-5">
-                                                            <Camera className="h-8 w-8 mb-2" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            className="flex flex-row items-center justify-center gap-1"
+                                                            onClick={() =>
+                                                                handleUpdateId(
+                                                                    customer,
+                                                                    2
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                isUpdating
+                                                            }
+                                                        >
+                                                            {isUpdating ? (
+                                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                            ) : (
+                                                                <Camera className="h-6 w-6" />
+                                                            )}
                                                             <span className="font-medium">
-                                                                Photo 2
+                                                                Update ID 2
                                                             </span>
-                                                        </Card>
+                                                        </Button>
                                                     </div>
                                                     <div className="grid gap-2">
                                                         <div className="grid grid-cols-3 items-center gap-4">
