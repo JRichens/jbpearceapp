@@ -51,6 +51,7 @@ interface UpdateImageProps {
 }
 
 const NewAccount = () => {
+    const [debugLogs, setDebugLogs] = useState<string[]>([])
     const [isUpdating, setIsUpdating] = useState(false)
     const [updateImageRef, setUpdateImageRef] =
         useState<HTMLInputElement | null>(null)
@@ -79,6 +80,12 @@ const NewAccount = () => {
     })
 
     const { toast } = useToast()
+
+    const logDebug = (message: string, data?: any) => {
+        const logMessage = data ? `${message} ${JSON.stringify(data)}` : message
+        setDebugLogs((prev) => [...prev, logMessage])
+        console.log(message, data) // Keep console.log for desktop debugging
+    }
 
     const processImage = async (imageData: string) => {
         try {
@@ -248,16 +255,22 @@ const NewAccount = () => {
 
     const compressImage = (file: File): Promise<string> => {
         return new Promise((resolve, reject) => {
+            console.log('Starting image compression')
             const reader = new FileReader()
             reader.readAsDataURL(file)
 
             reader.onload = (event) => {
+                console.log('File read complete')
                 const img = new window.Image()
                 img.src = event.target?.result as string
 
                 img.onload = () => {
+                    console.log('Image loaded:', {
+                        originalWidth: img.width,
+                        originalHeight: img.height,
+                    })
+
                     const canvas = document.createElement('canvas')
-                    // Calculate 40% of original dimensions
                     const width = img.width * 0.4
                     const height = img.height * 0.4
 
@@ -270,20 +283,20 @@ const NewAccount = () => {
                         return
                     }
 
-                    // Draw resized image
                     ctx.drawImage(img, 0, 0, width, height)
-
-                    // Get compressed base64 string
                     const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8)
+                    console.log('Compression complete')
                     resolve(compressedBase64)
                 }
 
-                img.onerror = () => {
+                img.onerror = (err) => {
+                    console.error('Image load error:', err)
                     reject(new Error('Failed to load image'))
                 }
             }
 
-            reader.onerror = () => {
+            reader.onerror = (err) => {
+                console.error('File read error:', err)
                 reject(new Error('Failed to read file'))
             }
         })
@@ -386,26 +399,39 @@ const NewAccount = () => {
     const handleUpdateId = async (customer: IdData, imagePathNumber: 1 | 2) => {
         try {
             setIsUpdating(true)
+            logDebug('Starting update process', {
+                customerCode: customer.code,
+                imagePathNumber,
+            })
 
-            // Create a file input element
             const input = document.createElement('input')
             input.type = 'file'
             input.accept = 'image/*'
             input.setAttribute('capture', 'environment')
 
-            // Handle file selection
             input.onchange = async (e) => {
                 const file = (e.target as HTMLInputElement).files?.[0]
                 if (file) {
                     try {
-                        // Use the same compression method that works in handleFormSubmit
-                        const compressedImage = await compressImage(file)
+                        logDebug('File selected', {
+                            type: file.type,
+                            size: file.size,
+                            name: file.name,
+                        })
 
-                        // Create FormData using the compressed image
+                        const compressedImage = await compressImage(file)
+                        logDebug('Image compressed')
+
                         const imageResponse = await fetch(compressedImage)
                         const blob = await imageResponse.blob()
+                        logDebug('Blob created', {
+                            type: blob.type,
+                            size: blob.size,
+                        })
+
                         const imageFile = new File([blob], 'customer-id.jpg', {
                             type: 'image/jpeg',
+                            lastModified: new Date().getTime(),
                         })
 
                         const formData = new FormData()
@@ -416,7 +442,7 @@ const NewAccount = () => {
                             imagePathNumber.toString()
                         )
 
-                        // Make the API call
+                        logDebug('Sending update request')
                         const updateResponse = await fetch(
                             'https://genuine-calf-newly.ngrok-free.app/customers',
                             {
@@ -428,8 +454,15 @@ const NewAccount = () => {
                             }
                         )
 
+                        const responseData = await updateResponse.json()
+                        logDebug('Update response', responseData)
+
                         if (!updateResponse.ok) {
-                            throw new Error('Failed to update ID')
+                            throw new Error(
+                                `Failed to update ID: ${JSON.stringify(
+                                    responseData
+                                )}`
+                            )
                         }
 
                         toast({
@@ -456,10 +489,13 @@ const NewAccount = () => {
                             setCustomers(result.data)
                         }
                     } catch (error) {
-                        console.error('Error updating ID:', error)
+                        logDebug('Error in update process', error)
                         toast({
                             title: 'Error',
-                            description: 'Failed to update ID',
+                            description:
+                                error instanceof Error
+                                    ? error.message
+                                    : 'Failed to update ID',
                             className: 'bg-red-500 text-white border-none',
                         })
                     }
@@ -468,7 +504,7 @@ const NewAccount = () => {
 
             input.click()
         } catch (error) {
-            console.error('Error in handleUpdateId:', error)
+            logDebug('Error in handleUpdateId', error)
             toast({
                 title: 'Error',
                 description: 'Failed to process update',
@@ -1004,6 +1040,15 @@ const NewAccount = () => {
                     </Card>
                 </TabsContent>
             </Tabs>
+            {debugLogs.length > 0 && (
+                <div className="fixed bottom-0 left-0 right-0 bg-black/80 text-white p-4 max-h-48 overflow-auto">
+                    {debugLogs.map((log, index) => (
+                        <div key={index} className="text-xs">
+                            {log}
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     )
 }
