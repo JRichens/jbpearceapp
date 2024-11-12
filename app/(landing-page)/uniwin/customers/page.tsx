@@ -391,24 +391,47 @@ const NewAccount = () => {
             const input = document.createElement('input')
             input.type = 'file'
             input.accept = 'image/*'
-            input.capture = 'environment'
+            input.setAttribute('capture', 'environment')
 
             // Handle file selection
             input.onchange = async (e) => {
                 const file = (e.target as HTMLInputElement).files?.[0]
                 if (file) {
                     try {
-                        // Compress the image
+                        // Use the same compression method that works in handleFormSubmit
                         const compressedImage = await compressImage(file)
 
-                        // Update the customer ID
-                        await updateCustomerId(
-                            customer.code,
-                            imagePathNumber,
-                            compressedImage
+                        // Create FormData using the compressed image
+                        const imageResponse = await fetch(compressedImage)
+                        const blob = await imageResponse.blob()
+                        const imageFile = new File([blob], 'customer-id.jpg', {
+                            type: 'image/jpeg',
+                        })
+
+                        const formData = new FormData()
+                        formData.append('image', imageFile, 'customer-id.jpg')
+                        formData.append('customerCode', customer.code)
+                        formData.append(
+                            'imagePathNumber',
+                            imagePathNumber.toString()
                         )
 
-                        // Show success message
+                        // Make the API call
+                        const updateResponse = await fetch(
+                            'https://genuine-calf-newly.ngrok-free.app/customers',
+                            {
+                                method: 'PUT',
+                                headers: {
+                                    'ngrok-skip-browser-warning': '69420',
+                                },
+                                body: formData,
+                            }
+                        )
+
+                        if (!updateResponse.ok) {
+                            throw new Error('Failed to update ID')
+                        }
+
                         toast({
                             title: 'Success',
                             description: `ID ${imagePathNumber} updated successfully`,
@@ -416,8 +439,7 @@ const NewAccount = () => {
                         })
 
                         // Refresh the customers list
-                        // You might want to add a function to refresh only the specific customer
-                        const response = await fetch(
+                        const customersResponse = await fetch(
                             'https://genuine-calf-newly.ngrok-free.app/customers',
                             {
                                 method: 'GET',
@@ -428,8 +450,9 @@ const NewAccount = () => {
                             }
                         )
 
-                        if (response.ok) {
-                            const result: ApiResponse = await response.json()
+                        if (customersResponse.ok) {
+                            const result: ApiResponse =
+                                await customersResponse.json()
                             setCustomers(result.data)
                         }
                     } catch (error) {
@@ -443,7 +466,6 @@ const NewAccount = () => {
                 }
             }
 
-            // Trigger file input
             input.click()
         } catch (error) {
             console.error('Error in handleUpdateId:', error)
@@ -505,6 +527,7 @@ const NewAccount = () => {
                     <TabsTrigger value="newaccount">New Account</TabsTrigger>
                     <TabsTrigger value="updateid">Update ID</TabsTrigger>
                 </TabsList>
+                {/* New Account */}
                 <TabsContent value="newaccount">
                     <Card className="p-6 space-y-6">
                         <h1 className="text-2xl font-bold text-center">
@@ -783,6 +806,7 @@ const NewAccount = () => {
                         </div>
                     </Card>
                 </TabsContent>
+                {/* Update ID */}
                 <TabsContent value="updateid">
                     <Card className="p-6 space-y-6 h-full">
                         <h1 className="text-2xl font-bold text-center">
