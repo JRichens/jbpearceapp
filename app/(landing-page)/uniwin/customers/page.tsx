@@ -1,5 +1,3 @@
-'use client'
-
 import { useState, useRef, useEffect, ChangeEvent } from 'react'
 import {
     Popover,
@@ -16,7 +14,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TextField } from '@mui/material'
 import { useToast } from '@/components/ui/use-toast'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { ImageCapture } from './ImageCapture'
 
 declare global {
     interface Window {
@@ -388,43 +385,64 @@ const NewAccount = () => {
         try {
             setIsUpdating(true)
 
-            const handleImageSelected = async (file: File) => {
-                try {
-                    // Compress the image
-                    const compressedImage = await compressImage(file)
+            // Create a file input element
+            const input = document.createElement('input')
+            input.type = 'file'
+            input.accept = 'image/*'
+            input.capture = 'environment'
 
-                    // Update the customer ID
-                    await updateCustomerId(
-                        customer.code,
-                        imagePathNumber,
-                        compressedImage
-                    )
+            // Handle file selection
+            input.onchange = async (e) => {
+                const file = (e.target as HTMLInputElement).files?.[0]
+                if (file) {
+                    try {
+                        // Compress the image
+                        const compressedImage = await compressImage(file)
 
-                    // Show success message
-                    toast({
-                        title: 'Success',
-                        description: `ID ${imagePathNumber} updated successfully`,
-                        className: 'bg-green-500 text-white border-none',
-                    })
-                } catch (error) {
-                    console.error('Error updating ID:', error)
-                    toast({
-                        title: 'Error',
-                        description: 'Failed to update ID',
-                        className: 'bg-red-500 text-white border-none',
-                    })
-                } finally {
-                    setIsUpdating(false)
+                        // Update the customer ID
+                        await updateCustomerId(
+                            customer.code,
+                            imagePathNumber,
+                            compressedImage
+                        )
+
+                        // Show success message
+                        toast({
+                            title: 'Success',
+                            description: `ID ${imagePathNumber} updated successfully`,
+                            className: 'bg-green-500 text-white border-none',
+                        })
+
+                        // Refresh the customers list
+                        // You might want to add a function to refresh only the specific customer
+                        const response = await fetch(
+                            'https://genuine-calf-newly.ngrok-free.app/customers',
+                            {
+                                method: 'GET',
+                                headers: {
+                                    'ngrok-skip-browser-warning': '69420',
+                                    'Content-Type': 'application/json',
+                                },
+                            }
+                        )
+
+                        if (response.ok) {
+                            const result: ApiResponse = await response.json()
+                            setCustomers(result.data)
+                        }
+                    } catch (error) {
+                        console.error('Error updating ID:', error)
+                        toast({
+                            title: 'Error',
+                            description: 'Failed to update ID',
+                            className: 'bg-red-500 text-white border-none',
+                        })
+                    }
                 }
             }
 
-            return (
-                <ImageCapture
-                    onImageCapture={handleImageSelected}
-                    buttonText={`Update ID ${imagePathNumber}`}
-                    disabled={isUpdating}
-                />
-            )
+            // Trigger file input
+            input.click()
         } catch (error) {
             console.error('Error in handleUpdateId:', error)
             toast({
@@ -432,6 +450,8 @@ const NewAccount = () => {
                 description: 'Failed to process update',
                 className: 'bg-red-500 text-white border-none',
             })
+        } finally {
+            setIsUpdating(false)
         }
     }
 
@@ -842,34 +862,50 @@ const NewAccount = () => {
                                             <PopoverContent className="w-80">
                                                 <div className="grid gap-2">
                                                     <div className="gap-2 flex flex-row justify-evenly items-center">
-                                                        <ImageCapture
-                                                            onImageCapture={(
-                                                                file
-                                                            ) =>
+                                                        <Button
+                                                            variant="outline"
+                                                            className="flex flex-row items-center justify-center gap-1"
+                                                            onClick={() =>
                                                                 handleUpdateId(
                                                                     customer,
                                                                     1
                                                                 )
                                                             }
-                                                            buttonText="Update ID 1"
                                                             disabled={
                                                                 isUpdating
                                                             }
-                                                        />
-                                                        <ImageCapture
-                                                            onImageCapture={(
-                                                                file
-                                                            ) =>
+                                                        >
+                                                            {isUpdating ? (
+                                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                            ) : (
+                                                                <Camera className="h-6 w-6" />
+                                                            )}
+                                                            <span className="font-medium">
+                                                                Update ID 1
+                                                            </span>
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            className="flex flex-row items-center justify-center gap-1"
+                                                            onClick={() =>
                                                                 handleUpdateId(
                                                                     customer,
                                                                     2
                                                                 )
                                                             }
-                                                            buttonText="Update ID 2"
                                                             disabled={
                                                                 isUpdating
                                                             }
-                                                        />
+                                                        >
+                                                            {isUpdating ? (
+                                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                            ) : (
+                                                                <Camera className="h-6 w-6" />
+                                                            )}
+                                                            <span className="font-medium">
+                                                                Update ID 2
+                                                            </span>
+                                                        </Button>
                                                     </div>
                                                     <div className="grid gap-2">
                                                         <div className="grid grid-cols-3 items-center gap-4">
