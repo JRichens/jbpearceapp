@@ -80,6 +80,31 @@ const NewAccount = () => {
 
     const { toast } = useToast()
 
+    const processImage = async (imageData: string) => {
+        try {
+            const response = await fetch(imageData)
+            const blob = await response.blob()
+            return new File([blob], 'customer-id.jpg', { type: 'image/jpeg' })
+        } catch (error) {
+            console.error('Error processing image:', error)
+            throw new Error('Failed to process image')
+        }
+    }
+
+    const createFormData = (
+        image: File,
+        additionalData?: Record<string, string>
+    ) => {
+        const formData = new FormData()
+        formData.append('image', image, 'customer-id.jpg')
+        if (additionalData) {
+            Object.entries(additionalData).forEach(([key, value]) => {
+                formData.append(key, value)
+            })
+        }
+        return formData
+    }
+
     const filteredCustomers = customers
         .filter((customer) =>
             customer.fullName.toLowerCase().includes(searchQuery.toLowerCase())
@@ -145,33 +170,28 @@ const NewAccount = () => {
         try {
             setIsSubmitting(true)
 
-            // Create FormData object
-            const formData = new FormData()
-
-            // Append all form fields
-            formData.append('code', formValues.code)
-            formData.append('name', formValues.fullName)
-            formData.append('address', formValues.firstLineAddress)
-            formData.append('postcode', formValues.postcode)
-            formData.append('reg', formValues.registration)
-            formData.append('paymenttype', formValues.paymentType)
-            formData.append('tel', formValues.telephone)
-            formData.append(
-                'account',
-                formValues.paymentType === 'BACS' ? formValues.accountNo : ''
-            )
-            formData.append(
-                'sortcode',
-                formValues.paymentType === 'BACS' ? formValues.sortCode : ''
-            )
-
-            // Append the image if it exists
+            let imageFile: File | null = null
             if (selectedImage) {
-                // Convert base64 to blob
-                const response = await fetch(selectedImage)
-                const blob = await response.blob()
-                formData.append('image', blob, 'customer-id.jpg')
+                imageFile = await processImage(selectedImage)
             }
+
+            const formData = createFormData(imageFile!, {
+                code: formValues.code,
+                name: formValues.fullName,
+                address: formValues.firstLineAddress,
+                postcode: formValues.postcode,
+                reg: formValues.registration,
+                paymenttype: formValues.paymentType,
+                tel: formValues.telephone,
+                account:
+                    formValues.paymentType === 'BACS'
+                        ? formValues.accountNo
+                        : '',
+                sortcode:
+                    formValues.paymentType === 'BACS'
+                        ? formValues.sortCode
+                        : '',
+            })
 
             const response = await fetch(
                 'https://genuine-calf-newly.ngrok-free.app/customers',
@@ -179,7 +199,6 @@ const NewAccount = () => {
                     method: 'POST',
                     headers: {
                         'ngrok-skip-browser-warning': '69420',
-                        // Remove Content-Type header - it will be set automatically with boundary
                     },
                     body: formData,
                 }
@@ -187,18 +206,14 @@ const NewAccount = () => {
 
             if (!response.ok) {
                 const errorData = await response.json()
-                toast({
-                    title: 'Error',
-                    description: errorData.message,
-                    className: 'bg-red-500 text-white border-none',
-                })
+                throw new Error(
+                    errorData.message || 'Failed to create customer'
+                )
             }
 
-            // Handle success
-            setError(null)
             toast({
-                title: 'Customer Created',
-                description: 'New customer created successfully in UniWin.',
+                title: 'Success',
+                description: 'New customer created successfully',
                 className: 'bg-green-500 text-white border-none',
             })
 
@@ -217,10 +232,15 @@ const NewAccount = () => {
             setSelectedImage(null)
             setIdData(null)
         } catch (error) {
-            setError(
-                error instanceof Error ? error.message : 'Failed to submit form'
-            )
             console.error('Form submission error:', error)
+            toast({
+                title: 'Error',
+                description:
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to submit form',
+                className: 'bg-red-500 text-white border-none',
+            })
         } finally {
             setIsSubmitting(false)
         }
@@ -332,19 +352,12 @@ const NewAccount = () => {
         imageData: string
     ) => {
         try {
-            // Create FormData object
-            const formData = new FormData()
+            const imageFile = await processImage(imageData)
 
-            // Append the customer code and image path number
-            formData.append('customerCode', customerCode)
-            formData.append('imagePathNumber', imagePathNumber.toString())
-
-            // Convert base64 to blob and append image
-            if (imageData) {
-                const response = await fetch(imageData)
-                const blob = await response.blob()
-                formData.append('image', blob, 'customer-id.jpg')
-            }
+            const formData = createFormData(imageFile, {
+                customerCode,
+                imagePathNumber: imagePathNumber.toString(),
+            })
 
             const response = await fetch(
                 'https://genuine-calf-newly.ngrok-free.app/customers',
