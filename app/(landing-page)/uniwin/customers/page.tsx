@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useRef, useEffect, ChangeEvent } from 'react'
 import {
     Popover,
