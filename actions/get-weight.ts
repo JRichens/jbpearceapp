@@ -1,13 +1,14 @@
-"use server"
+'use server'
 
-import { db } from "@/lib/db"
+import { db } from '@/lib/db'
 
 export async function GetWeight() {
-  const latestWeightEntry = await db.saveweight.findFirst({})
-
-  if (!latestWeightEntry) {
-    throw new Error("No weight entries found")
-  }
-
-  return latestWeightEntry
+    try {
+        const latestWeightEntry = await db.saveweight.findFirst({})
+        if (latestWeightEntry) {
+            return latestWeightEntry
+        }
+    } catch (error) {
+        console.error('Failed to fetch latest weight', error)
+    }
 }

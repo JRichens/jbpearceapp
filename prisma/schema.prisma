@@ -270,3 +270,30 @@ model CompanyVehicles {
   TAXstatus     TAXStatus @default(Taxed)
   TAXdays       Int @default(0)
 }
+
+model WeighbridgeTicket {
+  id              String           @id @default(cuid())
+  created         DateTime         @default(now())
+  modified        DateTime         @updatedAt
+  driver          String
+  customer        String?
+  notes           String?
+  materials       TicketMaterial[] // One WeighbridgeTicket can have many TicketMaterials
+}
+
+model TicketMaterial {
+  id              String            @id @default(cuid())
+  created         DateTime          @default(now())
+  modified        DateTime          @updatedAt
+  material        String?
+  weight1         String?
+  date1           DateTime?
+  weight2         String?
+  date2           DateTime?
+  weightDeduction String?
+  priceDeduction  String?
+  
+  // Relation fields
+  weighbridgeTicket   WeighbridgeTicket  @relation(fields: [weighbridgeTicketId], references: [id], onDelete: Cascade)
+  weighbridgeTicketId String
+}

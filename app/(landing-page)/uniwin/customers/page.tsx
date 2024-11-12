@@ -31,7 +31,7 @@ type IdData = {
     firstLineAddress: string
     postcode: string
     registration: string
-    paymentType: 'ACCINV' | 'BACS' | 'CHEQUE'
+    paymentType: 'BACS' | 'CHEQUE'
     telephone: string
     accountNo: string
     sortCode: string
@@ -45,14 +45,7 @@ type ApiResponse = {
     data: IdData[]
 }
 
-interface UpdateImageProps {
-    customerCode: string
-    imagePathNumber: 1 | 2
-}
-
 const NewAccount = () => {
-    const [debugLogs, setDebugLogs] = useState<string[]>([])
-
     const [selectedCustomerForUpdate, setSelectedCustomerForUpdate] =
         useState<IdData | null>(null)
     const [selectedImagePathNumber, setSelectedImagePathNumber] = useState<
@@ -60,8 +53,6 @@ const NewAccount = () => {
     >(1)
     const updateImageInputRef = useRef<HTMLInputElement>(null)
     const [isUpdating, setIsUpdating] = useState(false)
-    const [updateImageRef, setUpdateImageRef] =
-        useState<HTMLInputElement | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
     const [gettingCustomers, setGettingCustomers] = useState(false)
     const [customers, setCustomers] = useState<IdData[]>([])
@@ -88,12 +79,6 @@ const NewAccount = () => {
     })
 
     const { toast } = useToast()
-
-    const logDebug = (message: string, data?: any) => {
-        const logMessage = data ? `${message} ${JSON.stringify(data)}` : message
-        setDebugLogs((prev) => [...prev, logMessage])
-        console.log(message, data) // Keep console.log for desktop debugging
-    }
 
     const processImage = async (imageData: string) => {
         try {
@@ -363,44 +348,6 @@ const NewAccount = () => {
             console.error(err)
         } finally {
             setIsLoading(false)
-        }
-    }
-
-    // Function to update customer ID
-    const updateCustomerId = async (
-        customerCode: string,
-        imagePathNumber: 1 | 2,
-        imageData: string
-    ) => {
-        try {
-            const imageFile = await processImage(imageData)
-
-            const formData = createFormData(imageFile, {
-                customerCode,
-                imagePathNumber: imagePathNumber.toString(),
-            })
-
-            const response = await fetch(
-                'https://genuine-calf-newly.ngrok-free.app/customers',
-                {
-                    method: 'PUT',
-                    headers: {
-                        'ngrok-skip-browser-warning': '69420',
-                    },
-                    body: formData,
-                }
-            )
-
-            if (!response.ok) {
-                const errorData = await response.json()
-                throw new Error(errorData.message || 'Update failed')
-            }
-
-            const data = await response.json()
-            return data
-        } catch (error) {
-            console.error('Error updating customer ID:', error)
-            throw error
         }
     }
 
@@ -710,16 +657,12 @@ const NewAccount = () => {
                                                         ...prev,
                                                         paymentType: e.target
                                                             .value as
-                                                            | 'ACCINV'
                                                             | 'BACS'
                                                             | 'CHEQUE',
                                                     }))
                                                 }
                                                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                             >
-                                                <option value="ACCINV">
-                                                    ACCINV
-                                                </option>
                                                 <option value="BACS">
                                                     BACS
                                                 </option>
@@ -1050,15 +993,6 @@ const NewAccount = () => {
                     </Card>
                 </TabsContent>
             </Tabs>
-            {debugLogs.length > 0 && (
-                <div className="fixed bottom-0 left-0 right-0 bg-black/80 text-white p-4 max-h-48 overflow-auto">
-                    {debugLogs.map((log, index) => (
-                        <div key={index} className="text-xs">
-                            {log}
-                        </div>
-                    ))}
-                </div>
-            )}
         </div>
     )
 }
