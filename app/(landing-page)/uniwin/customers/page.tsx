@@ -52,6 +52,13 @@ interface UpdateImageProps {
 
 const NewAccount = () => {
     const [debugLogs, setDebugLogs] = useState<string[]>([])
+
+    const [selectedCustomerForUpdate, setSelectedCustomerForUpdate] =
+        useState<IdData | null>(null)
+    const [selectedImagePathNumber, setSelectedImagePathNumber] = useState<
+        1 | 2
+    >(1)
+    const updateImageInputRef = useRef<HTMLInputElement>(null)
     const [isUpdating, setIsUpdating] = useState(false)
     const [updateImageRef, setUpdateImageRef] =
         useState<HTMLInputElement | null>(null)
@@ -65,6 +72,7 @@ const NewAccount = () => {
     const [isLoading, setIsLoading] = useState(false)
     const [idData, setIdData] = useState<IdData | null>(null)
     const [error, setError] = useState<string | null>(null)
+
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [formValues, setFormValues] = useState<IdData>({
@@ -399,129 +407,18 @@ const NewAccount = () => {
     const handleUpdateId = async (customer: IdData, imagePathNumber: 1 | 2) => {
         try {
             setIsUpdating(true)
+            setSelectedCustomerForUpdate(customer)
+            setSelectedImagePathNumber(imagePathNumber)
 
-            // Create a file input element
-            const input = document.createElement('input')
-            input.type = 'file'
-            input.accept = 'image/*'
-            // Try specifying multiple capture methods for better iOS compatibility
-            input.setAttribute('capture', 'environment')
-            input.setAttribute('accept', 'image/*;capture=camera')
+            console.log('Starting update process', {
+                customerCode: customer.code,
+                imagePathNumber,
+            })
 
-            // Handle file selection
-            input.onchange = async (e) => {
-                const file = (e.target as HTMLInputElement).files?.[0]
-                if (file) {
-                    try {
-                        console.log('Original file:', {
-                            type: file.type,
-                            size: file.size,
-                            name: file.name,
-                        })
-
-                        // Use the same compression method that works in handleFormSubmit
-                        const compressedImage = await compressImage(file)
-                        console.log('Compressed image generated')
-
-                        // Create FormData using the compressed image
-                        const imageResponse = await fetch(compressedImage)
-                        const blob = await imageResponse.blob()
-                        console.log('Blob created:', {
-                            type: blob.type,
-                            size: blob.size,
-                        })
-
-                        const imageFile = new File([blob], 'customer-id.jpg', {
-                            type: 'image/jpeg',
-                            lastModified: new Date().getTime(),
-                        })
-                        console.log('Image file created:', {
-                            type: imageFile.type,
-                            size: imageFile.size,
-                        })
-
-                        const formData = new FormData()
-                        formData.append('image', imageFile, 'customer-id.jpg')
-                        formData.append('customerCode', customer.code)
-                        formData.append(
-                            'imagePathNumber',
-                            imagePathNumber.toString()
-                        )
-
-                        // Log FormData contents
-                        console.log('FormData contents:', {
-                            customerCode: customer.code,
-                            imagePathNumber,
-                            hasImage: formData.has('image'),
-                        })
-
-                        // Make the API call
-                        const updateResponse = await fetch(
-                            'https://genuine-calf-newly.ngrok-free.app/customers',
-                            {
-                                method: 'PUT',
-                                headers: {
-                                    'ngrok-skip-browser-warning': '69420',
-                                },
-                                body: formData,
-                            }
-                        )
-
-                        // Log the response status
-                        console.log('Update response:', {
-                            status: updateResponse.status,
-                            ok: updateResponse.ok,
-                        })
-
-                        const responseData = await updateResponse.json()
-                        console.log('Response data:', responseData)
-
-                        if (!updateResponse.ok) {
-                            throw new Error(
-                                `Failed to update ID: ${JSON.stringify(
-                                    responseData
-                                )}`
-                            )
-                        }
-
-                        toast({
-                            title: 'Success',
-                            description: `ID ${imagePathNumber} updated successfully`,
-                            className: 'bg-green-500 text-white border-none',
-                        })
-
-                        // Refresh the customers list
-                        const customersResponse = await fetch(
-                            'https://genuine-calf-newly.ngrok-free.app/customers',
-                            {
-                                method: 'GET',
-                                headers: {
-                                    'ngrok-skip-browser-warning': '69420',
-                                    'Content-Type': 'application/json',
-                                },
-                            }
-                        )
-
-                        if (customersResponse.ok) {
-                            const result: ApiResponse =
-                                await customersResponse.json()
-                            setCustomers(result.data)
-                        }
-                    } catch (error) {
-                        console.error('Error updating ID:', error)
-                        toast({
-                            title: 'Error',
-                            description:
-                                error instanceof Error
-                                    ? error.message
-                                    : 'Failed to update ID',
-                            className: 'bg-red-500 text-white border-none',
-                        })
-                    }
-                }
+            // Trigger the file input click
+            if (updateImageInputRef.current) {
+                updateImageInputRef.current.click()
             }
-
-            input.click()
         } catch (error) {
             console.error('Error in handleUpdateId:', error)
             toast({
@@ -529,8 +426,85 @@ const NewAccount = () => {
                 description: 'Failed to process update',
                 className: 'bg-red-500 text-white border-none',
             })
+        }
+    }
+
+    // New function to handle the file processing
+    const handleUpdateIdFile = async (
+        file: File,
+        customerCode: string,
+        imagePathNumber: 1 | 2
+    ) => {
+        try {
+            console.log('File selected', {
+                type: file.type,
+                size: file.size,
+                name: file.name,
+            })
+
+            // Compress the image
+            const compressedImage = await compressImage(file)
+            console.log('Image compressed')
+
+            // Create blob from compressed image
+            const imageResponse = await fetch(compressedImage)
+            const blob = await imageResponse.blob()
+            console.log('Blob created:', {
+                type: blob.type,
+                size: blob.size,
+            })
+
+            // Create FormData
+            const formData = new FormData()
+            const imageFile = new File([blob], 'customer-id.jpg', {
+                type: 'image/jpeg',
+                lastModified: new Date().getTime(),
+            })
+            formData.append('image', imageFile, 'customer-id.jpg')
+            formData.append('customerCode', customerCode)
+            formData.append('imagePathNumber', imagePathNumber.toString())
+
+            console.log('Sending update request')
+
+            // Make the API call
+            const updateResponse = await fetch(
+                'https://genuine-calf-newly.ngrok-free.app/customers',
+                {
+                    method: 'PUT',
+                    headers: {
+                        'ngrok-skip-browser-warning': '69420',
+                    },
+                    body: formData,
+                }
+            )
+
+            const responseData = await updateResponse.json()
+            console.log('Update response', responseData)
+
+            if (!updateResponse.ok) {
+                throw new Error(
+                    `Failed to update ID: ${JSON.stringify(responseData)}`
+                )
+            }
+
+            toast({
+                title: 'Success',
+                description: `ID ${imagePathNumber} updated successfully`,
+                className: 'bg-green-500 text-white border-none',
+            })
+        } catch (error) {
+            console.error('Error updating ID:', error)
+            toast({
+                title: 'Error',
+                description:
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to update ID',
+                className: 'bg-red-500 text-white border-none',
+            })
         } finally {
             setIsUpdating(false)
+            setSelectedCustomerForUpdate(null)
         }
     }
 
@@ -871,6 +845,23 @@ const NewAccount = () => {
                         customers &&
                         customers.length > 0 ? (
                             <div className="space-y-4">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0]
+                                        if (file && selectedCustomerForUpdate) {
+                                            handleUpdateIdFile(
+                                                file,
+                                                selectedCustomerForUpdate.code,
+                                                selectedImagePathNumber
+                                            )
+                                        }
+                                    }}
+                                    ref={updateImageInputRef}
+                                    className="hidden"
+                                    capture="environment"
+                                />
                                 <TextField
                                     id="search"
                                     label="Search Customers"
