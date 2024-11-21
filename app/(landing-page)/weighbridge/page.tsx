@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { GetWeight } from '@/actions/get-weight'
-import { WeighbridgeCapture, User } from '@prisma/client'
+import { WeighbridgeTicket, User } from '@prisma/client'
 import { cn } from '@/lib/utils'
 
 import { Input } from '@/components/ui/input'
@@ -25,7 +25,7 @@ const WeighbridgeDisplay = () => {
     const [isModalOpen, setIsModalOpen] = useState(false)
 
     const [currentUser, setCurrentUser] = useState<User | null>(null)
-    const [weighings, setWeighings] = useState<WeighbridgeCapture[]>([])
+    const [weighings, setWeighings] = useState<WeighbridgeTicket[]>([])
     const [newWeighing, setNewWeighing] = useState({
         created: '',
         driver: currentUser?.name || '',
