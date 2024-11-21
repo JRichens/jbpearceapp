@@ -268,19 +268,34 @@ const VehicleReminders = () => {
                                 zIndex: 1,
                             },
                         }}
-                        muiTableBodyRowProps={({ row, table }) => ({
-                            sx: {
-                                backgroundColor:
-                                    table.getRowModel().rows.indexOf(row) %
-                                        2 ===
-                                    0
+                        muiTableBodyRowProps={({ row, table }) => {
+                            const vehicle = row.original
+                            const isExpiringSoon =
+                                vehicle.TAXstatus !== 'SORN' &&
+                                ((vehicle.MOTdate !== 'No date' &&
+                                    vehicle.MOTdays <= 14) ||
+                                    (vehicle.TAXdate !== 'No date' &&
+                                        vehicle.TAXdays <= 14))
+
+                            return {
+                                sx: {
+                                    backgroundColor: isExpiringSoon
+                                        ? 'rgba(239, 68, 68, 0.2)' // Light red background
+                                        : table
+                                              .getRowModel()
+                                              .rows.indexOf(row) %
+                                              2 ===
+                                          0
                                         ? 'inherit'
                                         : 'rgba(0, 0, 0, 0.02)',
-                                '&:hover': {
-                                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                                    '&:hover': {
+                                        backgroundColor: isExpiringSoon
+                                            ? 'rgba(239, 68, 68, 0.3)' // Slightly darker red on hover
+                                            : 'rgba(0, 0, 0, 0.04)',
+                                    },
                                 },
-                            },
-                        })}
+                            }
+                        }}
                     />
                     <ModifyVehiclePopup
                         open={modifyOpen}
