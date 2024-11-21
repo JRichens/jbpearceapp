@@ -1,26 +1,25 @@
-const withPWA = require('@ducanh2912/next-pwa').default({
-    dest: 'public',
-})
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    reactStrictMode: false,
+    experimental: {
+        serverActionsBodySizeLimit: '10mb',
+    },
     images: {
+        formats: ['image/webp'],
         remotePatterns: [
             {
                 protocol: 'https',
-                hostname: 'img.clerk.com',
+                hostname: 'genuine-calf-newly.ngrok-free.app',
             },
             {
                 protocol: 'https',
-                hostname: 'ws.carwebuk.com',
-            },
-            {
-                protocol: 'https',
-                hostname: 'utfs.io',
+                hostname: '**',
             },
         ],
     },
+    webpack: (config) => {
+        config.externals = [...config.externals, 'canvas', 'jsdom']
+        return config
+    },
 }
 
-module.exports = withPWA(nextConfig)
+module.exports = nextConfig

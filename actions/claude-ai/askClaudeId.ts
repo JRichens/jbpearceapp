@@ -12,6 +12,27 @@ type IdDataResponse = {
     postcode: string
 }
 
+function checkAndCompressBase64(base64String: string): string {
+    // Remove data URL prefix if present
+    const base64Data = base64String.includes('base64,')
+        ? base64String.split('base64,')[1]
+        : base64String
+
+    // Calculate size in bytes
+    const sizeInBytes = Buffer.from(base64Data, 'base64').length
+    const maxSize = 5 * 1024 * 1024 // 5MB in bytes
+
+    if (sizeInBytes > maxSize) {
+        throw new Error(
+            `Image size (${(sizeInBytes / 1024 / 1024).toFixed(
+                2
+            )}MB) exceeds maximum allowed size (5MB)`
+        )
+    }
+
+    return base64Data
+}
+
 export async function askClaudeId(
     base64Image: string
 ): Promise<IdDataResponse | string> {
@@ -20,6 +41,9 @@ export async function askClaudeId(
     }
 
     try {
+        // Check and compress image if needed
+        const processedImage = checkAndCompressBase64(base64Image)
+
         const response = await anthropic.messages.create({
             model: 'claude-3-opus-20240229',
             max_tokens: 1000,
@@ -66,7 +90,7 @@ Output: "JOHN SMITH"
                             source: {
                                 type: 'base64',
                                 media_type: 'image/jpeg',
-                                data: base64Image,
+                                data: processedImage,
                             },
                         },
                     ],
@@ -94,6 +118,10 @@ Output: "JOHN SMITH"
         if (apiError instanceof Error) {
             console.error('Error message:', apiError.message)
             console.error('Error stack:', apiError.stack)
+            // Return a more specific error message if it's a size-related error
+            if (apiError.message.includes('size')) {
+                return 'Error: Image file is too large. Please use a smaller image (maximum 5MB).'
+            }
         }
         return 'Sorry, there was an error calling the AI service.'
     }

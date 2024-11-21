@@ -16,34 +16,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TextField } from '@mui/material'
 import { useToast } from '@/components/ui/use-toast'
 import { ScrollArea } from '@/components/ui/scroll-area'
-
-declare global {
-    interface Window {
-        Image: {
-            new (width?: number, height?: number): HTMLImageElement
-        }
-    }
-}
-
-type IdData = {
-    code: string
-    fullName: string
-    firstLineAddress: string
-    postcode: string
-    registration: string
-    paymentType: 'BACS' | 'CHEQUE'
-    telephone: string
-    accountNo: string
-    sortCode: string
-    image1?: string
-    image2?: string
-}
-
-type ApiResponse = {
-    success: boolean
-    count: number
-    data: IdData[]
-}
+import { IdData, ApiResponse } from './types'
+import {
+    processImage,
+    compressImage,
+    createFormData,
+    isFormValid,
+} from './utils'
 
 const NewAccount = () => {
     const [selectedCustomerForUpdate, setSelectedCustomerForUpdate] =
@@ -63,7 +42,6 @@ const NewAccount = () => {
     const [isLoading, setIsLoading] = useState(false)
     const [idData, setIdData] = useState<IdData | null>(null)
     const [error, setError] = useState<string | null>(null)
-
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [formValues, setFormValues] = useState<IdData>({
@@ -72,7 +50,7 @@ const NewAccount = () => {
         firstLineAddress: '',
         postcode: '',
         registration: '',
-        paymentType: 'BACS', // default value
+        paymentType: 'BACS',
         telephone: '',
         accountNo: '',
         sortCode: '',
@@ -80,38 +58,12 @@ const NewAccount = () => {
 
     const { toast } = useToast()
 
-    const processImage = async (imageData: string) => {
-        try {
-            const response = await fetch(imageData)
-            const blob = await response.blob()
-            return new File([blob], 'customer-id.jpg', { type: 'image/jpeg' })
-        } catch (error) {
-            console.error('Error processing image:', error)
-            throw new Error('Failed to process image')
-        }
-    }
-
-    const createFormData = (
-        image: File,
-        additionalData?: Record<string, string>
-    ) => {
-        const formData = new FormData()
-        formData.append('image', image, 'customer-id.jpg')
-        if (additionalData) {
-            Object.entries(additionalData).forEach(([key, value]) => {
-                formData.append(key, value)
-            })
-        }
-        return formData
-    }
-
     const filteredCustomers = customers
         .filter((customer) =>
             customer.fullName.toLowerCase().includes(searchQuery.toLowerCase())
         )
-        .slice(0, 15) // This limits the results to first 10 matches
+        .slice(0, 15)
 
-    // Get customers from express-server api
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -132,7 +84,6 @@ const NewAccount = () => {
                 }
 
                 const result: ApiResponse = await response.json()
-                // Set customers with the data array from the response
                 setCustomers(result.data)
             } catch (err) {
                 setError(
@@ -146,23 +97,8 @@ const NewAccount = () => {
         fetchData()
     }, [])
 
-    const isFormValid = (): boolean => {
-        return (
-            formValues.code.length > 0 &&
-            formValues.fullName.length > 0 &&
-            formValues.firstLineAddress.length > 0 &&
-            formValues.postcode.length > 0 &&
-            formValues.registration.length > 0 &&
-            ((formValues.paymentType === 'BACS' &&
-                formValues.telephone.length > 0 &&
-                formValues.accountNo.length === 8 &&
-                formValues.sortCode.length === 6) ||
-                formValues.paymentType !== 'BACS')
-        )
-    }
-
     const handleFormSubmit = async () => {
-        if (!isFormValid()) {
+        if (!isFormValid(formValues)) {
             setError('Please fill all required fields correctly')
             return
         }
@@ -217,7 +153,6 @@ const NewAccount = () => {
                 className: 'bg-green-500 text-white border-none',
             })
 
-            // Reset form
             setFormValues({
                 code: '',
                 fullName: '',
@@ -244,55 +179,6 @@ const NewAccount = () => {
         } finally {
             setIsSubmitting(false)
         }
-    }
-
-    const compressImage = (file: File): Promise<string> => {
-        return new Promise((resolve, reject) => {
-            console.log('Starting image compression')
-            const reader = new FileReader()
-            reader.readAsDataURL(file)
-
-            reader.onload = (event) => {
-                console.log('File read complete')
-                const img = new window.Image()
-                img.src = event.target?.result as string
-
-                img.onload = () => {
-                    console.log('Image loaded:', {
-                        originalWidth: img.width,
-                        originalHeight: img.height,
-                    })
-
-                    const canvas = document.createElement('canvas')
-                    const width = img.width * 0.4
-                    const height = img.height * 0.4
-
-                    canvas.width = width
-                    canvas.height = height
-
-                    const ctx = canvas.getContext('2d')
-                    if (!ctx) {
-                        reject(new Error('Could not get canvas context'))
-                        return
-                    }
-
-                    ctx.drawImage(img, 0, 0, width, height)
-                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8)
-                    console.log('Compression complete')
-                    resolve(compressedBase64)
-                }
-
-                img.onerror = (err) => {
-                    console.error('Image load error:', err)
-                    reject(new Error('Failed to load image'))
-                }
-            }
-
-            reader.onerror = (err) => {
-                console.error('File read error:', err)
-                reject(new Error('Failed to read file'))
-            }
-        })
     }
 
     const handleImageSelect = async (
@@ -337,7 +223,6 @@ const NewAccount = () => {
                     accountNo: '',
                     telephone: '',
                 })
-                // Update form values with the extracted data
                 setFormValues((prev) => ({
                     ...prev,
                     ...response,
@@ -362,7 +247,6 @@ const NewAccount = () => {
                 imagePathNumber,
             })
 
-            // Trigger the file input click
             if (updateImageInputRef.current) {
                 updateImageInputRef.current.click()
             }
@@ -376,7 +260,6 @@ const NewAccount = () => {
         }
     }
 
-    // New function to handle the file processing
     const handleUpdateIdFile = async (
         file: File,
         customerCode: string,
@@ -389,11 +272,9 @@ const NewAccount = () => {
                 name: file.name,
             })
 
-            // Compress the image
             const compressedImage = await compressImage(file)
             console.log('Image compressed')
 
-            // Create blob from compressed image
             const imageResponse = await fetch(compressedImage)
             const blob = await imageResponse.blob()
             console.log('Blob created:', {
@@ -401,7 +282,6 @@ const NewAccount = () => {
                 size: blob.size,
             })
 
-            // Create FormData
             const formData = new FormData()
             const imageFile = new File([blob], 'customer-id.jpg', {
                 type: 'image/jpeg',
@@ -413,7 +293,6 @@ const NewAccount = () => {
 
             console.log('Sending update request')
 
-            // Make the API call
             const updateResponse = await fetch(
                 'https://genuine-calf-newly.ngrok-free.app/customers',
                 {
@@ -457,7 +336,6 @@ const NewAccount = () => {
 
     const handleInputChange =
         (field: string) => (e: ChangeEvent<HTMLInputElement>) => {
-            // Remove all non-numeric characters
             const value = e.target.value.replace(/\D/g, '')
 
             let maxLength: number
@@ -472,7 +350,6 @@ const NewAccount = () => {
                     maxLength = 6
                     break
                 default:
-                    // For other fields, just use the original value without truncation
                     setFormValues((prev) => ({
                         ...prev,
                         [field]: e.target.value,
@@ -480,7 +357,6 @@ const NewAccount = () => {
                     return
             }
 
-            // Truncate the value based on the maxLength
             const truncatedValue = value.slice(0, maxLength)
 
             setFormValues((prev) => ({
@@ -754,7 +630,8 @@ const NewAccount = () => {
                                         <Button
                                             onClick={handleFormSubmit}
                                             disabled={
-                                                !isFormValid() || isSubmitting
+                                                !isFormValid(formValues) ||
+                                                isSubmitting
                                             }
                                             className="w-full mt-6"
                                         >
@@ -825,7 +702,6 @@ const NewAccount = () => {
                                         <Popover key={customer.code}>
                                             <PopoverTrigger asChild>
                                                 <Card
-                                                    // Remove the onClick handler from here
                                                     className={`p-4 transition-colors cursor-pointer flex flex-row items-center ${
                                                         selectedCustomer &&
                                                         selectedCustomer.code ===
@@ -835,7 +711,6 @@ const NewAccount = () => {
                                                     }`}
                                                 >
                                                     <button
-                                                        // Add a button wrapper with the onClick handler
                                                         onClick={() => {
                                                             setSelectedCustomer(
                                                                 (

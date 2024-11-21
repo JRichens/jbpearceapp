@@ -33,14 +33,14 @@ const VehicleReminders = () => {
     useEffect(() => {
         if (open || modifyOpen || remindersOpen) return
         const fetchData = async () => {
-            setIsLoading(true) // Set loading to true before fetching
+            setIsLoading(true)
             try {
                 const data = await GetAllCompanyVehicles()
                 setData(data ? data : [])
             } catch (error) {
                 console.error('Error fetching data:', error)
             } finally {
-                setIsLoading(false) // Set loading to false after fetching
+                setIsLoading(false)
             }
         }
         fetchData()
@@ -49,6 +49,11 @@ const VehicleReminders = () => {
     // Sort the data
     const sortedData = useMemo(() => {
         return [...data].sort((a, b) => {
+            // If either vehicle is SORN, move it to the bottom
+            if (a.TAXstatus === 'SORN' && b.TAXstatus === 'SORN') return 0
+            if (a.TAXstatus === 'SORN') return 1
+            if (b.TAXstatus === 'SORN') return -1
+
             const getEffectiveMOTDays = (vehicle: CompanyVehicles): number => {
                 // Ignore MOT days for both 'Agri' and 'NA' statuses
                 if (

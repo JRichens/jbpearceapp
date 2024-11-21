@@ -19,6 +19,7 @@ import {
     Tractor,
     BellRing,
     UserCircle2,
+    ListOrdered,
 } from 'lucide-react'
 import { BiCar } from 'react-icons/bi'
 import { Button } from '@/components/ui/button'
@@ -85,6 +86,12 @@ export const SidebarItem = () => {
             label: 'eBay Vehicle Search',
             icon: <Store className="h-6 w-6 mr-2" />,
             href: `/ebay-vehicle-search`,
+            access: ['staff', 'admin', 'super'],
+        },
+        {
+            label: 'eBay Management',
+            icon: <ListOrdered className="h-6 w-6 mr-2" />,
+            href: `/ebay-listings`,
             access: ['staff', 'admin', 'super'],
         },
         {

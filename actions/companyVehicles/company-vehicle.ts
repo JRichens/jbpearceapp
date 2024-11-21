@@ -3,7 +3,7 @@
 import { db } from '@/lib/db'
 import { auth } from '@clerk/nextjs'
 import { CompanyVehicles, MOTStatus, TAXStatus } from '@prisma/client'
-import { isValid, parse } from 'date-fns'
+import { isValid, parse, isBefore } from 'date-fns'
 
 export async function AddCompanyVehicle(
     reg: string,
@@ -225,22 +225,42 @@ export async function GetAllCompanyVehicles() {
                     }
 
                     if (data.taxStatus === 'Taxed') {
+                        // Check if the existing TAXdate is later than the API's taxDueDate
+                        const existingTaxDate =
+                            vehicle.TAXdate !== 'No date'
+                                ? new Date(vehicle.TAXdate)
+                                : null
+                        const apiTaxDate = new Date(data.taxDueDate)
+
+                        // Only use API date if there's no existing date or if API date is later
+                        const finalTaxDate =
+                            existingTaxDate &&
+                            !isBefore(existingTaxDate, apiTaxDate)
+                                ? existingTaxDate
+                                : apiTaxDate
+
                         const taxDays = Math.round(
-                            (new Date(data.taxDueDate).getTime() - Date.now()) /
+                            (finalTaxDate.getTime() - Date.now()) /
                                 (1000 * 60 * 60 * 24)
                         )
+
                         results.success.push({
                             registration: vehicle.registration,
                             company: vehicle.company,
-                            taxDueDate: data.taxDueDate,
+                            taxDueDate: finalTaxDate
+                                .toISOString()
+                                .split('T')[0],
                             taxDays,
                             motExpiryDate: data.motExpiryDate,
                         })
+
                         return await db.companyVehicles.update({
                             where: { id: vehicle.id },
                             data: {
                                 TAXstatus: 'Taxed',
-                                TAXdate: data.taxDueDate,
+                                TAXdate: finalTaxDate
+                                    .toISOString()
+                                    .split('T')[0],
                                 TAXdays: taxDays,
                             },
                         })
@@ -363,17 +383,30 @@ export async function UpdateCompanyVehicle({
         return parsedDate.toISOString().split('T')[0]
     }
 
+    // Calculate days remaining for a date
+    const calculateDaysRemaining = (dateString: string): number => {
+        if (dateString === 'No date') return 0
+        const date = new Date(dateString)
+        return Math.round((date.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    }
+
     // Validate dates
     const validMOTDate = validateAndFormatDate(MOTdate)
     const validTAXDate = validateAndFormatDate(TAXdate)
 
-    // Prepare update data excluding invalid dates
+    // Calculate days remaining
+    const MOTdays = validMOTDate ? calculateDaysRemaining(validMOTDate) : 0
+    const TAXdays = validTAXDate ? calculateDaysRemaining(validTAXDate) : 0
+
+    // Prepare update data
     const updateData: Record<string, any> = {
         registration,
         company,
         description,
         MOTstatus,
         TAXstatus,
+        MOTdays,
+        TAXdays,
     }
 
     // Only include valid dates in the update
@@ -386,8 +419,18 @@ export async function UpdateCompanyVehicle({
 
     // Update the vehicle
     try {
-        const companyVehicle = await db.companyVehicles.updateMany({
+        // Find the vehicle first
+        const existingVehicle = await db.companyVehicles.findFirst({
             where: { registration },
+        })
+
+        if (!existingVehicle) {
+            throw new Error('Vehicle not found')
+        }
+
+        // Update the vehicle using update instead of updateMany
+        const companyVehicle = await db.companyVehicles.update({
+            where: { id: existingVehicle.id },
             data: updateData,
         })
         return companyVehicle
