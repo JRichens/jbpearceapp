@@ -19,10 +19,10 @@ export default function MyListings() {
             header: 'Image',
             size: 120,
             Cell: ({ row }) =>
-                row.original.imageUrl && (
+                row.original.imageUrls?.[0] && (
                     <div className="w-20 h-20">
                         <Image
-                            src={row.original.imageUrl}
+                            src={row.original.imageUrls[0]}
                             alt={row.original.title}
                             width={80}
                             height={80}
@@ -42,8 +42,8 @@ export default function MyListings() {
             header: 'Price',
             size: 100,
             Cell: ({ row }) => {
-                const value = parseFloat(row.original.price.value)
-                return `£${value.toFixed(2)}`
+                const value = row.original.price.value
+                return `£${value.toString()}`
             },
         },
         {
@@ -52,8 +52,8 @@ export default function MyListings() {
             size: 100,
             Cell: ({ row }) => {
                 if (!row.original.shippingCost) return 'N/A'
-                const value = parseFloat(row.original.shippingCost.value)
-                return value === 0 ? 'FREE' : `£${value.toFixed(2)}`
+                const value = row.original.shippingCost.value
+                return value === 0 ? 'FREE' : `£${value.toString()}`
             },
         },
         {

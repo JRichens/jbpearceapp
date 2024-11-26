@@ -35,11 +35,21 @@ export interface CreateListingParams {
     compatibility?: string // Added compatibility field
 }
 
+export interface Price {
+    value: number
+    currency: string
+}
+
+export interface ShippingCost {
+    value: number
+    currency: string
+}
+
 export interface EbayListing {
     id: string
     title: string
     description: string
-    price: string | number // Allow both string and number
+    price: Price
     condition: string
     conditionDescription?: string
     imageUrls: string[]
@@ -55,8 +65,10 @@ export interface EbayListing {
     vehicle?: Vehicle
     createdAt: Date
     updatedAt: Date
-    watchCount?: number // Added watchCount field
-    shippingProfileId?: string // Added this field
+    watchCount?: number
+    shippingProfileId?: string
+    shippingCost?: ShippingCost
+    listingUrl: string
 }
 
 export interface EbayListingResponse {
