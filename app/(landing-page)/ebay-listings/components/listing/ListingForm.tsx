@@ -119,12 +119,9 @@ export function ListingForm() {
     const handleVerifySubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         try {
-            const result = await handleSubmit(
-                e,
-                formState.isVerified ? 'submit' : 'verify'
-            )
+            await handleSubmit(e, formState.isVerified ? 'submit' : 'verify')
 
-            if (formState.isVerified && result) {
+            if (formState.isVerified) {
                 setShowFeesDialog(false)
                 if (partDescriptionRef.current) {
                     partDescriptionRef.current.focus()
