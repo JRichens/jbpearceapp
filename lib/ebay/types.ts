@@ -45,6 +45,14 @@ export interface ShippingCost {
     currency: string
 }
 
+export interface ShippingProfile {
+    profileId: string
+    profileName: string
+    description: string
+    isDefault: boolean
+    categoryGroups: string[]
+}
+
 export interface EbayListing {
     id: string
     itemId: string
