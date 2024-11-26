@@ -5,13 +5,13 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { MAX_PHOTOS } from './types'
+import { MAX_PHOTOS } from '../../types/listingTypes'
 import {
     startCamera,
     stopCamera,
     captureSquarePhoto,
     convertToJPEG,
-} from './utils'
+} from '../../utils/imageUtils'
 
 interface PhotoUploaderProps {
     photos: File[]
@@ -27,19 +27,80 @@ export function PhotoUploader({
     isLoading,
 }: PhotoUploaderProps) {
     const [isCameraOpen, setIsCameraOpen] = useState(false)
+    const [isCameraInitializing, setIsCameraInitializing] = useState(false)
+    const [cameraError, setCameraError] = useState<string | null>(null)
     const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const streamRef = useRef<MediaStream | null>(null)
 
+    const handleCameraClose = () => {
+        stopCamera(streamRef.current)
+        setIsCameraOpen(false)
+        setCameraError(null)
+        setIsCameraInitializing(false)
+    }
+
     useEffect(() => {
-        if (isCameraOpen) {
-            startCamera(videoRef).then((stream) => {
-                streamRef.current = stream
-            })
-        } else {
+        let mounted = true
+
+        async function initializeCamera() {
+            if (!isCameraOpen) return
+
+            setIsCameraInitializing(true)
+            setCameraError(null)
+
+            try {
+                console.log('Starting camera initialization...')
+                const stream = await startCamera(videoRef)
+
+                if (!mounted) {
+                    if (stream) {
+                        stopCamera(stream)
+                    }
+                    return
+                }
+
+                if (stream) {
+                    console.log('Camera stream obtained successfully')
+                    streamRef.current = stream
+
+                    if (videoRef.current) {
+                        videoRef.current.onloadedmetadata = () => {
+                            if (!mounted) return
+                            console.log('Video metadata loaded')
+                            videoRef.current?.play().catch((error) => {
+                                console.error('Error playing video:', error)
+                                setCameraError('Failed to start video preview')
+                            })
+                        }
+                    }
+                } else {
+                    throw new Error('Failed to initialize camera stream')
+                }
+            } catch (error) {
+                if (!mounted) return
+
+                console.error('Camera initialization error:', error)
+                const errorMessage =
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to initialize camera'
+                setCameraError(errorMessage)
+                toast.error(errorMessage)
+                // Don't close the dialog automatically on error
+            } finally {
+                if (mounted) {
+                    setIsCameraInitializing(false)
+                }
+            }
+        }
+
+        initializeCamera()
+
+        return () => {
+            mounted = false
             stopCamera(streamRef.current)
         }
-        return () => stopCamera(streamRef.current)
     }, [isCameraOpen])
 
     const handlePhotoChange = async (
@@ -83,16 +144,26 @@ export function PhotoUploader({
     }
 
     const capturePhoto = async () => {
-        const capturedFile = await captureSquarePhoto(videoRef, canvasRef)
-        if (capturedFile) {
-            const previewUrl = URL.createObjectURL(capturedFile)
-            onPhotosChange(
-                [...photos, capturedFile],
-                [...photosPreviews, previewUrl]
-            )
-            setIsCameraOpen(false)
-            toast.success('Photo captured successfully')
-        } else {
+        if (!videoRef.current || !videoRef.current.videoWidth) {
+            toast.error('Camera not ready yet. Please wait a moment.')
+            return
+        }
+
+        try {
+            const capturedFile = await captureSquarePhoto(videoRef, canvasRef)
+            if (capturedFile) {
+                const previewUrl = URL.createObjectURL(capturedFile)
+                onPhotosChange(
+                    [...photos, capturedFile],
+                    [...photosPreviews, previewUrl]
+                )
+                handleCameraClose()
+                toast.success('Photo captured successfully')
+            } else {
+                toast.error('Failed to capture photo')
+            }
+        } catch (error) {
+            console.error('Error capturing photo:', error)
             toast.error('Failed to capture photo')
         }
     }
@@ -170,10 +241,38 @@ export function PhotoUploader({
             )}
 
             {/* Camera Dialog */}
-            <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
+            <Dialog
+                open={isCameraOpen}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        handleCameraClose()
+                    } else {
+                        setIsCameraOpen(true)
+                    }
+                }}
+            >
                 <DialogContent className="sm:max-w-[600px] p-0">
                     <div className="relative">
                         <div className="relative aspect-square w-full bg-black overflow-hidden">
+                            {isCameraInitializing && (
+                                <div className="absolute inset-0 flex items-center justify-center text-white bg-black bg-opacity-50 z-10">
+                                    Initializing camera...
+                                </div>
+                            )}
+                            {cameraError && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-white bg-black bg-opacity-50 z-10 p-4">
+                                    <p className="text-center mb-4">
+                                        {cameraError}
+                                    </p>
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        onClick={handleCameraClose}
+                                    >
+                                        Close Camera
+                                    </Button>
+                                </div>
+                            )}
                             <video
                                 ref={videoRef}
                                 autoPlay
@@ -198,6 +297,7 @@ export function PhotoUploader({
                                 type="button"
                                 className="rounded-full w-16 h-16 bg-white"
                                 onClick={capturePhoto}
+                                disabled={isCameraInitializing || !!cameraError}
                             >
                                 <div className="rounded-full w-14 h-14 border-2 border-black" />
                             </Button>

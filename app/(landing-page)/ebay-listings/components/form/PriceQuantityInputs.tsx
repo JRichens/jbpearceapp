@@ -4,8 +4,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
 interface PriceQuantityInputsProps {
-    onPriceChange: () => void
-    onQuantityChange: () => void
+    onPriceChange: (
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement> | string
+    ) => void
+    onQuantityChange: (
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement> | string
+    ) => void
     className?: string
 }
 

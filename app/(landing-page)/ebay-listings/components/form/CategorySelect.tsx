@@ -1,6 +1,6 @@
 'use client'
 
-import { Category } from '../types'
+import { Category } from '../../types/listingTypes'
 import {
     Select,
     SelectContent,

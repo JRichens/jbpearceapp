@@ -19,7 +19,7 @@ export async function GET() {
 
         const listings = await getMyEbayListings()
         const filteredListings = listings.filter(
-            (listing: EbayListing) => listing.watchCount >= 3
+            (listing: EbayListing) => (listing.watchCount ?? 0) >= 3
         )
         return NextResponse.json(filteredListings)
     } catch (error: any) {
@@ -60,6 +60,21 @@ export async function POST(req: Request) {
         const category = formData.get('category') as string
         const shippingProfileId = formData.get('shippingProfileId') as string
         const currency = (formData.get('currency') as string) || 'GBP'
+        const partNumber = formData.get('partNumber') as string
+        const brand = formData.get('brand') as string
+        const make = formData.get('make') as string
+        const paintCode = formData.get('paintCode') as string
+        const placement = formData.get('placement') as string
+        const productionYearInfo = formData.get('productionYearInfo') as string
+
+        // Get vehicle data for hidden fields
+        const vehicleDataStr = formData.get('vehicleData') as string
+        const vehicle = vehicleDataStr ? JSON.parse(vehicleDataStr) : null
+
+        // Parse production year info
+        const productionYearData = productionYearInfo
+            ? JSON.parse(productionYearInfo)
+            : null
 
         // Validate required fields
         if (
@@ -113,7 +128,8 @@ export async function POST(req: Request) {
 
         const listingParams = {
             title,
-            description,
+            description: title, // Use title as the description
+            compatibility: productionYearData?.description || '', // Use production year info description as compatibility
             price,
             condition,
             conditionDescription,
@@ -123,6 +139,28 @@ export async function POST(req: Request) {
             category,
             shippingProfileId,
             location: 'Bristol',
+            partNumber: partNumber || undefined,
+            brand: brand || undefined,
+            make: make || undefined,
+            paintCode: paintCode || undefined,
+            placement: placement || undefined,
+            vehicle: vehicle
+                ? {
+                      vinOriginalDvla: vehicle.vinOriginalDvla,
+                      dvlaYearOfManufacture: vehicle.dvlaYearOfManufacture,
+                      dvlaModel: vehicle.dvlaModel,
+                      dvlaMake: vehicle.dvlaMake,
+                      modelSeries: vehicle.modelSeries,
+                      modelVariant: vehicle.modelVariant,
+                      colourCurrent: vehicle.colourCurrent,
+                      engineCode: vehicle.engineCode,
+                      engineCapacity: vehicle.engineCapacity,
+                      fuelType: vehicle.fuelType,
+                      transmission: vehicle.transmission,
+                      driveType: vehicle.driveType,
+                      euroStatus: vehicle.euroStatus,
+                  }
+                : undefined,
         }
 
         if (isVerification) {
@@ -134,18 +172,30 @@ export async function POST(req: Request) {
                 verificationResult,
             })
         } else {
-            // Submit the listing to eBay
-            const result = await addEbayListing(listingParams)
+            // Check if eBay listing is enabled
+            const enableEbayListing = process.env.ENABLE_EBAY_LISTING === 'true'
 
-            // Store the image keys in the database or a file for later cleanup
-            // This is a better approach than immediate deletion
-            // You might want to implement a separate cleanup job that runs periodically
-            // to delete old images after ensuring they're properly processed by eBay
+            if (!enableEbayListing) {
+                console.log(
+                    'eBay listing is disabled. Simulating successful listing.'
+                )
+                return NextResponse.json({
+                    success: true,
+                    message:
+                        'Test Mode: Listing simulated successfully (eBay listing disabled)',
+                    itemId: 'SIMULATION-' + Date.now(),
+                    testMode: true,
+                })
+            }
+
+            // Submit the listing to eBay only if enabled
+            const result = await addEbayListing(listingParams)
 
             return NextResponse.json({
                 success: true,
-                message: 'Listing submitted successfully',
+                message: 'Listing submitted successfully to eBay',
                 itemId: result.itemId,
+                testMode: false,
             })
         }
     } catch (error: any) {

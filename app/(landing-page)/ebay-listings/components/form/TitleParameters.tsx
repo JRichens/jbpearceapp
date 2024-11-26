@@ -4,9 +4,16 @@ import { Car } from '@prisma/client'
 import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
+import { ProductionYearInfo } from '../../types/listingTypes'
 
 type TitleParameter = {
-    key: keyof Car | 'genuine'
+    key:
+        | keyof Car
+        | 'genuine'
+        | 'passenger'
+        | 'driver'
+        | 'productionYears'
+        | 'productionYearsFL'
     label: string
     value?: string
     isCustom?: boolean
@@ -20,6 +27,18 @@ export const formatNomCC = (value: any): string => {
 
 const TITLE_PARAMETERS: TitleParameter[] = [
     {
+        key: 'passenger',
+        label: 'Passenger',
+        value: 'N/S Passenger Left',
+        isCustom: true,
+    },
+    {
+        key: 'driver',
+        label: 'Driver',
+        value: 'O/S Driver Right',
+        isCustom: true,
+    },
+    {
         key: 'genuine',
         label: 'Genuine',
         value: '✅ GENUINE',
@@ -30,11 +49,21 @@ const TITLE_PARAMETERS: TitleParameter[] = [
     { key: 'modelSeries', label: 'Model Series' },
     { key: 'modelVariant', label: 'Model Variant' },
     { key: 'dvlaYearOfManufacture', label: 'Year' },
-    { key: 'colourCurrent', label: 'Color' },
+    {
+        key: 'productionYears',
+        label: 'Production Years',
+        isCustom: true,
+    },
+    {
+        key: 'productionYearsFL',
+        label: 'Production Years FL',
+        isCustom: true,
+    },
     { key: 'fuelType', label: 'Fuel Type' },
     { key: 'nomCC', label: 'Engine Capacity' },
     { key: 'transmission', label: 'Transmission' },
     { key: 'driveType', label: 'Drive Type' },
+    { key: 'colourCurrent', label: 'Colour' },
 ]
 
 interface TitleParametersProps {
@@ -42,6 +71,7 @@ interface TitleParametersProps {
     selectedParams: Set<string>
     onParamChange: (param: string) => void
     className?: string
+    productionYearInfo?: ProductionYearInfo | null
 }
 
 export function TitleParameters({
@@ -49,28 +79,66 @@ export function TitleParameters({
     selectedParams,
     onParamChange,
     className = '',
+    productionYearInfo,
 }: TitleParametersProps) {
     if (!vehicle) return null
 
-    const formatValue = (param: TitleParameter, vehicleValue: any) => {
-        if (param.isCustom) return param.value
-        if (param.key === 'nomCC') {
-            return formatNomCC(vehicleValue)
+    const formatValue = (param: TitleParameter) => {
+        if (param.isCustom) {
+            if (
+                param.key === 'genuine' ||
+                param.key === 'passenger' ||
+                param.key === 'driver'
+            )
+                return param.value
+            if (productionYearInfo) {
+                if (param.key === 'productionYears') {
+                    return `${productionYearInfo.from} to ${productionYearInfo.to}`
+                }
+                if (
+                    param.key === 'productionYearsFL' &&
+                    productionYearInfo.facelift
+                ) {
+                    return `${productionYearInfo.from} to ${productionYearInfo.facelift}`
+                }
+            }
+            return null
         }
-        return vehicleValue?.toString() || ''
+        const value = vehicle[param.key as keyof Car]
+        if (param.key === 'nomCC' && value) {
+            return formatNomCC(value)
+        }
+        return value?.toString() || ''
     }
 
     return (
         <div className={className}>
-            <ScrollArea className="h-[400px] w-full rounded-md">
-                <div className="grid grid-cols-2 gap-2 p-1">
+            <Label className="text-sm font-medium mb-2 block">
+                Title Parameters
+            </Label>
+            <ScrollArea className="h-[250px] w-full rounded-md border border-gray-200">
+                <div className="grid grid-cols-2 gap-2 p-2">
                     {TITLE_PARAMETERS.map((param) => {
-                        const value = param.isCustom
-                            ? param.value
-                            : vehicle[param.key as keyof Car]
+                        const value = formatValue(param)
                         const isSelected = selectedParams.has(param.key)
 
-                        if (!value && !param.isCustom) return null // Don't show button if no value exists (except for custom parameters)
+                        // Only show production year buttons if we have the info
+                        if (
+                            (param.key === 'productionYears' ||
+                                param.key === 'productionYearsFL') &&
+                            !productionYearInfo
+                        ) {
+                            return null
+                        }
+                        // Don't show FL option if there's no facelift year
+                        if (
+                            param.key === 'productionYearsFL' &&
+                            !productionYearInfo?.facelift
+                        ) {
+                            return null
+                        }
+                        // Don't show button if no value exists (except for custom parameters)
+                        if (!value && !param.isCustom) return null
 
                         return (
                             <button
@@ -97,7 +165,7 @@ export function TitleParameters({
                                             : 'text-gray-900 dark:text-gray-100'
                                     )}
                                 >
-                                    {formatValue(param, value)}
+                                    {value}
                                 </span>
                             </button>
                         )

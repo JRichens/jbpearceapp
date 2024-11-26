@@ -1,8 +1,9 @@
 'use client'
 
-import { Car } from '@prisma/client'
-import { Label } from '@/components/ui/label'
+import { useState } from 'react'
 import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Car } from '@prisma/client'
 
 interface ListingDescriptionProps {
     vehicle: Car | null
@@ -17,27 +18,32 @@ export function ListingDescription({
     onChange,
     className = '',
 }: ListingDescriptionProps) {
+    const [description, setDescription] = useState<string>('')
+
+    const generateDefaultDescription = () => {
+        if (!vehicle) return ''
+        // Only use the part description since vehicle details will be handled by the template
+        return partDescription
+    }
+
+    const handleDescriptionChange = (
+        e: React.ChangeEvent<HTMLTextAreaElement>
+    ) => {
+        setDescription(e.target.value)
+        onChange()
+    }
+
     return (
         <div className={className}>
-            <Label htmlFor="description">Description *</Label>
+            <Label htmlFor="description">Description</Label>
             <Textarea
                 id="description"
                 name="description"
-                placeholder="Enter item description"
-                className="min-h-[100px] text-xl"
+                value={description || generateDefaultDescription()}
+                onChange={handleDescriptionChange}
+                placeholder="Enter detailed item description"
                 required
-                onChange={onChange}
-                defaultValue={
-                    vehicle
-                        ? `${vehicle.dvlaMake} ${vehicle.dvlaModel} ${vehicle.dvlaYearOfManufacture}
-Engine Size: ${vehicle.engineCapacity}cc
-Fuel Type: ${vehicle.fuelType}
-Transmission: ${vehicle.transmission}
-Vehicle Category: ${vehicle.vehicleCategory}
-Colour: ${vehicle.colourCurrent}
-Part: ${partDescription}`
-                        : ''
-                }
+                className="min-h-[200px]"
             />
         </div>
     )

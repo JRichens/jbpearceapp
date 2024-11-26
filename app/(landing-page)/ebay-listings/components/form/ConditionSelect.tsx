@@ -1,6 +1,6 @@
 'use client'
 
-import { CONDITIONS } from '../types'
+import { CONDITIONS } from '../../types/listingTypes'
 import {
     Select,
     SelectContent,
@@ -14,7 +14,9 @@ import { Label } from '@/components/ui/label'
 interface ConditionSelectProps {
     selectedCondition: string
     onConditionChange: (value: string) => void
-    onDescriptionChange: () => void
+    onDescriptionChange: (
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement> | string
+    ) => void
     className?: string
 }
 
@@ -66,7 +68,7 @@ export function ConditionSelect({
                         defaultValue="✅ Good condition"
                         className="text-xl"
                         required
-                        onChange={onDescriptionChange}
+                        onChange={(e) => onDescriptionChange(e)}
                     />
                 </div>
             )}

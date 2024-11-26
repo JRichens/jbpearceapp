@@ -1,4 +1,4 @@
-import { VerificationResult as VerificationResultType } from './types'
+import { VerificationResult as VerificationResultType } from '../../types/listingTypes'
 
 interface VerificationResultProps {
     result: VerificationResultType

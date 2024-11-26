@@ -1,0 +1,568 @@
+<!-- Previous content remains unchanged until the relevant CSS section -->
+<style>
+    :root {
+        --primary-color: #2563eb;
+        --secondary-color: #1e40af;
+        --accent-color: #3b82f6;
+        --background-color: #f8fafc;
+        --border-color: #e2e8f0;
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        --radius: 0.5rem;
+        --max-width: 850px;
+        --spacing: 1rem;
+    }
+
+    .listing-container {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.5;
+        color: var(--text-primary);
+        max-width: var(--max-width);
+        margin: 0 auto;
+        padding: var(--spacing);
+        background-color: var(--background-color);
+    }
+
+    .header {
+        background: white;
+        border-radius: var(--radius);
+        padding: 0.5rem;
+        margin-bottom: 1rem;
+        box-shadow: var(--shadow);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        border: 1px solid var(--border-color);
+        min-height: 60px;
+        box-sizing: border-box;
+        flex-wrap: nowrap;
+        width: 100%;
+    }
+
+    @media (min-width: 768px) {
+        .header {
+            gap: 6rem;
+        }
+    }
+
+    .logo {
+        width: 120px;
+        height: 120px;
+        border-radius: var(--radius);
+        transition: transform 0.2s;
+        background: white;
+        padding: 0.2rem;
+        object-fit: contain;
+        flex-shrink: 0;
+    }
+
+    .logo:hover {
+        transform: scale(1.05);
+    }
+
+    .info-box {
+        width: 120px;
+        height: 120px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.2rem;
+        background: white;
+        border-radius: var(--radius);
+        padding: 1rem;
+        flex-shrink: 0;
+    }
+
+    .info-box h3 {
+        font-size: 1rem;
+        font-weight: 500;
+        margin: 0;
+        color: var(--text-primary);
+    }
+
+    .info-box p {
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .info-box img {
+        width: 30px;
+        height: 30px;
+        opacity: 0.7;
+    }
+
+    .section {
+        background-color: white;
+        border-radius: var(--radius);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: var(--shadow);
+        box-sizing: border-box;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .section-header img {
+        width: 24px;
+        height: 24px;
+        opacity: 0.7;
+    }
+
+    .section-header h2 {
+        font-size: 1.25rem;
+        font-weight: 500;
+        margin: 0;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .specs-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    @media (min-width: 768px) {
+        .vehicle-details .specs-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            grid-auto-rows: minmax(min-content, auto);
+        }
+
+        .vehicle-details .spec-item:last-child:nth-child(odd) {
+            grid-column: 1 / -1;
+        }
+    }
+
+    .spec-item {
+        display: flex;
+        padding: 1rem;
+        background-color: #f8fafc;
+        transition: background-color 0.2s;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        box-sizing: border-box;
+        gap: 1rem;
+    }
+
+    .spec-label {
+        font-weight: 500;
+        color: var(--text-secondary);
+        min-width: 120px;
+    }
+
+    .spec-value {
+        color: var(--text-primary);
+        flex: 1;
+    }
+
+    .vehicle-details .spec-item:nth-child(even) {
+        background-color: white;
+    }
+
+    .spec-item:hover {
+        background-color: #f1f5f9;
+    }
+
+    /* CSS-only tabs */
+    .tabs {
+        margin-bottom: 2rem;
+    }
+
+    .tab-container {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+        padding: 0.75rem;
+        background-color: white;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        margin-bottom: 1rem;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .tab-label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.75rem;
+        background: none;
+        border-radius: var(--radius);
+        color: var(--text-secondary);
+        font-weight: 500;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        width: 100%;
+        text-align: center;
+        min-height: 48px;
+        box-sizing: border-box;
+        flex-wrap: wrap;
+    }
+
+    .tab-label img {
+        width: 18px;
+        height: 18px;
+        opacity: 0.7;
+        flex-shrink: 0;
+    }
+
+    .tab-radio {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    @media (max-width: 768px) {
+        .tab-container {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 480px) {
+        :root {
+            --spacing: 0.75rem;
+        }
+
+        .section {
+            padding: 1rem;
+        }
+
+        .tab-container {
+            grid-template-columns: 1fr;
+        }
+
+        .tab-label {
+            padding: 0.5rem;
+            min-height: 40px;
+        }
+    }
+
+    .tab-label:hover {
+        background-color: #f8fafc;
+        color: var(--primary-color);
+    }
+
+    .tab-label img {
+        width: 18px;
+        height: 18px;
+        opacity: 0.7;
+    }
+
+    .tab-content {
+        display: none;
+        padding: 1.5rem;
+        background: white;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        box-sizing: border-box;
+    }
+
+    .tab-content p {
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    /* Show active tab content */
+    #tab1:checked ~ #content1,
+    #tab2:checked ~ #content2,
+    #tab3:checked ~ #content3,
+    #tab4:checked ~ #content4,
+    #tab5:checked ~ #content5,
+    #tab6:checked ~ #content6 {
+        display: block;
+    }
+
+    /* Style active tab label */
+    #tab1:checked ~ .tab-container .tab-label[for='tab1'],
+    #tab2:checked ~ .tab-container .tab-label[for='tab2'],
+    #tab3:checked ~ .tab-container .tab-label[for='tab3'],
+    #tab4:checked ~ .tab-container .tab-label[for='tab4'],
+    #tab5:checked ~ .tab-container .tab-label[for='tab5'],
+    #tab6:checked ~ .tab-container .tab-label[for='tab6'] {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    #tab1:checked ~ .tab-container .tab-label[for='tab1'] img,
+    #tab2:checked ~ .tab-container .tab-label[for='tab2'] img,
+    #tab3:checked ~ .tab-container .tab-label[for='tab3'] img,
+    #tab4:checked ~ .tab-container .tab-label[for='tab4'] img,
+    #tab5:checked ~ .tab-container .tab-label[for='tab5'] img,
+    #tab6:checked ~ .tab-container .tab-label[for='tab6'] img {
+        filter: brightness(0) invert(1);
+        opacity: 1;
+    }
+
+    .highlight {
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+</style>
+
+<!-- Rest of the HTML content remains unchanged -->
+<div class="listing-container">
+    <header class="header">
+        <img
+            src="https://i.ibb.co/WPmtGJR/JBPLOGO.png"
+            alt="JBP Logo"
+            class="logo"
+        />
+        <div class="info-box">
+            <h3>ELV Centre</h3>
+            <p>EAWML26118</p>
+            <img
+                src="https://i.ibb.co/ynTp7cb/destroying-car.png"
+                alt="ELV Centre"
+            />
+        </div>
+    </header>
+
+    <section class="section">
+        <div class="section-header">
+            <h2>
+                <img
+                    src="https://uxwing.com/wp-content/themes/uxwing/download/transportation-automotive/engine-motor-icon.png"
+                    alt="Part"
+                />
+                Part Information
+            </h2>
+        </div>
+        <div class="specs-grid">
+            <div class="spec-item">
+                <span class="spec-label">Description</span>
+                <span class="spec-value">{{partDescription}}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Part Number</span>
+                <span class="spec-value">{{partNumber}}</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-header">
+            <h2>
+                <img
+                    src="https://uxwing.com/wp-content/themes/uxwing/download/business-professional-services/services-plumber-icon.png"
+                    alt="Compatibility"
+                />
+                Compatibility Guide
+            </h2>
+        </div>
+        <div class="specs-grid">
+            <div class="spec-item" style="display: block">
+                <p style="line-height: 1.6">{{compatibility}}</p>
+                <p style="margin-top: 1rem; font-weight: italic">
+                    *This is a guide only and is not a guarantee of
+                    compatibility
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section vehicle-details">
+        <div class="section-header">
+            <h2>
+                <img
+                    src="https://uxwing.com/wp-content/themes/uxwing/download/transportation-automotive/car-icon.png"
+                    alt="Vehicle"
+                />
+                Vehicle Details
+            </h2>
+        </div>
+        <div class="specs-grid">
+            <div class="spec-item">
+                <span class="spec-label">Make</span>
+                <span class="spec-value">{{make}}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Model</span>
+                <span class="spec-value">{{model}}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Year</span>
+                <span class="spec-value">{{year}}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Series</span>
+                <span class="spec-value">{{series}}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Variant</span>
+                <span class="spec-value">{{variant}}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Color</span>
+                <span class="spec-value">{{color}}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Engine Code</span>
+                <span class="spec-value">{{engineCode}}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Engine Size</span>
+                <span class="spec-value">{{engineSize}}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Fuel Type</span>
+                <span class="spec-value">{{fuelType}}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Transmission</span>
+                <span class="spec-value">{{transmission}}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Drive Type</span>
+                <span class="spec-value">{{driveType}}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Euro Status</span>
+                <span class="spec-value">{{euroStatus}}</span>
+            </div>
+        </div>
+    </section>
+
+    <div class="tabs">
+        <!-- Radio buttons -->
+        <input type="radio" name="tabs" id="tab1" class="tab-radio" checked />
+        <input type="radio" name="tabs" id="tab2" class="tab-radio" />
+        <input type="radio" name="tabs" id="tab3" class="tab-radio" />
+        <input type="radio" name="tabs" id="tab4" class="tab-radio" />
+        <input type="radio" name="tabs" id="tab5" class="tab-radio" />
+        <input type="radio" name="tabs" id="tab6" class="tab-radio" />
+
+        <!-- Tab labels -->
+        <div class="tab-container">
+            <label for="tab1" class="tab-label">
+                <img
+                    src="https://uxwing.com/wp-content/themes/uxwing/download/transportation-automotive/steering-wheel-icon.png"
+                    alt="Condition"
+                />
+                Item Condition
+            </label>
+            <label for="tab2" class="tab-label">
+                <img
+                    src="https://uxwing.com/wp-content/themes/uxwing/download/logistics-shipping-delivery/truck-icon.png"
+                    alt="Shipping"
+                />
+                Shipping
+            </label>
+            <label for="tab3" class="tab-label">
+                <img
+                    src="https://uxwing.com/wp-content/themes/uxwing/download/communication-chat-call/phone-icon.png"
+                    alt="Contact"
+                />
+                Contact
+            </label>
+            <label for="tab4" class="tab-label">
+                <img
+                    src="https://uxwing.com/wp-content/themes/uxwing/download/sport-and-awards/certificate-medal-quality-icon.png"
+                    alt="Warranty"
+                />
+                Warranty
+            </label>
+            <label for="tab5" class="tab-label">
+                <img
+                    src="https://uxwing.com/wp-content/themes/uxwing/download/arrow-direction/reply-all-arrow-icon.png"
+                    alt="Returns"
+                />
+                Returns
+            </label>
+            <label for="tab6" class="tab-label">
+                <img
+                    src="https://uxwing.com/wp-content/themes/uxwing/download/emoji-emoticon/laughing-black-icon.png"
+                    alt="Feedback"
+                />
+                Feedback
+            </label>
+        </div>
+
+        <!-- Tab content -->
+        <div id="content1" class="tab-content">
+            <p>
+                All used parts listed on our website are taken from right-hand
+                drive vehicles (unless otherwise specified). They may have minor
+                scratches, dents, or dirt. The parts will be sold in the
+                condition they are shown in the pictures. The listing title and
+                eBay compatibility list are for reference only. Please verify
+                fitment by checking the part number or visually matching the
+                part. If you are unsure, please contact us for assistance.
+            </p>
+        </div>
+
+        <div id="content2" class="tab-content">
+            <p>
+                We ship to <span class="highlight">UK Mainland Only</span>. We
+                always ship the same day of purchase if paid before 16:00
+                Mon-Fri. Therefore you should typically receive your item within
+                1-2 days of purchase (however, please
+                <span class="highlight">allow 2-3 days</span> for delivery).
+            </p>
+        </div>
+
+        <div id="content3" class="tab-content">
+            <p>
+                If you have any questions or queries, please do not hesitate to
+                contact us. All information can be found at the bottom of the
+                page.<br /><br />
+                <strong>Opening hours:</strong><br />
+                Mon / Fri - 08:00 to 17:00<br />
+                Sat - 08:00 to 14:00
+            </p>
+        </div>
+
+        <div id="content4" class="tab-content">
+            <p>
+                All items are covered by a
+                <span class="highlight">14-day warranty</span> from the date of
+                delivery. To prevent fraudulent returns, we mark all items prior
+                to dispatch. If you receive an item that is faulty or not
+                working properly, please contact us immediately. We will either
+                replace the item or issue a partial or full refund, depending on
+                the circumstances.
+            </p>
+        </div>
+
+        <div id="content5" class="tab-content">
+            <p>
+                All products are subject to a 14-day warranty starting from the
+                date of delivery. We kindly request that you initiate
+                communication with our team prior to initiating a return
+                request. Please be advised that refunds will only be processed
+                upon receipt of the returned item. The item must be returned in
+                its original condition as received.
+            </p>
+        </div>
+
+        <div id="content6" class="tab-content">
+            <p>
+                We greatly appreciate your positive feedback if you are
+                satisfied with both your product and the service provided. In
+                the event of any issues, we kindly request that you reach out to
+                us prior to leaving neutral or negative feedback. Our dedicated
+                support team is readily available to address any concerns you
+                may encounter. We place immense value on our customers and are
+                committed to diligently rectifying any situations to ensure your
+                complete satisfaction.
+            </p>
+        </div>
+    </div>
+</div>
