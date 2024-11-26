@@ -42,6 +42,7 @@ export function PhotoUploader({
 
     useEffect(() => {
         let mounted = true
+        let initTimeout: NodeJS.Timeout
 
         async function initializeCamera() {
             if (!isCameraOpen) return
@@ -49,56 +50,66 @@ export function PhotoUploader({
             setIsCameraInitializing(true)
             setCameraError(null)
 
-            try {
-                console.log('Starting camera initialization...')
-                const stream = await startCamera(videoRef)
-
-                if (!mounted) {
-                    if (stream) {
-                        stopCamera(stream)
+            // Add a small delay to ensure the video element is mounted
+            initTimeout = setTimeout(async () => {
+                try {
+                    console.log('Starting camera initialization...')
+                    if (!videoRef.current) {
+                        console.error('Video element not found, retrying...')
+                        return // Early return to allow retry
                     }
-                    return
-                }
 
-                if (stream) {
-                    console.log('Camera stream obtained successfully')
-                    streamRef.current = stream
+                    const stream = await startCamera(videoRef)
 
-                    if (videoRef.current) {
-                        videoRef.current.onloadedmetadata = () => {
-                            if (!mounted) return
-                            console.log('Video metadata loaded')
-                            videoRef.current?.play().catch((error) => {
-                                console.error('Error playing video:', error)
-                                setCameraError('Failed to start video preview')
-                            })
+                    if (!mounted) {
+                        if (stream) {
+                            stopCamera(stream)
                         }
+                        return
                     }
-                } else {
-                    throw new Error('Failed to initialize camera stream')
-                }
-            } catch (error) {
-                if (!mounted) return
 
-                console.error('Camera initialization error:', error)
-                const errorMessage =
-                    error instanceof Error
-                        ? error.message
-                        : 'Failed to initialize camera'
-                setCameraError(errorMessage)
-                toast.error(errorMessage)
-                // Don't close the dialog automatically on error
-            } finally {
-                if (mounted) {
-                    setIsCameraInitializing(false)
+                    if (stream) {
+                        console.log('Camera stream obtained successfully')
+                        streamRef.current = stream
+
+                        if (videoRef.current) {
+                            videoRef.current.onloadedmetadata = () => {
+                                if (!mounted) return
+                                console.log('Video metadata loaded')
+                                videoRef.current?.play().catch((error) => {
+                                    console.error('Error playing video:', error)
+                                    setCameraError(
+                                        'Failed to start video preview'
+                                    )
+                                })
+                            }
+                        }
+                    } else {
+                        throw new Error('Failed to initialize camera stream')
+                    }
+                } catch (error) {
+                    if (!mounted) return
+
+                    console.error('Camera initialization error:', error)
+                    const errorMessage =
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to initialize camera'
+                    setCameraError(errorMessage)
+                    toast.error(errorMessage)
+                } finally {
+                    if (mounted) {
+                        setIsCameraInitializing(false)
+                    }
                 }
-            }
+            }, 100) // Small delay to ensure DOM is ready
         }
 
         initializeCamera()
 
         return () => {
             mounted = false
+            clearTimeout(initTimeout)
             stopCamera(streamRef.current)
         }
     }, [isCameraOpen])
