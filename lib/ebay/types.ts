@@ -36,25 +36,28 @@ export interface CreateListingParams {
 }
 
 export interface Price {
-    value: number
+    value: number | string
     currency: string
 }
 
 export interface ShippingCost {
-    value: number
+    value: number | string
     currency: string
 }
 
 export interface EbayListing {
     id: string
+    itemId: string
     title: string
     description: string
     price: Price
     condition: string
     conditionDescription?: string
     imageUrls: string[]
+    imageUrl?: string // Single image URL from eBay API
     currency: string
     quantity: number
+    quantityAvailable: number
     category: string
     location: string
     partNumber?: string
@@ -69,6 +72,7 @@ export interface EbayListing {
     shippingProfileId?: string
     shippingCost?: ShippingCost
     listingUrl: string
+    listingStatus: string
 }
 
 export interface EbayListingResponse {

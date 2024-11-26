@@ -81,22 +81,40 @@ export async function getMyEbayListings(): Promise<EbayListing[]> {
                     shippingServiceOptions?.getElementsByTagName(
                         'ShippingServiceCost'
                     )[0]
+                const itemId = getElementText(item, 'ItemID')
 
                 pageListings.push({
-                    itemId: getElementText(item, 'ItemID'),
+                    id: itemId, // Using itemId as the id
+                    itemId: itemId,
                     title: getElementText(item, 'Title'),
+                    description: getElementText(item, 'Description') || '',
                     price: {
                         value: buyItNowPrice?.textContent || '0',
                         currency:
                             buyItNowPrice?.getAttribute('currencyID') || 'GBP',
                     },
                     listingStatus: getElementText(item, 'ListingType'),
+                    condition: getElementText(item, 'ConditionID') || 'Used',
                     imageUrl: getElementText(pictureDetails, 'GalleryURL'),
+                    imageUrls: [getElementText(pictureDetails, 'GalleryURL')], // Using gallery URL as the first image
+                    currency:
+                        buyItNowPrice?.getAttribute('currencyID') || 'GBP',
+                    quantity: getElementNumber(item, 'Quantity') || 1,
+                    quantityAvailable:
+                        getElementNumber(item, 'QuantityAvailable') || 0,
+                    category:
+                        getElementText(item, 'PrimaryCategory/CategoryID') ||
+                        '',
+                    location: getElementText(item, 'Location') || '',
                     listingUrl: getElementText(listingDetails, 'ViewItemURL'),
                     watchCount: getElementNumber(item, 'WatchCount'),
-                    quantityAvailable: getElementNumber(
-                        item,
-                        'QuantityAvailable'
+                    createdAt: new Date(
+                        getElementText(item, 'StartTime') ||
+                            new Date().toISOString()
+                    ),
+                    updatedAt: new Date(
+                        getElementText(item, 'EndTime') ||
+                            new Date().toISOString()
                     ),
                     shippingCost: shippingServiceCost
                         ? {
