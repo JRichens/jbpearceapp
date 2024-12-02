@@ -22,6 +22,11 @@ export interface FeesDialogProps {
     onSubmit: () => void
 }
 
+export interface VehicleCompatibility {
+    kType: string
+    notes: string
+}
+
 export interface ProductionYearInfo {
     from: string
     to: string
@@ -65,8 +70,9 @@ export interface FormState {
     shippingProfileId: string | null
     allowOffers: boolean
     minimumOfferPrice: string
-    searchByPartNumber: boolean // New field for part number search flag
-    activePartNumber: string // New field for storing active part number being searched
+    searchByPartNumber: boolean
+    activePartNumber: string
+    compatibilityList: VehicleCompatibility[]
 }
 
 export interface FormSectionProps {
@@ -105,6 +111,7 @@ export const initialFormState: FormState = {
     shippingProfileId: null,
     allowOffers: false,
     minimumOfferPrice: '0',
-    searchByPartNumber: false, // Initialize search by part number flag as false
-    activePartNumber: '', // Initialize active part number as empty string
+    searchByPartNumber: false,
+    activePartNumber: '',
+    compatibilityList: [],
 }
