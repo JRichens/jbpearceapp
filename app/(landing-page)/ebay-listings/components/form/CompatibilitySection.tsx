@@ -49,12 +49,12 @@ export function CompatibilitySection({
         }))
     }
 
-    // Auto-populate KType from vehicle registration if available
+    // Auto-populate KType from vehicle engine code if available
     const autoPopulateFromVehicle = () => {
-        if (formState.vehicle?.kType) {
+        if (formState.vehicle?.engineCode) {
             setNewCompatibility((prev) => ({
                 ...prev,
-                kType: formState.vehicle?.kType || '',
+                kType: formState.vehicle?.engineCode || '',
             }))
         }
     }
@@ -115,13 +115,13 @@ export function CompatibilitySection({
                             }
                             placeholder="e.g., 27959"
                         />
-                        {formState.vehicle?.kType && (
+                        {formState.vehicle?.engineCode && (
                             <Button
                                 type="button"
                                 variant="outline"
                                 onClick={autoPopulateFromVehicle}
                             >
-                                Use Vehicle KType
+                                Use Engine Code
                             </Button>
                         )}
                     </div>
