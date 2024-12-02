@@ -14,6 +14,14 @@ export interface VerificationResult {
     }
 }
 
+export interface FeesDialogProps {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+    verificationResult: VerificationResult | null
+    isLoading: boolean
+    onSubmit: () => void
+}
+
 export interface ProductionYearInfo {
     from: string
     to: string
