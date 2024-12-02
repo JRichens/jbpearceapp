@@ -41,9 +41,18 @@ export interface CreateListingParams {
 export interface EbayListing {
     itemId: string
     title: string
-    price: number
+    price: {
+        value: number
+        currency?: string
+    }
     watchCount?: number
     quantity: number
     quantitySold: number
     status: string
+    imageUrls?: string[]
+    listingUrl: string
+    shippingCost?: {
+        value: number
+        currency?: string
+    }
 }
