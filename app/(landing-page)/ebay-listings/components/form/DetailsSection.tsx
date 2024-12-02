@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { FormSectionProps } from '../../types/form.types'
 import { capitalizeWords, PLACEMENT_OPTIONS } from '../../utils/form.utils'
-import { useState } from 'react'
+import { updateCar } from '@/actions/cars/update-car'
 
 interface DetailsSectionProps extends FormSectionProps {
     selectedPlacements: string[]
@@ -21,35 +21,6 @@ export function DetailsSection({
 }: DetailsSectionProps) {
     return (
         <div className="space-y-6">
-            <div className="space-y-2">
-                <Label htmlFor="partNumber">Part Number</Label>
-                <Input
-                    id="partNumber"
-                    name="partNumber"
-                    value={formState.partNumber}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        const transformedValue = e.target.value
-                            .trim()
-                            .toUpperCase()
-                        const newEvent = {
-                            ...e,
-                            target: {
-                                ...e.target,
-                                value: transformedValue,
-                            },
-                        } as React.ChangeEvent<HTMLInputElement>
-
-                        setFormState((prev) => ({
-                            ...prev,
-                            partNumber: transformedValue,
-                        }))
-                        onFormChange(newEvent)
-                    }}
-                    placeholder="Enter manufacturer part number"
-                    className="text-xl"
-                />
-            </div>
-
             <div className="space-y-2">
                 <Label htmlFor="make">Make</Label>
                 <Input
@@ -86,7 +57,9 @@ export function DetailsSection({
                     id="paintCode"
                     name="paintCode"
                     value={formState.paintCode}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    onChange={async (
+                        e: React.ChangeEvent<HTMLInputElement>
+                    ) => {
                         const transformedValue = e.target.value
                             .trim()
                             .toUpperCase()
@@ -103,6 +76,20 @@ export function DetailsSection({
                             paintCode: transformedValue,
                         }))
                         onFormChange(newEvent)
+
+                        // Update the car's paint code in the database
+                        if (formState.vehicle?.reg) {
+                            try {
+                                await updateCar(formState.vehicle.reg, {
+                                    paintCode: transformedValue,
+                                })
+                            } catch (error) {
+                                console.error(
+                                    'Failed to update paint code:',
+                                    error
+                                )
+                            }
+                        }
                     }}
                     placeholder="Enter paint code"
                     className="text-xl"

@@ -45,6 +45,7 @@ model Car {
   breaking                 Breaking?
   exporting                Exporting?
   enginePrice              Float? @default(0)
+  paintCode                String?
 }
 
 model EnginePrice {

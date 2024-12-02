@@ -8,13 +8,13 @@ import { Input } from '@/components/ui/input'
 import { useToast } from '@/components/ui/use-toast'
 import { Loader2 } from 'lucide-react'
 
-export const Form = ({
-    setVehicle,
-    search,
-}: {
+interface FormProps {
     setVehicle: Dispatch<SetStateAction<Car | null>>
     search?: string
-}) => {
+    autoFocus?: boolean
+}
+
+export const Form = ({ setVehicle, search, autoFocus = true }: FormProps) => {
     const [reg, setReg] = useState(search ? search : '')
     const [pending, setPending] = useState(false)
     const { toast } = useToast()
@@ -58,7 +58,7 @@ export const Form = ({
                 name="reg"
                 required
                 value={reg}
-                autoFocus
+                autoFocus={autoFocus}
                 placeholder="Registration.."
                 onKeyDown={(event) => {
                     if (event.key === ' ') {

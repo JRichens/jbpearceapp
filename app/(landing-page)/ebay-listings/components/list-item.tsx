@@ -5,7 +5,7 @@ import { ListingForm } from './listing/ListingForm'
 
 export default function ListItem() {
     return (
-        <Card className="p-4 sm:p-6 w-full max-w-[600px]">
+        <Card className="mb-6 px-4 md:px-8 py-4 mx-4 md:mx-8 shadow-md max-w-[600px]">
             <ListingForm />
         </Card>
     )

@@ -39,11 +39,14 @@ export interface FormState {
     title: string
     partDescription: string
     partNumber: string
+    partNumbers: string[]
     brand: string
     make: string
     paintCode: string
     placement: string
     price: string
+    quantity: string
+    showMinimumOffer: boolean
     verificationResult: VerificationResult | null
     isVerified: boolean
     selectedCondition: string
@@ -52,6 +55,18 @@ export interface FormState {
     selectedTitleParams: Set<string>
     productionYearInfo: ProductionYearInfo | null
     shippingProfileId: string | null
+    allowOffers: boolean
+    minimumOfferPrice: string
+    searchByPartNumber: boolean // New field for part number search flag
+    activePartNumber: string // New field for storing active part number being searched
+}
+
+export interface FormSectionProps {
+    formState: FormState
+    setFormState: React.Dispatch<React.SetStateAction<FormState>>
+    onFormChange: (
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement> | string
+    ) => void
 }
 
 export const initialFormState: FormState = {
@@ -64,11 +79,14 @@ export const initialFormState: FormState = {
     title: '',
     partDescription: '',
     partNumber: '',
+    partNumbers: [''],
     brand: '',
     make: '',
     paintCode: '',
     placement: '',
     price: '0',
+    quantity: '1',
+    showMinimumOffer: false,
     verificationResult: null,
     isVerified: false,
     selectedCondition: 'Used',
@@ -77,4 +95,8 @@ export const initialFormState: FormState = {
     selectedTitleParams: new Set(['dvlaMake', 'dvlaModel', 'modelSeries']),
     productionYearInfo: null,
     shippingProfileId: null,
+    allowOffers: false,
+    minimumOfferPrice: '0',
+    searchByPartNumber: false, // Initialize search by part number flag as false
+    activePartNumber: '', // Initialize active part number as empty string
 }

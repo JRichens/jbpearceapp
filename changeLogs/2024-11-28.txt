@@ -1,0 +1,208 @@
+##############################################################################################
+[2024-11-28 16:00] - #0010 - Added Price Comparison Navigation and Form State Persistence
+
+Files Modified:
+1. app/(landing-page)/ebay-listings/components/listing/ListingForm.tsx
+   - Added transition button between Listing and Price Comparison views
+   - Implemented pageNumber state for view switching
+   - Added Price Comparisons view placeholder (upcoming feature for similar eBay items)
+
+2. app/(landing-page)/ebay-listings/types/listingTypes.ts
+   - Added showMinimumOffer to FormState interface
+   - Updated initialFormState with new fields
+   - Enhanced type safety for form state management
+
+3. app/(landing-page)/ebay-listings/components/form/PriceQuantityInputs.tsx
+   - Updated to use form state for all fields
+   - Fixed persistence of price, quantity, and offer settings
+
+4. app/(landing-page)/ebay-listings/components/form/ShippingProfileSelect.tsx
+   - Fixed default "Please select..." placeholder behavior
+   - Improved shipping profile state management
+   - Enhanced form validation for shipping profile selection
+
+Changes Summary:
+- Added navigation between Listing and Price Comparison views
+- Implemented proper form state persistence across view changes
+- Fixed shipping profile dropdown default behavior
+- Prepared foundation for upcoming price comparison feature
+- Enhanced overall form validation and state management
+
+##############################################################################################
+[2024-11-28 14:20] - #0009 - Added Auto Accept Price Calculation
+
+Files Modified:
+1. app/(landing-page)/ebay-listings/components/form/PriceQuantityInputs.tsx
+   - Added automatic calculation of auto accept price (listing price -15% rounded to £5)
+   - Updated field label to "Auto Accept Price (£)"
+
+Changes Summary:
+- Implemented automatic price calculation for Best Offer auto accept
+- Enhanced UX with clear labeling and automatic updates
+
+##############################################################################################
+[2024-11-28 12:50] - #0008 - Added Minimum Offer Price Feature
+
+Files Modified:
+1. lib/ebay/add-listing.ts & verify-listing.ts
+   - Updated XML to use ListingDetails.MinimumBestOfferPrice and BestOfferAutoAcceptPrice
+   - Added proper handling for minimum offer prices in eBay API requests
+
+2. lib/ebay/get-category-features.ts (New)
+   - Added category feature checking for auto-decline support
+   - Implemented GetCategoryFeatures API call
+
+3. app/api/ebay-listings/route.ts
+   - Added category feature verification before setting minimum prices
+   - Enhanced error handling for unsupported categories
+
+Changes Summary:
+- Added minimum offer price support with auto-decline and auto-accept
+- Added category feature verification
+- Improved error handling and logging
+
+##############################################################################################
+[2024-11-28 11:55] - #0007 - Added Allow Offers Feature
+
+Files Modified:
+1. app/(landing-page)/ebay-listings/components/form/PriceQuantityInputs.tsx
+   - Added Allow Offers checkbox under price and quantity inputs
+   - Implemented onChange handler for checkbox state
+
+2. app/(landing-page)/ebay-listings/types/form.types.ts
+   - Added allowOffers boolean to FormState interface
+   - Updated initialFormState with allowOffers default value
+
+3. app/(landing-page)/ebay-listings/types/listingTypes.ts
+   - Added allowOffers to FormState interface
+   - Updated initialFormState with allowOffers default value
+
+4. app/(landing-page)/ebay-listings/components/listing/ListingForm.tsx
+   - Added handleAllowOffersChange function
+   - Implemented state management for allowOffers
+   - Added logging for debugging state changes
+
+5. app/(landing-page)/ebay-listings/hooks/useListingForm.ts
+   - Modified handleSubmit to properly include allowOffers in FormData
+   - Added logging for form submission state
+
+6. app/api/ebay-listings/route.ts
+   - Updated POST handler to process allowOffers parameter
+   - Added type conversion from string to boolean
+   - Added logging for server-side verification
+
+7. lib/ebay/add-listing.ts
+   - Added allowOffers to CreateListingParams interface
+   - Modified XML generation to include BestOfferDetails section
+   - Added proper boolean handling in eBay API request
+
+8. lib/ebay/verify-listing.ts
+   - Added allowOffers parameter handling
+   - Updated verification XML to include BestOfferDetails
+   - Maintained consistency with actual listing creation
+
+Changes Summary:
+- Implemented Best Offer functionality for eBay listings
+- Added UI control through checkbox in price/quantity section
+- Enhanced type safety with proper interface updates
+- Added comprehensive logging throughout the flow
+- Ensured consistent handling in both verification and listing creation
+- Maintained existing functionality while adding new feature
+
+##############################################################################################
+[2024-11-28 11:15] - #0006 - Added Paint Code Storage
+
+Files Modified:
+1. actions/cars/update-car.ts
+   - Created server action for updating car paint code
+   - Added error handling and type safety
+
+2. app/(landing-page)/ebay-listings/components/listing/ListingForm.tsx
+   - Integrated paint code saving after successful listing verification
+   - Added error handling with toast notifications
+   - Fixed form submission handling to prevent FormData errors
+
+Changes Summary:
+- Implemented persistent storage of paint codes in database
+- Enhanced error handling with user feedback
+- Improved form submission flow
+
+##############################################################################################
+[2024-11-28 10:52] - #0005 - Added Toast Notifications
+
+Files Modified:
+1. app/(landing-page)/ebay-listings/components/listing/ListingForm.tsx
+   - Added success toast with green styling
+   - Added error toast for failed submissions
+
+Changes Summary:
+- Implemented visual feedback for listing submission status
+- Enhanced UX with clear success/error indicators
+
+##############################################################################################
+[2024-11-28 10:40] - #0004 - Enhanced Part Number Functionality
+
+Files Modified:
+1. app/(landing-page)/ebay-listings/components/form/PartDescriptionSection.tsx
+   - Added support for multiple part number inputs with Plus/Remove buttons
+   - Implemented state management for multiple part numbers
+   - Added reset functionality when form is submitted
+   - Updated UI to show multiple part number fields dynamically
+   - Modified RegForm to prevent auto-focus when displayed
+
+2. app/(landing-page)/_components/reg-form.tsx
+   - Added optional autoFocus prop with default true value
+   - Maintained backward compatibility for other uses of the component
+
+3. app/(landing-page)/ebay-listings/components/listing/ListingForm.tsx
+   - Added ref handling for PartDescriptionSection
+   - Implemented reset for part numbers on form submission
+
+4. lib/ebay/add-listing.ts
+   - Added stripPartNumber helper function to remove spaces and hyphens
+   - Modified part number handling in eBay listing creation:
+     * Manufacturer Part Number: Preserves original format (e.g., "354-H323")
+     * Reference OE/OEM Number: Uses stripped format (e.g., "354H323")
+
+Changes Summary:
+- Enhanced part number input with multiple field support
+- Improved user experience with dynamic field addition/removal
+- Added proper form reset functionality
+- Optimized part number formatting for eBay listing compatibility
+- Maintained existing functionality while adding new features
+
+##############################################################################################
+[2024-11-28 10:20] - #0003 - Fixed Ampersand Handling in Category Search
+
+Files Modified:
+1. lib/ebay/get-categories.ts
+   - Added sanitization of search terms to remove ampersand symbols
+   - Applied fix to both findSimilarListingsCategories and fallback category search
+   - Prevents XML parsing issues when searching categories with '&' character
+
+##############################################################################################
+[2024-11-28 10:10] - #0002 - Added Conditional RegForm Display
+
+Files Modified:
+1. app/(landing-page)/ebay-listings/components/form/PartDescriptionSection.tsx
+   - Added conditional rendering for RegForm based on part fields
+   - RegForm now only shows when both partDescription and partNumber have content
+
+##############################################################################################
+[2024-11-28 10:00] - #0001 - Moved Part Number Field in eBay Listings Form
+
+Files Modified:
+1. app/(landing-page)/ebay-listings/components/form/PartDescriptionSection.tsx
+   - Added partNumber input field below partDescription
+   - Maintained uppercase transformation and form state management
+   - Preserved all existing functionality
+
+2. app/(landing-page)/ebay-listings/components/form/DetailsSection.tsx
+   - Removed partNumber input field and related code
+   - Kept all other functionality intact (make, paintCode, placement selections)
+
+Changes Summary:
+- Relocated partNumber field to improve form flow and user experience
+- No changes to underlying data structure or form state management
+- Maintained all input validation and transformation logic
+- UI enhancement: Part number now appears in a more logical location after part description

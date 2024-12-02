@@ -1,0 +1,69 @@
+##############################################################################################
+[2024-11-29 16:00] - #0014 - Improved eBay Price Scraping Accuracy
+
+Files Modified:
+1. app/api/ebay-listings/get-prices/route.ts
+   - Updated selectors for more accurate data extraction
+   - Added support for Best Offer and Coupon information
+   - Enhanced price parsing with better handling of special cases
+   - Added comprehensive logging for debugging
+
+Changes Summary:
+- Fixed price selector to handle all price formats correctly
+- Added Best Offer detection and Coupon information extraction
+- Improved sold date extraction with updated selectors
+- Added robust price parsing with special case handling
+- Implemented detailed logging throughout the scraping process
+
+##############################################################################################
+[2024-11-29 10:30] - #0013 - Enhanced eBay Price Comparison Search
+
+Files Modified:
+1. app/api/ebay-listings/get-prices/route.ts
+   - Implemented dual search strategy (model series and year-based)
+   - Added strict category filtering
+   - Enhanced search term construction using first words
+2. lib/ebay/get-prices.ts
+   - Updated interface to support new search parameters
+   - Added proper type definitions for search results
+3. app/(landing-page)/ebay-listings/components/listing/ListingForm.tsx
+   - Updated price fetching to use new search parameters
+   - Enhanced search results display with both search terms
+
+Changes Summary:
+- Improved search accuracy by using first word of model and model series
+- Added parallel searching using both model series and year
+- Enhanced category filtering to ensure results match selected category
+- Added detailed logging for search term construction and results
+- Improved type safety across the price comparison functionality
+
+##############################################################################################
+[2024-11-29 09:10] - #0012 - Added VIN and Paint Code to eBay Listings
+
+Files Modified:
+1. lib/ebay/listing-template.html
+   - Added VIN and Paint Code fields to Vehicle Details section
+2. lib/ebay/add-listing.ts
+   - Updated template replacements to include VIN and Paint Code
+3. lib/ebay/types.ts
+   - Added Vehicle interface for proper type safety
+   - Enhanced type definitions for vehicle-related fields
+
+Changes Summary:
+- Added VIN and Paint Code display to eBay listing template
+- Improved type safety with proper Vehicle interface
+- Enhanced vehicle data handling in listing creation
+
+##############################################################################################
+[2024-11-29 08:50] - #0011 - Fixed Price Comparisons View Animation
+
+Files Modified:
+1. app/(landing-page)/ebay-listings/components/listing/ListingForm.tsx
+   - Enhanced overflow handling for Price Comparisons view animation
+   - Added proper width constraints to prevent scrollbar flash
+   - Improved animation container structure for smoother transitions
+
+Changes Summary:
+- Fixed temporary scrollbar appearance during Price Comparisons view animation
+- Optimized animation container layout and overflow handling
+- Enhanced overall transition smoothness between views

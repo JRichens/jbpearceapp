@@ -26,6 +26,8 @@ export async function addEbayListing(
             paintCode,
             vehicle,
             shippingProfileId,
+            allowOffers = false,
+            minimumOfferPrice,
         } = params
 
         // Helper function to escape XML special characters
@@ -53,6 +55,11 @@ export async function addEbayListing(
             })
         }
 
+        // Helper function to strip spaces and hyphens from part numbers
+        const stripPartNumber = (partNum: string): string => {
+            return partNum.replace(/[\s-]/g, '')
+        }
+
         // Read the template file
         const templatePath = path.join(
             process.cwd(),
@@ -62,8 +69,8 @@ export async function addEbayListing(
 
         // Replace placeholders with actual data
         const replacements = {
-            partDescription: title || '', // Use title as partDescription
-            compatibility: compatibility || '', // Use provided compatibility
+            partDescription: title || '',
+            compatibility: compatibility || '',
             make: vehicle?.dvlaMake || make || '',
             model: vehicle?.dvlaModel || '',
             year: vehicle?.dvlaYearOfManufacture || '',
@@ -77,13 +84,15 @@ export async function addEbayListing(
             driveType: vehicle?.driveType || '',
             euroStatus: vehicle?.euroStatus || '',
             partNumber: partNumber || '',
+            vin: vehicle?.vinOriginalDvla || '',
+            paintCode: paintCode || vehicle?.paintCode || '',
         }
 
         // Replace all placeholders in the template
         Object.entries(replacements).forEach(([key, value]) => {
             template = template.replace(
                 new RegExp(`{{${key}}}`, 'g'),
-                escapeXml(value || '') // Ensure value is never undefined
+                escapeXml(value || '')
             )
         })
 
@@ -102,9 +111,9 @@ export async function addEbayListing(
                 </NameValueList>`)
         }
 
-        // Add part number specifics
         if (partNumber) {
             const escapedPartNumber = escapeXml(partNumber)
+            const strippedPartNumber = escapeXml(stripPartNumber(partNumber))
             itemSpecifics.push(`
                 <NameValueList>
                     <Name>Manufacturer Part Number</Name>
@@ -112,11 +121,10 @@ export async function addEbayListing(
                 </NameValueList>
                 <NameValueList>
                     <Name>Reference OE/OEM Number</Name>
-                    <Value>${escapedPartNumber}</Value>
+                    <Value>${strippedPartNumber}</Value>
                 </NameValueList>`)
         }
 
-        // Add placement specific if provided
         if (placement) {
             itemSpecifics.push(`
                 <NameValueList>
@@ -125,7 +133,6 @@ export async function addEbayListing(
                 </NameValueList>`)
         }
 
-        // Add paint code specific if provided
         if (paintCode) {
             itemSpecifics.push(`
                 <NameValueList>
@@ -134,7 +141,6 @@ export async function addEbayListing(
                 </NameValueList>`)
         }
 
-        // Add vehicle-related specifics
         if (vehicle) {
             if (vehicle.vinOriginalDvla) {
                 itemSpecifics.push(`
@@ -161,7 +167,6 @@ export async function addEbayListing(
             }
         }
 
-        // Add warranty period specific
         itemSpecifics.push(`
             <NameValueList>
                 <Name>Warranty Period</Name>
@@ -177,16 +182,22 @@ export async function addEbayListing(
                 ? 'Courier 3-5 Work/Days'
                 : 'Express Delivery'
 
-        const response = await fetch('https://api.ebay.com/ws/api.dll', {
-            method: 'POST',
-            headers: {
-                'X-EBAY-API-SITEID': '3', // UK Site ID
-                'X-EBAY-API-COMPATIBILITY-LEVEL': '967',
-                'X-EBAY-API-CALL-NAME': 'AddFixedPriceItem',
-                'X-EBAY-API-IAF-TOKEN': `${process.env.EBAY_USER_TOKEN}`,
-                'Content-Type': 'text/xml',
-            },
-            body: `<?xml version="1.0" encoding="utf-8"?>
+        // Prepare BestOfferDetails and ListingDetails XML
+        const bestOfferDetailsXml = allowOffers
+            ? `<BestOfferDetails>
+                <BestOfferEnabled>true</BestOfferEnabled>
+               </BestOfferDetails>`
+            : ''
+
+        const listingDetailsXml =
+            allowOffers && minimumOfferPrice
+                ? `<ListingDetails>
+                <MinimumBestOfferPrice>${minimumOfferPrice}</MinimumBestOfferPrice>
+                <BestOfferAutoAcceptPrice>${minimumOfferPrice}</BestOfferAutoAcceptPrice>
+               </ListingDetails>`
+                : ''
+
+        const requestXml = `<?xml version="1.0" encoding="utf-8"?>
                 <AddFixedPriceItemRequest xmlns="urn:ebay:apis:eBLBaseComponents">
                     <RequesterCredentials>
                         <eBayAuthToken>${
@@ -201,6 +212,38 @@ export async function addEbayListing(
                         <PrimaryCategory>
                             <CategoryID>${category.trim()}</CategoryID>
                         </PrimaryCategory>
+                        <ItemCompatibilityList>
+                            <Compatibility>
+                                <NameValueList>
+                                    <Name>Make</Name>
+                                    <Value>BMW</Value>
+                                </NameValueList>
+                                <NameValueList>
+                                    <Name>Model</Name>
+                                    <Value>1 Series</Value>
+                                </NameValueList>
+                                <NameValueList>
+                                    <Name>Year</Name>
+                                    <Value>2015</Value>
+                                </NameValueList>
+                                <NameValueList>
+                                    <Name>Variant</Name>
+                                    <Value>Petrol Hatch</Value>
+                                </NameValueList>
+                                <NameValueList>
+                                    <Name>Type</Name>
+                                    <Value>116i</Value>
+                                </NameValueList>
+                                <NameValueList>
+                                    <Name>Chassis</Name>
+                                    <Value>RWD -- F21</Value>
+                                </NameValueList>
+                                <NameValueList>
+                                    <Name>Engine</Name>
+                                    <Value>1598cc 100KW 136HP N13 B16 A</Value>
+                                </NameValueList>
+                            </Compatibility>
+                        </ItemCompatibilityList>
                         <StartPrice>${price}</StartPrice>
                         <ConditionID>${getConditionId(condition)}</ConditionID>
                         ${
@@ -232,6 +275,8 @@ export async function addEbayListing(
                                 .join('')}
                         </PictureDetails>
                         <Quantity>${quantity}</Quantity>
+                        ${bestOfferDetailsXml}
+                        ${listingDetailsXml}
                         <SellerProfiles>
                             <SellerPaymentProfile>
                                 <PaymentProfileID>239472522017</PaymentProfileID>
@@ -249,7 +294,18 @@ export async function addEbayListing(
                             </SellerShippingProfile>
                         </SellerProfiles>
                     </Item>
-                </AddFixedPriceItemRequest>`,
+                </AddFixedPriceItemRequest>`
+
+        const response = await fetch('https://api.ebay.com/ws/api.dll', {
+            method: 'POST',
+            headers: {
+                'X-EBAY-API-SITEID': '3',
+                'X-EBAY-API-COMPATIBILITY-LEVEL': '1227',
+                'X-EBAY-API-CALL-NAME': 'AddFixedPriceItem',
+                'X-EBAY-API-IAF-TOKEN': `${process.env.EBAY_USER_TOKEN}`,
+                'Content-Type': 'text/xml',
+            },
+            body: requestXml,
         })
 
         const responseText = await response.text()

@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server'
 import { getMyEbayListings } from '../../../lib/ebay/get-listings'
 import { verifyEbayListing } from '../../../lib/ebay/verify-listing'
 import { addEbayListing } from '../../../lib/ebay/add-listing'
+import { getCategoryFeatures } from '../../../lib/ebay/get-category-features'
 import { auth } from '@clerk/nextjs'
 import { UTApi } from 'uploadthing/server'
 import { EbayListing } from '../../../lib/ebay/types'
 
-// Initialize the UploadThing API
 const utapi = new UTApi()
 
 export async function GET() {
@@ -42,16 +42,13 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        // Parse the incoming request data
         const formData = await req.formData()
-
-        // Check if this is a verification or submission request
         const isVerification = formData.get('action') === 'verify'
 
-        // Extract listing details
         const title = formData.get('title') as string
         const description = formData.get('description') as string
-        const price = formData.get('price') as string
+        const priceStr = formData.get('price') as string
+        const price = parseFloat(priceStr)
         const condition = formData.get('condition') as string
         const conditionDescription = formData.get(
             'conditionDescription'
@@ -66,21 +63,37 @@ export async function POST(req: Request) {
         const paintCode = formData.get('paintCode') as string
         const placement = formData.get('placement') as string
         const productionYearInfo = formData.get('productionYearInfo') as string
+        const allowOffers = formData.get('allowOffers') === 'true'
+        const minimumOfferPriceStr = formData.get('minimumOfferPrice') as string
+        const minimumOfferPrice = minimumOfferPriceStr
+            ? parseFloat(minimumOfferPriceStr)
+            : undefined
 
-        // Get vehicle data for hidden fields
+        if (allowOffers && minimumOfferPrice) {
+            const categoryFeatures = await getCategoryFeatures(category)
+            if (!categoryFeatures.bestOfferAutoDeclineEnabled) {
+                return NextResponse.json(
+                    {
+                        error: 'Category does not support auto-decline for Best Offers',
+                        details:
+                            'The minimum offer price feature is not available for this category.',
+                    },
+                    { status: 400 }
+                )
+            }
+        }
+
         const vehicleDataStr = formData.get('vehicleData') as string
         const vehicle = vehicleDataStr ? JSON.parse(vehicleDataStr) : null
 
-        // Parse production year info
         const productionYearData = productionYearInfo
             ? JSON.parse(productionYearInfo)
             : null
 
-        // Validate required fields
         if (
             !title ||
             !description ||
-            !price ||
+            isNaN(price) ||
             !condition ||
             !category ||
             !shippingProfileId
@@ -91,7 +104,6 @@ export async function POST(req: Request) {
             )
         }
 
-        // Handle photo files
         const photos = formData.getAll('photos') as File[]
         if (photos.length === 0) {
             return NextResponse.json(
@@ -100,7 +112,6 @@ export async function POST(req: Request) {
             )
         }
 
-        // Upload photos to UploadThing
         const uploadPromises = photos.map(async (photo) => {
             const response = await utapi.uploadFiles(photo)
             return {
@@ -111,7 +122,6 @@ export async function POST(req: Request) {
 
         const uploadResults = await Promise.all(uploadPromises)
 
-        // Filter out any undefined values and ensure we have at least one valid image URL
         const imageData = uploadResults.filter(
             (result): result is { url: string; key: string } =>
                 result.url !== undefined && result.key !== undefined
@@ -128,8 +138,8 @@ export async function POST(req: Request) {
 
         const listingParams = {
             title,
-            description: title, // Use title as the description
-            compatibility: productionYearData?.description || '', // Use production year info description as compatibility
+            description: title,
+            compatibility: productionYearData?.description || '',
             price,
             condition,
             conditionDescription,
@@ -144,6 +154,8 @@ export async function POST(req: Request) {
             make: make || undefined,
             paintCode: paintCode || undefined,
             placement: placement || undefined,
+            allowOffers,
+            minimumOfferPrice,
             vehicle: vehicle
                 ? {
                       vinOriginalDvla: vehicle.vinOriginalDvla,
@@ -164,7 +176,6 @@ export async function POST(req: Request) {
         }
 
         if (isVerification) {
-            // Verify the eBay listing
             const verificationResult = await verifyEbayListing(listingParams)
             return NextResponse.json({
                 success: true,
@@ -172,13 +183,9 @@ export async function POST(req: Request) {
                 verificationResult,
             })
         } else {
-            // Check if eBay listing is enabled
             const enableEbayListing = process.env.ENABLE_EBAY_LISTING === 'true'
 
             if (!enableEbayListing) {
-                console.log(
-                    'eBay listing is disabled. Simulating successful listing.'
-                )
                 return NextResponse.json({
                     success: true,
                     message:
@@ -188,7 +195,6 @@ export async function POST(req: Request) {
                 })
             }
 
-            // Submit the listing to eBay only if enabled
             const result = await addEbayListing(listingParams)
 
             return NextResponse.json({

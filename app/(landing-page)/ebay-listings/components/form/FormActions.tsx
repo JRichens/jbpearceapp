@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
-import { FormSectionProps } from '../../types/form.types'
+import { FormSectionProps } from '../../types/listingTypes'
 import { VerificationResult } from './VerificationResult'
 
 interface FormActionsProps extends FormSectionProps {
@@ -19,10 +19,11 @@ export function FormActions({
 }: FormActionsProps) {
     // Check if all required fields are filled
     const isFormValid = Boolean(
-        formState.partNumber && // Part Number is required
-            formState.paintCode && // Paint Code is required
-            formState.price && // Price is required
+        formState.partNumbers.some((num) => num.trim() !== '') && // At least one part number is filled
+            formState.partDescription && // Part Description is required
+            parseFloat(formState.price) > 0 && // Price must be greater than 0
             formState.shippingProfileId && // Shipping Profile is required
+            formState.paintCode && // Paint Code is required
             formState.photos.length > 0 // At least one photo is required
     )
 

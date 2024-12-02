@@ -28,7 +28,6 @@ export function useListingForm() {
         useState(false)
     const { toast: shadcnToast } = useToast()
 
-    // Effect to update form state when vehicle changes
     useEffect(() => {
         if (vehicle) {
             setFormState((prev) => ({
@@ -38,17 +37,14 @@ export function useListingForm() {
                 make: vehicle.dvlaMake || '',
             }))
 
-            // If we have a part description, fetch production year
             if (formState.partDescription) {
                 fetchProductionYear()
             }
         }
-    }, [vehicle]) // eslint-disable-line react-hooks/exhaustive-deps
+    }, [vehicle])
 
-    // Effect for title generation with length validation
     useEffect(() => {
         if (formState.vehicle && formState.partDescription) {
-            // Get all selected parameters except passenger, driver, and colour
             const regularTitleParts = TITLE_PARAMETERS.filter(
                 (param) =>
                     formState.selectedTitleParams.has(param.key) &&
@@ -80,7 +76,6 @@ export function useListingForm() {
                 })
                 .filter(Boolean)
 
-            // Get passenger/driver value if selected
             const positionParam = TITLE_PARAMETERS.find(
                 (param) =>
                     (param.key === 'passenger' || param.key === 'driver') &&
@@ -88,14 +83,12 @@ export function useListingForm() {
             )
             const positionValue = positionParam?.value
 
-            // Get colour if selected
             const colourValue = formState.selectedTitleParams.has(
                 'colourCurrent'
             )
                 ? formState.vehicle.colourCurrent
                 : null
 
-            // Combine all parts in the desired order
             const allParts = [
                 ...regularTitleParts,
                 positionValue,
@@ -105,7 +98,6 @@ export function useListingForm() {
 
             const fullTitle = allParts.join(' ')
 
-            // Check if title length exceeds 80 characters
             if (fullTitle.length > 80) {
                 shadcnToast({
                     variant: 'destructive',
@@ -113,7 +105,6 @@ export function useListingForm() {
                     description:
                         "Title length exceeds eBay's 80 character limit. Please remove some parameters.",
                 })
-                // Remove the last added parameter
                 const lastParam = Array.from(
                     formState.selectedTitleParams
                 ).pop()
@@ -123,7 +114,7 @@ export function useListingForm() {
                     setFormState((prev) => ({
                         ...prev,
                         selectedTitleParams: newParams,
-                        title: prev.title, // Keep the previous valid title
+                        title: prev.title,
                     }))
                 }
                 return
@@ -149,7 +140,6 @@ export function useListingForm() {
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement> | string
     ) => {
         if (typeof e === 'string') {
-            // Handle direct value (from shipping profile select)
             setFormState((prev) => ({
                 ...prev,
                 shippingProfileId: e,
@@ -157,7 +147,6 @@ export function useListingForm() {
                 verificationResult: null,
             }))
         } else if (e?.target) {
-            // Handle event object
             const { name, value } = e.target
             setFormState((prev) => ({
                 ...prev,
@@ -166,7 +155,6 @@ export function useListingForm() {
                 verificationResult: null,
             }))
         } else {
-            // Handle general form state reset
             setFormState((prev) => ({
                 ...prev,
                 isVerified: false,
@@ -228,14 +216,12 @@ export function useListingForm() {
     const handleTitleParamChange = (param: string) => {
         const newParams = new Set(formState.selectedTitleParams)
 
-        // Handle passenger/driver mutual exclusivity
         if (param === 'passenger' && newParams.has('driver')) {
             newParams.delete('driver')
         } else if (param === 'driver' && newParams.has('passenger')) {
             newParams.delete('passenger')
         }
 
-        // Handle production years mutual exclusivity
         if (param === 'productionYears' && newParams.has('productionYearsFL')) {
             newParams.delete('productionYearsFL')
         } else if (
@@ -279,7 +265,6 @@ export function useListingForm() {
 
             setProductionYearInfo(result)
 
-            // Update form state in a single operation
             setFormState((prev) => {
                 const newParams = new Set(prev.selectedTitleParams)
                 if (result.facelift) {
@@ -294,7 +279,6 @@ export function useListingForm() {
                 }
             })
 
-            // After successful production year fetch, fetch categories
             const searchTerm = `${vehicle.dvlaMake} ${formState.partDescription}`
             await fetchCategories(searchTerm)
         } catch (error) {
@@ -320,22 +304,27 @@ export function useListingForm() {
                 'input[name="price"]'
             )?.value
 
-            // Add action
             formData.append('action', action)
-
-            // Add required fields
             formData.append('title', formState.title)
-            formData.append('description', formState.title) // Use title as description
+            formData.append('description', formState.title)
             formData.append('price', priceFromForm || formState.price)
             formData.append('condition', formState.selectedCondition)
-            formData.append('quantity', '1') // Default quantity
+            formData.append('quantity', '1')
             formData.append('category', formState.selectedCategory?.id || '')
             formData.append(
                 'shippingProfileId',
                 formState.shippingProfileId || '240049979017'
-            ) // Use selected profile or default to Express Delivery
+            )
 
-            // Add optional fields
+            formData.set(
+                'allowOffers',
+                formState.allowOffers ? 'true' : 'false'
+            )
+
+            if (formState.allowOffers && formState.minimumOfferPrice) {
+                formData.set('minimumOfferPrice', formState.minimumOfferPrice)
+            }
+
             if (formState.partNumber)
                 formData.append('partNumber', formState.partNumber)
             if (formState.brand) formData.append('brand', formState.brand)
@@ -345,12 +334,10 @@ export function useListingForm() {
             if (formState.placement)
                 formData.append('placement', formState.placement)
 
-            // Add photos
             formState.photos.forEach((photo) => {
                 formData.append('photos', photo)
             })
 
-            // Add vehicle data
             if (formState.vehicle) {
                 formData.append(
                     'vehicleData',
@@ -358,7 +345,6 @@ export function useListingForm() {
                 )
             }
 
-            // Add production year info
             if (productionYearInfo) {
                 formData.append(
                     'productionYearInfo',
@@ -405,7 +391,6 @@ export function useListingForm() {
     }
 
     const resetForm = () => {
-        // Reset all state to initial values
         setFormState(initialFormState)
         setVehicle(null)
         setProductionYearInfo(null)

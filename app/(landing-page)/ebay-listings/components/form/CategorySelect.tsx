@@ -32,11 +32,13 @@ export function CategorySelect({
 }: CategorySelectProps) {
     const getCategoryPlaceholder = () => {
         if (isCategoriesLoading) return 'Loading categories...'
+        if (categories.length > 0)
+            return selectedCategory
+                ? selectedCategory.finalName
+                : 'Select a category'
         if (!vehicle) return 'Enter vehicle registration first'
         if (!partDescription) return 'Enter part description first'
-        if (categories.length === 0) return 'No matching categories found'
-        if (selectedCategory) return selectedCategory.finalName
-        return 'Select a category'
+        return 'No matching categories found'
     }
 
     const renderCategoryOption = (category: Category) => {
@@ -99,11 +101,6 @@ export function CategorySelect({
             </Select>
             {categoriesError && (
                 <p className="text-sm text-red-500">{categoriesError}</p>
-            )}
-            {isCategoriesLoading && (
-                <p className="text-sm text-muted-foreground">
-                    Loading categories...
-                </p>
             )}
         </div>
     )

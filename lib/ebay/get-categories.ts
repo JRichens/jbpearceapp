@@ -6,6 +6,9 @@ async function findSimilarListingsCategories(
     Array<{ id: string; name: string; fullPath: string; finalName: string }>
 > {
     try {
+        // Strip out ampersands from search term before using in XML
+        const sanitizedSearchTerm = searchTerm.replace(/&/g, '')
+
         // Search for similar listings using Finding API with simplified search term
         const response = await fetch(
             'https://svcs.ebay.com/services/search/FindingService/v1',
@@ -20,7 +23,7 @@ async function findSimilarListingsCategories(
                 },
                 body: `<?xml version="1.0" encoding="utf-8"?>
                 <findItemsByKeywordsRequest xmlns="http://www.ebay.com/marketplace/search/v1/services">
-                    <keywords>${searchTerm}</keywords>
+                    <keywords>${sanitizedSearchTerm}</keywords>
                     <itemFilter>
                         <name>Condition</name>
                         <value>Used</value>
@@ -227,6 +230,9 @@ export async function getEbayCategories(
             return similarCategories
         }
 
+        // Strip out ampersands from search term before using in XML for fallback search
+        const sanitizedSearchTerm = searchTerm.replace(/&/g, '')
+
         // Fallback to original category search if useVehicleSearch is false
         console.log('Using fallback category search')
         const response = await fetch('https://api.ebay.com/ws/api.dll', {
@@ -269,7 +275,7 @@ export async function getEbayCategories(
             if (
                 id &&
                 name &&
-                name.toLowerCase().includes(searchTerm.toLowerCase())
+                name.toLowerCase().includes(sanitizedSearchTerm.toLowerCase())
             ) {
                 categories.push({
                     id,
