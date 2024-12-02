@@ -38,6 +38,14 @@ export interface CreateListingParams {
     minimumOfferPrice?: number
 }
 
+export interface ShippingProfile {
+    profileId: string
+    profileName: string
+    description: string
+    isDefault: boolean
+    categoryGroups: any[] // Using any[] since the actual type isn't shown in the code
+}
+
 export interface EbayListing {
     id: string
     itemId: string
