@@ -82,6 +82,10 @@ export async function getMyEbayListings(): Promise<EbayListing[]> {
                         'ShippingServiceCost'
                     )[0]
                 const itemId = getElementText(item, 'ItemID')
+                const quantity = getElementNumber(item, 'Quantity') || 1
+                const quantityAvailable =
+                    getElementNumber(item, 'QuantityAvailable') || 0
+                const quantitySold = quantity - quantityAvailable
 
                 pageListings.push({
                     id: itemId, // Using itemId as the id
@@ -99,15 +103,16 @@ export async function getMyEbayListings(): Promise<EbayListing[]> {
                     imageUrls: [getElementText(pictureDetails, 'GalleryURL')], // Using gallery URL as the first image
                     currency:
                         buyItNowPrice?.getAttribute('currencyID') || 'GBP',
-                    quantity: getElementNumber(item, 'Quantity') || 1,
-                    quantityAvailable:
-                        getElementNumber(item, 'QuantityAvailable') || 0,
+                    quantity,
+                    quantityAvailable,
+                    quantitySold,
                     category:
                         getElementText(item, 'PrimaryCategory/CategoryID') ||
                         '',
                     location: getElementText(item, 'Location') || '',
                     listingUrl: getElementText(listingDetails, 'ViewItemURL'),
                     watchCount: getElementNumber(item, 'WatchCount'),
+                    status: getElementText(item, 'ListingStatus'),
                     createdAt: new Date(
                         getElementText(item, 'StartTime') ||
                             new Date().toISOString()
