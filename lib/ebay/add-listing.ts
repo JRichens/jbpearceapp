@@ -1,7 +1,123 @@
 import { CreateListingParams } from './types'
 import { getConditionId, getElementText } from './utils'
+import {
+    checkCategoryCompatibility,
+    isPartsCategory,
+} from './category-features'
 import * as fs from 'fs'
 import * as path from 'path'
+
+// Helper function to escape XML special characters
+const escapeXml = (str: string): string => {
+    return str.replace(/[<>&'"]/g, (c: string) => {
+        switch (c) {
+            case '<':
+                return '&lt;'
+            case '>':
+                return '&gt;'
+            case '&':
+                // Don't escape &lt; &gt; &amp; &quot; &apos;
+                return /&(?:lt|gt|amp|quot|apos);/i.test(
+                    str.slice(str.indexOf(c), str.indexOf(c) + 6)
+                )
+                    ? c
+                    : '&amp;'
+            case '"':
+                return '&quot;'
+            case "'":
+                return '&apos;'
+            default:
+                return c
+        }
+    })
+}
+
+// Interface for compatibility data
+interface EbayCompatibility {
+    make: string
+    model: string
+    year: string
+    trim?: string
+    engine?: string
+    subModel?: string
+    variant?: string
+    chassis?: string
+}
+
+// Function to generate compatibility XML
+const generateCompatibilityXML = (
+    compatibilities: EbayCompatibility[]
+): string => {
+    if (!compatibilities?.length) return ''
+
+    return `<ItemCompatibilityList>
+        ${compatibilities
+            .map(
+                (comp) => `
+            <Compatibility>
+                <NameValueList>
+                    <Name>Year</Name>
+                    <Value>${escapeXml(comp.year)}</Value>
+                </NameValueList>
+                <NameValueList>
+                    <Name>Make</Name>
+                    <Value>${escapeXml(comp.make)}</Value>
+                </NameValueList>
+                <NameValueList>
+                    <Name>Model</Name>
+                    <Value>${escapeXml(comp.model)}</Value>
+                </NameValueList>
+                ${
+                    comp.trim
+                        ? `
+                <NameValueList>
+                    <Name>Trim</Name>
+                    <Value>${escapeXml(comp.trim)}</Value>
+                </NameValueList>`
+                        : ''
+                }
+                ${
+                    comp.variant
+                        ? `
+                <NameValueList>
+                    <Name>Variant</Name>
+                    <Value>${escapeXml(comp.variant)}</Value>
+                </NameValueList>`
+                        : ''
+                }
+                ${
+                    comp.chassis
+                        ? `
+                <NameValueList>
+                    <Name>Chassis</Name>
+                    <Value>${escapeXml(comp.chassis)}</Value>
+                </NameValueList>`
+                        : ''
+                }
+                ${
+                    comp.engine
+                        ? `
+                <NameValueList>
+                    <Name>Engine</Name>
+                    <Value>${escapeXml(comp.engine)}</Value>
+                </NameValueList>`
+                        : ''
+                }
+                ${
+                    comp.subModel
+                        ? `
+                <NameValueList>
+                    <Name>Submodel</Name>
+                    <Value>${escapeXml(comp.subModel)}</Value>
+                </NameValueList>`
+                        : ''
+                }
+            </Compatibility>
+        `
+            )
+            .join('')}
+    </ItemCompatibilityList>`
+}
 
 export async function addEbayListing(
     params: CreateListingParams
@@ -30,29 +146,42 @@ export async function addEbayListing(
             minimumOfferPrice,
         } = params
 
-        // Helper function to escape XML special characters
-        const escapeXml = (str: string): string => {
-            return str.replace(/[<>&'"]/g, (c: string) => {
-                switch (c) {
-                    case '<':
-                        return '&lt;'
-                    case '>':
-                        return '&gt;'
-                    case '&':
-                        // Don't escape &lt; &gt; &amp; &quot; &apos;
-                        return /&(?:lt|gt|amp|quot|apos);/i.test(
-                            str.slice(str.indexOf(c), str.indexOf(c) + 6)
-                        )
-                            ? c
-                            : '&amp;'
-                    case '"':
-                        return '&quot;'
-                    case "'":
-                        return '&apos;'
-                    default:
-                        return c
-                }
-            })
+        // Check category compatibility
+        const categoryFeatures = await checkCategoryCompatibility(
+            category.trim()
+        )
+
+        let compatibilityXml = ''
+        const compatibilityData = [
+            {
+                year: vehicle?.dvlaYearOfManufacture || '2015',
+                make: vehicle?.dvlaMake || make || 'BMW',
+                model: vehicle?.dvlaModel || '1 Series',
+                trim: vehicle?.modelVariant,
+                engine: vehicle?.engineCode,
+                subModel: vehicle?.modelSeries,
+                variant: vehicle?.modelVariant,
+                chassis: vehicle?.driveType
+                    ? `${vehicle.driveType} -- ${vehicle.modelSeries}`
+                    : undefined,
+            },
+        ]
+
+        if (!categoryFeatures.supportsCompatibility) {
+            if (categoryFeatures.error) {
+                console.warn(
+                    `Category ${category} compatibility check failed: ${categoryFeatures.error}`
+                )
+            } else {
+                console.warn(
+                    `Category ${category} (${categoryFeatures.name}) does not support parts compatibility. Skipping compatibility data.`
+                )
+            }
+        } else {
+            console.log(
+                `Adding compatibility data for category ${category} (${categoryFeatures.name})`
+            )
+            compatibilityXml = generateCompatibilityXML(compatibilityData)
         }
 
         // Helper function to strip spaces and hyphens from part numbers
@@ -212,38 +341,7 @@ export async function addEbayListing(
                         <PrimaryCategory>
                             <CategoryID>${category.trim()}</CategoryID>
                         </PrimaryCategory>
-                        <ItemCompatibilityList>
-                            <Compatibility>
-                                <NameValueList>
-                                    <Name>Make</Name>
-                                    <Value>BMW</Value>
-                                </NameValueList>
-                                <NameValueList>
-                                    <Name>Model</Name>
-                                    <Value>1 Series</Value>
-                                </NameValueList>
-                                <NameValueList>
-                                    <Name>Year</Name>
-                                    <Value>2015</Value>
-                                </NameValueList>
-                                <NameValueList>
-                                    <Name>Variant</Name>
-                                    <Value>Petrol Hatch</Value>
-                                </NameValueList>
-                                <NameValueList>
-                                    <Name>Type</Name>
-                                    <Value>116i</Value>
-                                </NameValueList>
-                                <NameValueList>
-                                    <Name>Chassis</Name>
-                                    <Value>RWD -- F21</Value>
-                                </NameValueList>
-                                <NameValueList>
-                                    <Name>Engine</Name>
-                                    <Value>1598cc 100KW 136HP N13 B16 A</Value>
-                                </NameValueList>
-                            </Compatibility>
-                        </ItemCompatibilityList>
+                        ${compatibilityXml}
                         <StartPrice>${price}</StartPrice>
                         <ConditionID>${getConditionId(condition)}</ConditionID>
                         ${

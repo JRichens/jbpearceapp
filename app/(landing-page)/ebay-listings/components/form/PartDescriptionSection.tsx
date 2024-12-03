@@ -12,6 +12,8 @@ import {
     SetStateAction,
     useImperativeHandle,
     forwardRef,
+    useRef,
+    useEffect,
 } from 'react'
 import { Button } from '@/components/ui/button'
 import { Plus, Search, X } from 'lucide-react'
@@ -54,6 +56,14 @@ export const PartDescriptionSection = forwardRef<
         },
         ref
     ) => {
+        const selectionRef = useRef<{
+            start: number | null
+            end: number | null
+        }>({
+            start: null,
+            end: null,
+        })
+
         useImperativeHandle(ref, () => ({
             resetPartNumbers: () => {
                 setFormState((prev: FormState) => ({
@@ -75,6 +85,48 @@ export const PartDescriptionSection = forwardRef<
             setVehicle(newVehicle)
             setHasSearchedVehicle(true)
         }
+
+        const handlePartDescriptionChange = (
+            e: React.ChangeEvent<HTMLInputElement>
+        ) => {
+            const input = e.target
+            const start = input.selectionStart
+            const end = input.selectionEnd
+
+            // Store selection position
+            selectionRef.current = { start, end }
+
+            const capitalizedValue = capitalizeWords(input.value)
+            const newEvent = {
+                ...e,
+                target: {
+                    ...e.target,
+                    value: capitalizedValue,
+                },
+            } as React.ChangeEvent<HTMLInputElement>
+
+            setFormState((prev: FormState) => ({
+                ...prev,
+                partDescription: capitalizedValue,
+                searchByPartNumber: false,
+                activePartNumber: '',
+            }))
+            onFormChange(newEvent)
+        }
+
+        // Restore cursor position after state update
+        useEffect(() => {
+            if (
+                partDescriptionRef.current &&
+                selectionRef.current.start !== null &&
+                selectionRef.current.end !== null
+            ) {
+                partDescriptionRef.current.setSelectionRange(
+                    selectionRef.current.start,
+                    selectionRef.current.end
+                )
+            }
+        }, [formState.partDescription])
 
         const handlePartNumberChange = (index: number, value: string) => {
             const newPartNumbers = [...formState.partNumbers]
@@ -132,8 +184,8 @@ export const PartDescriptionSection = forwardRef<
                 setFormState((prev) => ({
                     ...prev,
                     selectedCategory: null,
-                    searchByPartNumber: true, // Add this flag
-                    activePartNumber: partNumber.trim(), // Store the active part number being searched
+                    searchByPartNumber: true,
+                    activePartNumber: partNumber.trim(),
                 }))
                 setPageNumber(2)
             }
@@ -152,29 +204,11 @@ export const PartDescriptionSection = forwardRef<
                         id="partDescription"
                         name="partDescription"
                         value={formState.partDescription}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                            const capitalizedValue = capitalizeWords(
-                                e.target.value
-                            )
-                            const newEvent = {
-                                ...e,
-                                target: {
-                                    ...e.target,
-                                    value: capitalizedValue,
-                                },
-                            } as React.ChangeEvent<HTMLInputElement>
-
-                            setFormState((prev: FormState) => ({
-                                ...prev,
-                                partDescription: capitalizedValue,
-                                searchByPartNumber: false, // Reset the flag when description changes
-                                activePartNumber: '', // Clear active part number
-                            }))
-                            onFormChange(newEvent)
-                        }}
+                        onChange={handlePartDescriptionChange}
                         placeholder="Headlight, Wing Mirror, Bonnet..."
                         required
                         autoFocus
+                        autoComplete="on"
                         className="text-xl"
                     />
                 </div>
@@ -198,6 +232,7 @@ export const PartDescriptionSection = forwardRef<
                                         )
                                     }
                                     placeholder="Enter manufacturer part number"
+                                    autoComplete="on"
                                     className="text-xl"
                                 />
                                 <Button
