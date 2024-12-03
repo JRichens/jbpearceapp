@@ -60,9 +60,7 @@ export function DetailsSection({
                     onChange={async (
                         e: React.ChangeEvent<HTMLInputElement>
                     ) => {
-                        const transformedValue = e.target.value
-                            .trim()
-                            .toUpperCase()
+                        const transformedValue = e.target.value.toUpperCase()
                         const newEvent = {
                             ...e,
                             target: {
