@@ -235,15 +235,23 @@ export const PartDescriptionSection = forwardRef<
                                     autoComplete="on"
                                     className="text-xl"
                                 />
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="icon"
-                                    onClick={() => handleSearch(partNumber)}
-                                    className="shrink-0"
-                                >
-                                    <Search className="h-4 w-4" />
-                                </Button>
+                                {partNumber.trim() !== '' &&
+                                    !['NA', 'N/A'].includes(
+                                        partNumber.trim().toUpperCase()
+                                    ) && (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={() =>
+                                                handleSearch(partNumber)
+                                            }
+                                            className="shrink-0"
+                                        >
+                                            <Search className="h-4 w-4" />
+                                        </Button>
+                                    )}
+
                                 {index === formState.partNumbers.length - 1 ? (
                                     <Button
                                         type="button"

@@ -1,9 +1,5 @@
 import { CreateListingParams } from './types'
 import { getConditionId, getElementText } from './utils'
-import {
-    checkCategoryCompatibility,
-    isPartsCategory,
-} from './category-features'
 import * as fs from 'fs'
 import * as path from 'path'
 
@@ -32,93 +28,6 @@ const escapeXml = (str: string): string => {
     })
 }
 
-// Interface for compatibility data
-interface EbayCompatibility {
-    make: string
-    model: string
-    year: string
-    trim?: string
-    engine?: string
-    subModel?: string
-    variant?: string
-    chassis?: string
-}
-
-// Function to generate compatibility XML
-const generateCompatibilityXML = (
-    compatibilities: EbayCompatibility[]
-): string => {
-    if (!compatibilities?.length) return ''
-
-    return `<ItemCompatibilityList>
-        ${compatibilities
-            .map(
-                (comp) => `
-            <Compatibility>
-                <NameValueList>
-                    <Name>Year</Name>
-                    <Value>${escapeXml(comp.year)}</Value>
-                </NameValueList>
-                <NameValueList>
-                    <Name>Make</Name>
-                    <Value>${escapeXml(comp.make)}</Value>
-                </NameValueList>
-                <NameValueList>
-                    <Name>Model</Name>
-                    <Value>${escapeXml(comp.model)}</Value>
-                </NameValueList>
-                ${
-                    comp.trim
-                        ? `
-                <NameValueList>
-                    <Name>Trim</Name>
-                    <Value>${escapeXml(comp.trim)}</Value>
-                </NameValueList>`
-                        : ''
-                }
-                ${
-                    comp.variant
-                        ? `
-                <NameValueList>
-                    <Name>Variant</Name>
-                    <Value>${escapeXml(comp.variant)}</Value>
-                </NameValueList>`
-                        : ''
-                }
-                ${
-                    comp.chassis
-                        ? `
-                <NameValueList>
-                    <Name>Chassis</Name>
-                    <Value>${escapeXml(comp.chassis)}</Value>
-                </NameValueList>`
-                        : ''
-                }
-                ${
-                    comp.engine
-                        ? `
-                <NameValueList>
-                    <Name>Engine</Name>
-                    <Value>${escapeXml(comp.engine)}</Value>
-                </NameValueList>`
-                        : ''
-                }
-                ${
-                    comp.subModel
-                        ? `
-                <NameValueList>
-                    <Name>Submodel</Name>
-                    <Value>${escapeXml(comp.subModel)}</Value>
-                </NameValueList>`
-                        : ''
-                }
-            </Compatibility>
-        `
-            )
-            .join('')}
-    </ItemCompatibilityList>`
-}
-
 export async function addEbayListing(
     params: CreateListingParams
 ): Promise<{ itemId: string }> {
@@ -145,44 +54,6 @@ export async function addEbayListing(
             allowOffers = false,
             minimumOfferPrice,
         } = params
-
-        // Check category compatibility
-        const categoryFeatures = await checkCategoryCompatibility(
-            category.trim()
-        )
-
-        let compatibilityXml = ''
-        const compatibilityData = [
-            {
-                year: vehicle?.dvlaYearOfManufacture || '2015',
-                make: vehicle?.dvlaMake || make || 'BMW',
-                model: vehicle?.dvlaModel || '1 Series',
-                trim: vehicle?.modelVariant,
-                engine: vehicle?.engineCode,
-                subModel: vehicle?.modelSeries,
-                variant: vehicle?.modelVariant,
-                chassis: vehicle?.driveType
-                    ? `${vehicle.driveType} -- ${vehicle.modelSeries}`
-                    : undefined,
-            },
-        ]
-
-        if (!categoryFeatures.supportsCompatibility) {
-            if (categoryFeatures.error) {
-                console.warn(
-                    `Category ${category} compatibility check failed: ${categoryFeatures.error}`
-                )
-            } else {
-                console.warn(
-                    `Category ${category} (${categoryFeatures.name}) does not support parts compatibility. Skipping compatibility data.`
-                )
-            }
-        } else {
-            console.log(
-                `Adding compatibility data for category ${category} (${categoryFeatures.name})`
-            )
-            compatibilityXml = generateCompatibilityXML(compatibilityData)
-        }
 
         // Helper function to strip spaces and hyphens from part numbers
         const stripPartNumber = (partNum: string): string => {
@@ -341,7 +212,6 @@ export async function addEbayListing(
                         <PrimaryCategory>
                             <CategoryID>${category.trim()}</CategoryID>
                         </PrimaryCategory>
-                        ${compatibilityXml}
                         <StartPrice>${price}</StartPrice>
                         <ConditionID>${getConditionId(condition)}</ConditionID>
                         ${
@@ -393,6 +263,8 @@ export async function addEbayListing(
                         </SellerProfiles>
                     </Item>
                 </AddFixedPriceItemRequest>`
+
+        console.log(requestXml)
 
         const response = await fetch('https://api.ebay.com/ws/api.dll', {
             method: 'POST',
