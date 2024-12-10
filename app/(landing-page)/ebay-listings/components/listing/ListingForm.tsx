@@ -75,26 +75,43 @@ export function ListingForm() {
                 </motion.div>
             )}
 
-            {/* Sticky Switch Page Button */}
-            <motion.div
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -40 }}
-                className="fixed bottom-6 right-6 z-50"
-            >
-                <Button
-                    onClick={() => setPageNumber(pageNumber === 1 ? 2 : 1)}
-                    className="h-[60px] w-[60px] rounded-full"
+            {/* Sticky Switch Page Button - Only shown when category is selected */}
+            {formState.selectedCategory && (
+                <motion.div
+                    initial={{ opacity: 0, y: 40, scale: 0.3 }}
+                    animate={{
+                        opacity: 1,
+                        y: [-20, -30, 0],
+                        scale: [0.3, 1.2, 1],
+                        transition: {
+                            duration: 0.8,
+                            y: {
+                                times: [0, 0.6, 1],
+                                ease: 'easeOut',
+                            },
+                            scale: {
+                                times: [0, 0.6, 1],
+                                duration: 0.7,
+                            },
+                        },
+                    }}
+                    exit={{ opacity: 0, y: -40, scale: 0.3 }}
+                    className="fixed bottom-6 right-6 z-50"
                 >
-                    <span className="relative">
-                        {pageNumber === 1 ? (
-                            <ArrowRight className="w-6 h-6" />
-                        ) : (
-                            <ArrowLeft className="w-6 h-6" />
-                        )}
-                    </span>
-                </Button>
-            </motion.div>
+                    <Button
+                        onClick={() => setPageNumber(pageNumber === 1 ? 2 : 1)}
+                        className="h-[60px] w-[60px] rounded-full"
+                    >
+                        <span className="relative">
+                            {pageNumber === 1 ? (
+                                <ArrowRight className="w-6 h-6" />
+                            ) : (
+                                <ArrowLeft className="w-6 h-6" />
+                            )}
+                        </span>
+                    </Button>
+                </motion.div>
+            )}
         </div>
     )
 }

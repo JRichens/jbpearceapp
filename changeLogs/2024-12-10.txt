@@ -1,0 +1,27 @@
+##############################################################################################
+[2024-12-10 12:30] - #0018 - Enhanced Title Parameters Selection and Layout
+
+Files Modified:
+1. app/(landing-page)/ebay-listings/components/form/TitleParameters.tsx
+   - Implemented word-based selection for Model, Model Series, and Model Variant
+   - Added deduplication of repeated words across parameters
+   - Converted layout to use responsive flexbox for better space utilization
+   - Ensured all text displays in capital letters
+   - Removed redundant "Model Details" label
+   - Updated production years format to use hyphen separator
+
+2. app/(landing-page)/ebay-listings/hooks/useListingForm.ts
+   - Modified title generation to handle individual word selections
+   - Updated parameter ordering with Make first and Engine Capacity before Fuel Type
+   - Ensured "Genuine" appears at start of title when selected
+   - Added consistent hyphen format for production years in title
+   - Enhanced case handling to ensure uppercase throughout
+
+Changes Summary:
+- Improved title parameter selection with individual word choices
+- Enhanced space efficiency by removing duplicate word displays
+- Optimized layout using responsive flexbox design
+- Standardized text formatting to uppercase
+- Improved production years display with hyphen format
+- Reorganized parameter order for better logical flow
+- Maintained proper title generation with all parameter types

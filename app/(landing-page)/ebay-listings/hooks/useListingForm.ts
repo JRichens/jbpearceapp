@@ -28,6 +28,7 @@ export function useListingForm() {
         useState(false)
     const { toast: shadcnToast } = useToast()
 
+    // Effect to update form state when vehicle changes
     useEffect(() => {
         if (vehicle) {
             setFormState((prev) => ({
@@ -37,91 +38,120 @@ export function useListingForm() {
                 make: vehicle.dvlaMake || '',
             }))
 
+            // If we have both vehicle and part description, fetch categories
             if (formState.partDescription) {
-                fetchProductionYear()
+                const searchTerm = `${vehicle.dvlaMake} ${formState.partDescription}`
+                fetchCategories(searchTerm)
             }
         }
     }, [vehicle])
 
+    // Effect to fetch categories when part description changes
     useEffect(() => {
-        if (formState.vehicle && formState.partDescription) {
-            const regularTitleParts = TITLE_PARAMETERS.filter(
-                (param) =>
-                    formState.selectedTitleParams.has(param.key) &&
-                    param.key !== 'passenger' &&
-                    param.key !== 'driver' &&
-                    param.key !== 'colourCurrent'
-            )
-                .map((param) => {
-                    if (param.isCustom) {
-                        if (param.key === 'genuine') return param.value
-                        if (formState.productionYearInfo) {
-                            if (param.key === 'productionYears') {
-                                return `${formState.productionYearInfo.from} ${formState.productionYearInfo.to}`
-                            }
-                            if (
-                                param.key === 'productionYearsFL' &&
-                                formState.productionYearInfo.facelift
-                            ) {
-                                return `${formState.productionYearInfo.from} ${formState.productionYearInfo.facelift}`
-                            }
-                        }
-                        return null
-                    }
-                    const value = formState.vehicle![param.key as keyof Car]
-                    if (param.key === 'nomCC' && value) {
-                        return formatNomCC(value)
-                    }
-                    return value
-                })
-                .filter(Boolean)
-
-            const positionParam = TITLE_PARAMETERS.find(
-                (param) =>
-                    (param.key === 'passenger' || param.key === 'driver') &&
-                    formState.selectedTitleParams.has(param.key)
-            )
-            const positionValue = positionParam?.value
-
-            const colourValue = formState.selectedTitleParams.has(
-                'colourCurrent'
-            )
-                ? formState.vehicle.colourCurrent
-                : null
-
-            const allParts = [
-                ...regularTitleParts,
-                positionValue,
-                colourValue,
-                formState.partDescription,
-            ].filter(Boolean)
-
-            const fullTitle = allParts.join(' ')
-
-            if (fullTitle.length > 80) {
-                shadcnToast({
-                    variant: 'destructive',
-                    title: 'Title Length Error',
-                    description:
-                        "Title length exceeds eBay's 80 character limit. Please remove some parameters.",
-                })
-                const lastParam = Array.from(
-                    formState.selectedTitleParams
-                ).pop()
-                if (lastParam) {
-                    const newParams = new Set(formState.selectedTitleParams)
-                    newParams.delete(lastParam)
-                    setFormState((prev) => ({
-                        ...prev,
-                        selectedTitleParams: newParams,
-                        title: prev.title,
-                    }))
-                }
-                return
-            }
-
-            setFormState((prev) => ({ ...prev, title: fullTitle }))
+        if (vehicle && formState.partDescription) {
+            const searchTerm = `${vehicle.dvlaMake} ${formState.partDescription}`
+            fetchCategories(searchTerm)
         }
+    }, [formState.partDescription])
+
+    // Separate effect for production year
+    useEffect(() => {
+        if (vehicle && formState.partDescription) {
+            fetchProductionYear()
+        }
+    }, [vehicle, formState.partDescription])
+
+    useEffect(() => {
+        if (!formState.vehicle || !formState.partDescription) return
+
+        const currentVehicle = formState.vehicle
+        const titleParts: string[] = []
+        const genuineParam = TITLE_PARAMETERS.find(
+            (param) => param.key === 'genuine'
+        )
+
+        // First, handle Genuine if selected
+        if (
+            formState.selectedTitleParams.has('genuine') &&
+            genuineParam?.value
+        ) {
+            titleParts.push(genuineParam.value)
+        }
+
+        // Process each parameter (except Genuine which was handled above)
+        TITLE_PARAMETERS.forEach((param) => {
+            if (param.key === 'genuine') return // Skip Genuine as it's already handled
+
+            // Handle split word parameters
+            if (param.splitWords) {
+                const value =
+                    currentVehicle[param.key as keyof Car]?.toString() || ''
+                const words = value.split(' ')
+                words.forEach((word) => {
+                    const wordKey = `${param.key}_${word}`
+                    if (formState.selectedTitleParams.has(wordKey)) {
+                        titleParts.push(word)
+                    }
+                })
+            }
+            // Handle regular parameters
+            else if (formState.selectedTitleParams.has(param.key)) {
+                if (param.isCustom) {
+                    if (param.key === 'passenger' || param.key === 'driver') {
+                        titleParts.push(param.value!)
+                    } else if (formState.productionYearInfo) {
+                        if (param.key === 'productionYears') {
+                            titleParts.push(
+                                `${formState.productionYearInfo.from}-${formState.productionYearInfo.to}`
+                            )
+                        } else if (
+                            param.key === 'productionYearsFL' &&
+                            formState.productionYearInfo.facelift
+                        ) {
+                            titleParts.push(
+                                `${formState.productionYearInfo.from}-${formState.productionYearInfo.facelift}`
+                            )
+                        }
+                    }
+                } else {
+                    const value = currentVehicle[param.key as keyof Car]
+                    if (value) {
+                        if (param.key === 'nomCC') {
+                            titleParts.push(formatNomCC(value))
+                        } else {
+                            titleParts.push(value.toString().toUpperCase())
+                        }
+                    }
+                }
+            }
+        })
+
+        // Add part description at the end
+        titleParts.push(formState.partDescription.toUpperCase())
+
+        const fullTitle = titleParts.join(' ')
+
+        if (fullTitle.length > 80) {
+            shadcnToast({
+                variant: 'destructive',
+                title: 'Title Length Error',
+                description:
+                    "Title length exceeds eBay's 80 character limit. Please remove some parameters.",
+            })
+            const lastParam = Array.from(formState.selectedTitleParams).pop()
+            if (lastParam) {
+                const newParams = new Set(formState.selectedTitleParams)
+                newParams.delete(lastParam)
+                setFormState((prev) => ({
+                    ...prev,
+                    selectedTitleParams: newParams,
+                    title: prev.title,
+                }))
+            }
+            return
+        }
+
+        setFormState((prev) => ({ ...prev, title: fullTitle }))
     }, [
         formState.vehicle,
         formState.partDescription,
@@ -216,6 +246,7 @@ export function useListingForm() {
     const handleTitleParamChange = (param: string) => {
         const newParams = new Set(formState.selectedTitleParams)
 
+        // Handle mutually exclusive parameters
         if (param === 'passenger' && newParams.has('driver')) {
             newParams.delete('driver')
         } else if (param === 'driver' && newParams.has('passenger')) {
@@ -231,6 +262,7 @@ export function useListingForm() {
             newParams.delete('productionYears')
         }
 
+        // Toggle the parameter
         if (newParams.has(param)) {
             newParams.delete(param)
         } else {
@@ -265,22 +297,10 @@ export function useListingForm() {
 
             setProductionYearInfo(result)
 
-            setFormState((prev) => {
-                const newParams = new Set(prev.selectedTitleParams)
-                if (result.facelift) {
-                    newParams.add('productionYearsFL')
-                } else {
-                    newParams.add('productionYears')
-                }
-                return {
-                    ...prev,
-                    selectedTitleParams: newParams,
-                    productionYearInfo: result,
-                }
-            })
-
-            const searchTerm = `${vehicle.dvlaMake} ${formState.partDescription}`
-            await fetchCategories(searchTerm)
+            setFormState((prev) => ({
+                ...prev,
+                productionYearInfo: result,
+            }))
         } catch (error) {
             console.error('Error fetching production year:', error)
             toast.error('Failed to fetch vehicle production information')

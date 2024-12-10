@@ -3,6 +3,24 @@ import { getConditionId, getElementText } from './utils'
 import * as fs from 'fs'
 import * as path from 'path'
 
+// <ItemCompatibilityList>
+//                     <Compatibility>
+//                         <NameValueList>
+//                             <Name>Cars Year</Name>
+//                             <Value>2012</Value>
+//                         </NameValueList>
+//                         <NameValueList>
+//                             <Name>Car Make</Name>
+//                             <Value>BMW</Value>
+//                         </NameValueList>
+//                         <NameValueList>
+//                             <Name>Model</Name>
+//                             <Value>F20</Value>
+//                         </NameValueList>
+//                         <CompatibilityNotes>Fits for all trims and engines.</CompatibilityNotes>
+//                     </Compatibility>
+//                 </ItemCompatibilityList>
+
 // Helper function to escape XML special characters
 const escapeXml = (str: string): string => {
     return str.replace(/[<>&'"]/g, (c: string) => {
@@ -125,6 +143,7 @@ export async function addEbayListing(
                 </NameValueList>`)
         }
 
+        // Add placement as a single combined value
         if (placement) {
             itemSpecifics.push(`
                 <NameValueList>
@@ -163,6 +182,13 @@ export async function addEbayListing(
                     <NameValueList>
                         <Name>Model</Name>
                         <Value>${escapeXml(vehicle.dvlaModel)}</Value>
+                    </NameValueList>`)
+            }
+            if (vehicle.colourCurrent) {
+                itemSpecifics.push(`
+                    <NameValueList>
+                        <Name>Colour</Name>
+                        <Value>${escapeXml(vehicle.colourCurrent)}</Value>
                     </NameValueList>`)
             }
         }
@@ -264,7 +290,7 @@ export async function addEbayListing(
                     </Item>
                 </AddFixedPriceItemRequest>`
 
-        console.log(requestXml)
+        // console.log(requestXml)
 
         const response = await fetch('https://api.ebay.com/ws/api.dll', {
             method: 'POST',

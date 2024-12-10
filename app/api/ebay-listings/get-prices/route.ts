@@ -1,22 +1,12 @@
 import { NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
+import {
+    EbayItem,
+    EbayPricesResponse,
+} from '@/app/(landing-page)/ebay-listings/types/ebayTypes'
 
-interface EbayItem {
-    title: string
-    price: number
-    url: string
-    condition: string
-    location: string
-    imageUrl: string
-    status: 'active' | 'sold'
-    soldDate?: string
-    sellerInfo?: string
-    hasBestOffer?: boolean
-    couponDiscount?: string
-    category: {
-        id: string
-        name: string
-    }
+const getTotalPrice = (item: EbayItem): number => {
+    return item.basePrice + (item.shippingCost || 0)
 }
 
 const getPriceValue = (priceText: string): number => {
@@ -33,24 +23,19 @@ const getPriceValue = (priceText: string): number => {
     return parseFloat(cleanPrice) || 0
 }
 
-// Function to normalize text for comparison
 const normalizeText = (text: string): string => {
-    // Get text before the first opening bracket, or use the whole text if no bracket
     const textBeforeBracket = text.split('(')[0]
-
     return textBeforeBracket
         .toLowerCase()
-        .replace(/[^a-z0-9]/g, '') // Remove all non-alphanumeric characters
+        .replace(/[^a-z0-9]/g, '')
         .trim()
 }
 
-// Function to extract actual part description
 const extractPartDescription = (
     fullDescription: string,
-    make: string,
-    model: string
+    make?: string,
+    model?: string
 ): string => {
-    // Remove make and model from the description
     let cleanDescription = fullDescription
     if (make) {
         cleanDescription = cleanDescription.replace(new RegExp(make, 'gi'), '')
@@ -61,12 +46,10 @@ const extractPartDescription = (
     return cleanDescription.trim()
 }
 
-// Function to get first word of model
-const getFirstWordOfModel = (model: string): string => {
+const getFirstWordOfModel = (model?: string): string => {
     return model?.split(' ')[0] || ''
 }
 
-// Cache to store search results and prevent duplicate searches
 const searchCache = new Map<string, Promise<EbayItem[]>>()
 
 const processEbayItems = (
@@ -77,13 +60,11 @@ const processEbayItems = (
 ): EbayItem[] => {
     const results: EbayItem[] = []
 
-    // Convert items to array to use for...of loop, skip first item (advertisement)
     const itemsArray = items.toArray().slice(2)
 
     for (const item of itemsArray) {
         const $item = $(item)
 
-        // Check for the "Results matching fewer words" notice
         const isRewriteStart =
             $item.hasClass('srp-river-answer--REWRITE_START') &&
             $item
@@ -95,28 +76,23 @@ const processEbayItems = (
             console.log(
                 'Found "Results matching fewer words" notice, stopping processing'
             )
-            return results // Return immediately with current results
+            return results
         }
 
         try {
-            // Skip if not an item listing
             if (!$item.hasClass('s-item')) continue
-
-            // Skip if it's an advertisement (additional check)
             if ($item.find('[data-track="advertisement"]').length > 0) continue
 
-            // Get the URL from the main link
             const $mainLink = $item.find('.s-item__link')
             const url = $mainLink.attr('href')
 
-            // Extract data using the correct selectors
             const title = $item
                 .find('.s-item__title span[role="heading"]')
                 .text()
                 .trim()
 
             const priceText = $item.find('.s-item__price').first().text().trim()
-            const price = getPriceValue(priceText)
+            const basePrice = getPriceValue(priceText)
 
             const imageUrl = $item
                 .find('.s-item__image-wrapper img')
@@ -128,34 +104,92 @@ const processEbayItems = (
                 .text()
                 .trim()
 
-            // Get seller info
             const sellerInfo = $item
                 .find('.s-item__seller-info-text')
                 .text()
                 .trim()
 
-            // Get shipping cost
-            const shippingText = $item
-                .find('.s-item__shipping, .s-item__logisticsCost')
-                .text()
-                .trim()
-            const hasShipping = shippingText.includes('postage')
-            const shippingCost = hasShipping
-                ? parseFloat(shippingText.replace(/[^0-9.]/g, '')) || 0
-                : 0
+            const collectionElements = $item.find(
+                [
+                    '.s-item__dynamic.s-item__localDeliveryWithDistance',
+                    '.s-item__shipping',
+                    '.s-item__logisticsCost',
+                    '.s-item__freeXDays',
+                    '.s-item__dynamic:contains("Collection")',
+                    '.s-item__dynamic:contains("collection")',
+                    '.s-item__dynamic:contains("Pickup")',
+                    '.s-item__dynamic:contains("pickup")',
+                ].join(', ')
+            )
 
-            // Check for best offer
+            const allDeliveryText = collectionElements
+                .map((_, el) => $(el).text().trim().toLowerCase())
+                .get()
+                .join(' ')
+
+            // console.log('Delivery info for item:', {
+            //     title,
+            //     allDeliveryText,
+            //     elements: collectionElements.length,
+            // })
+
+            let isCollectionOnly = false
+            let collectionLocation = undefined
+            let collectionDistance = undefined
+            let shippingCost = undefined
+
+            const collectionIndicators = [
+                'collection only',
+                'collection in person',
+                'local pickup',
+                'collect in person',
+                'collection from',
+                'click & collect',
+            ]
+
+            if (
+                collectionIndicators.some((indicator) =>
+                    allDeliveryText.includes(indicator)
+                )
+            ) {
+                // console.log('Found collection only item:', { allDeliveryText })
+                isCollectionOnly = true
+
+                collectionElements.each((_, el) => {
+                    const text = $(el).text().trim()
+                    const match = text.match(/collection only: (.+) from (.+)/i)
+                    if (match) {
+                        collectionDistance = match[1]
+                        collectionLocation = match[2]
+                    }
+                })
+            } else {
+                const hasShipping =
+                    allDeliveryText.includes('postage') ||
+                    allDeliveryText.includes('shipping') ||
+                    allDeliveryText.includes('delivery')
+
+                if (hasShipping) {
+                    const shippingMatch = allDeliveryText.match(
+                        /[£$](\d+(?:\.\d{2})?)/
+                    )
+                    shippingCost = shippingMatch
+                        ? parseFloat(shippingMatch[1])
+                        : 0
+                } else {
+                    shippingCost = 0
+                }
+            }
+
             const hasBestOffer =
                 $item.find('.s-item__dynamic.s-item__formatBestOfferEnabled')
                     .length > 0
 
-            // Get coupon information
             const couponText = $item
                 .find('.s-item__sme.s-item__smeInfo .NEGATIVE.BOLD')
                 .text()
                 .trim()
 
-            // For sold items, get the sold date
             let soldDate
             if (!isActive) {
                 const soldDateText = $item
@@ -165,11 +199,11 @@ const processEbayItems = (
                 soldDate = soldDateText.replace('Sold', '').trim()
             }
 
-            // Only add valid items
-            if (title && !isNaN(price) && url) {
+            if (title && !isNaN(basePrice) && url) {
                 const item: EbayItem = {
                     title,
-                    price: price + shippingCost,
+                    basePrice,
+                    shippingCost: isCollectionOnly ? undefined : shippingCost,
                     url,
                     condition: condition || 'Not Specified',
                     location: 'United Kingdom',
@@ -177,10 +211,13 @@ const processEbayItems = (
                         imageUrl ||
                         'https://i.ebayimg.com/images/g/0kYAAOSwm~daXVfM/s-l140.jpg',
                     status: isActive ? 'active' : 'sold',
-                    ...(soldDate && { soldDate }),
-                    sellerInfo,
-                    hasBestOffer,
+                    soldDate: soldDate || undefined,
+                    sellerInfo: sellerInfo || undefined,
+                    hasBestOffer: hasBestOffer || false,
                     couponDiscount: couponText || undefined,
+                    isCollectionOnly: isCollectionOnly || false,
+                    collectionLocation: collectionLocation || undefined,
+                    collectionDistance: collectionDistance || undefined,
                     category: {
                         id: categoryId || 'all',
                         name: categoryId ? 'Used Parts' : 'All Categories',
@@ -215,7 +252,7 @@ async function searchEbayAPI(
     const encodedSearchTerm = encodeURIComponent(searchTerm)
     const url = `https://www.ebay.co.uk/sch/i.html?_from=R40&_nkw=${encodedSearchTerm}${
         categoryId ? `&_sacat=${categoryId}` : ''
-    }&LH_ItemCondition=3000&rt=nc`
+    }&LH_ItemCondition=3000&rt=nc&_ipg=240`
 
     console.log('Active search URL:', url)
 
@@ -231,7 +268,6 @@ async function searchEbayAPI(
             const html = await response.text()
             const $ = cheerio.load(html)
 
-            // Get all items including notices
             const items = $('li.s-item, li.srp-river-answer--REWRITE_START')
             const results = processEbayItems($, items, true, categoryId)
 
@@ -265,7 +301,7 @@ async function searchEbaySoldItems(
     const encodedSearchTerm = encodeURIComponent(searchTerm)
     const url = `https://www.ebay.co.uk/sch/i.html?_from=R40&_nkw=${encodedSearchTerm}${
         categoryId ? `&_sacat=${categoryId}` : ''
-    }&_sop=15&LH_ItemCondition=3000&rt=nc&LH_Sold=1&LH_Complete=1`
+    }&LH_ItemCondition=3000&rt=nc&LH_Sold=1&LH_Complete=1&_ipg=240`
 
     console.log('Sold items search URL:', url)
 
@@ -281,7 +317,6 @@ async function searchEbaySoldItems(
             const html = await response.text()
             const $ = cheerio.load(html)
 
-            // Get all items including notices
             const items = $('li.s-item, li.srp-river-answer--REWRITE_START')
             const results = processEbayItems($, items, false, categoryId)
 
@@ -316,31 +351,30 @@ export async function POST(req: Request) {
             year,
         })
 
-        // Clear the cache for each request to ensure fresh results
         searchCache.clear()
 
-        // Extract the actual part description by removing make and model
         const actualPartDescription = extractPartDescription(
             partDescription,
             make,
             model
         )
 
-        // Get the first word of the model
-        const firstWordOfModel = getFirstWordOfModel(model)
-
-        // Base search term is just the actual part description
+        // For manual searches (when make/model/modelSeries are not provided),
+        // just use the part description as the search term
         const baseSearchTerm = actualPartDescription.trim().replace(/&/g, '')
+        let modelSeriesSearchTerm = baseSearchTerm
 
-        // Add make, first word of model, and model series for the model series search
-        const modelSeriesSearchTerm =
-            `${baseSearchTerm} ${make} ${firstWordOfModel} ${modelSeries}`
-                .trim()
-                .replace(/&/g, '')
+        // Only append vehicle details if they are provided
+        if (make || model || modelSeries) {
+            const firstWordOfModel = getFirstWordOfModel(model)
+            const vehicleDetails = [make, firstWordOfModel, modelSeries]
+                .filter(Boolean)
+                .join(' ')
+            modelSeriesSearchTerm = `${baseSearchTerm} ${vehicleDetails}`.trim()
+        }
 
-        // Add make, first word of model, and year for the year search
         const yearSearchTerm = year
-            ? `${baseSearchTerm} ${make} ${firstWordOfModel} ${year}`
+            ? `${baseSearchTerm} ${make} ${getFirstWordOfModel(model)} ${year}`
                   .trim()
                   .replace(/&/g, '')
             : null
@@ -352,7 +386,6 @@ export async function POST(req: Request) {
             willPerformYearSearch: !!yearSearchTerm,
         })
 
-        // Perform searches with both terms
         const results = await Promise.allSettled([
             searchEbayAPI(modelSeriesSearchTerm, categoryId),
             searchEbaySoldItems(modelSeriesSearchTerm, categoryId),
@@ -373,7 +406,6 @@ export async function POST(req: Request) {
             result.status === 'fulfilled' ? result.value : []
         )
 
-        // Combine all results
         const allResults = [
             ...modelSeriesActiveResults,
             ...modelSeriesSoldResults,
@@ -381,7 +413,6 @@ export async function POST(req: Request) {
             ...(yearSoldResults || []),
         ]
 
-        // Remove duplicates based on normalized titles (text before brackets)
         const titleMap = new Map<string, EbayItem>()
         allResults.forEach((item) => {
             const normalizedTitle = normalizeText(item.title)
@@ -397,14 +428,18 @@ export async function POST(req: Request) {
             uniqueResults: uniqueResults.length,
         })
 
-        return NextResponse.json({
-            results: uniqueResults.sort((a, b) => a.price - b.price),
+        const response: EbayPricesResponse = {
+            results: uniqueResults.sort(
+                (a, b) => getTotalPrice(a) - getTotalPrice(b)
+            ),
             category: null,
             searchTerms: {
                 modelSeries: modelSeriesSearchTerm,
                 year: yearSearchTerm || modelSeriesSearchTerm,
             },
-        })
+        }
+
+        return NextResponse.json(response)
     } catch (error: unknown) {
         console.error('Error in get-prices route:', error)
         if (error instanceof Error) {

@@ -63,6 +63,7 @@ export interface FormState {
     verificationResult: VerificationResult | null
     isVerified: boolean
     selectedCondition: string
+    conditionDescription: string
     selectedCategory: Category | null
     vehicle: Car | null
     selectedTitleParams: Set<string>
@@ -104,6 +105,7 @@ export const initialFormState: FormState = {
     verificationResult: null,
     isVerified: false,
     selectedCondition: 'Used',
+    conditionDescription: '',
     selectedCategory: null,
     vehicle: null,
     selectedTitleParams: new Set(['dvlaMake', 'dvlaModel', 'modelSeries']),

@@ -10,10 +10,15 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useMemo, useState } from 'react'
+import { EbayItem } from '../../types/ebayTypes'
 
 interface StatusBadgeProps {
     status: 'active' | 'sold'
     soldDate?: string
+}
+
+const getTotalPrice = (item: EbayItem): number => {
+    return item.basePrice + (item.shippingCost || 0)
 }
 
 const StatusBadge = ({ status, soldDate }: StatusBadgeProps) => {
@@ -32,45 +37,40 @@ const StatusBadge = ({ status, soldDate }: StatusBadgeProps) => {
 }
 
 interface PriceSummaryProps {
-    items: Array<{
-        price: number
-        status: 'active' | 'sold'
-        url: string
-    }>
-    removedItems: Set<string>
+    items: EbayItem[]
+    filteredItems: EbayItem[]
+    activeItems: EbayItem[]
+    soldItems: EbayItem[]
 }
 
-const PriceSummary = ({ items, removedItems }: PriceSummaryProps) => {
-    const filteredItems = useMemo(
-        () => items.filter((item) => !removedItems.has(item.url)),
-        [items, removedItems]
-    )
-
-    const activeItems = useMemo(
-        () => filteredItems.filter((item) => item.status === 'active'),
-        [filteredItems]
-    )
-
-    const soldItems = useMemo(
-        () => filteredItems.filter((item) => item.status === 'sold'),
-        [filteredItems]
-    )
-
+const PriceSummary = ({
+    filteredItems,
+    activeItems,
+    soldItems,
+}: PriceSummaryProps) => {
     const topActiveItems = useMemo(
-        () => [...activeItems].sort((a, b) => a.price - b.price).slice(0, 5),
+        () =>
+            [...activeItems]
+                .sort((a, b) => getTotalPrice(a) - getTotalPrice(b))
+                .slice(0, 5),
         [activeItems]
     )
 
     const topSoldItems = useMemo(
-        () => [...soldItems].sort((a, b) => a.price - b.price).slice(0, 5),
+        () =>
+            [...soldItems]
+                .sort((a, b) => getTotalPrice(a) - getTotalPrice(b))
+                .slice(0, 5),
         [soldItems]
     )
 
     const avgTopActive = useMemo(
         () =>
             topActiveItems.length > 0
-                ? topActiveItems.reduce((sum, item) => sum + item.price, 0) /
-                  topActiveItems.length
+                ? topActiveItems.reduce(
+                      (sum, item) => sum + getTotalPrice(item),
+                      0
+                  ) / topActiveItems.length
                 : 0,
         [topActiveItems]
     )
@@ -78,8 +78,10 @@ const PriceSummary = ({ items, removedItems }: PriceSummaryProps) => {
     const avgTopSold = useMemo(
         () =>
             topSoldItems.length > 0
-                ? topSoldItems.reduce((sum, item) => sum + item.price, 0) /
-                  topSoldItems.length
+                ? topSoldItems.reduce(
+                      (sum, item) => sum + getTotalPrice(item),
+                      0
+                  ) / topSoldItems.length
                 : 0,
         [topSoldItems]
     )
@@ -167,7 +169,6 @@ export function PriceComparisonSection({
     selectedCategory,
     formState,
 }: PriceComparisonSectionProps) {
-    // Initialize search term with make and model if available
     const getInitialSearchTerm = () => {
         if (formState.searchByPartNumber) return formState.activePartNumber
 
@@ -186,7 +187,6 @@ export function PriceComparisonSection({
     )
     const [isManualSearch, setIsManualSearch] = useState(false)
 
-    // Use activeSearchTerm instead of editableSearchTerm for searches
     const { priceComparisons, searchTerms, isLoadingPrices } =
         usePriceComparisons(
             isManualSearch ? null : vehicle,
@@ -200,7 +200,7 @@ export function PriceComparisonSection({
 
     const handleSearch = () => {
         setIsManualSearch(true)
-        setActiveSearchTerm(editableSearchTerm) // Only update the active search term when search is triggered
+        setActiveSearchTerm(editableSearchTerm)
     }
 
     const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -210,19 +210,35 @@ export function PriceComparisonSection({
     }
 
     const filteredItems = useMemo(
-        () =>
-            priceComparisons
-                .filter((item) => !removedItems.has(item.url))
-                .filter((item) => {
-                    if (item.status === 'active') return showActive
-                    if (item.status === 'sold') return showSold
-                    return false
-                }),
-        [priceComparisons, removedItems, showActive, showSold]
+        () => priceComparisons.filter((item) => !removedItems.has(item.url)),
+        [priceComparisons, removedItems]
     )
 
-    const { visibleItems, hasMore, loadMoreRef } =
-        useInfiniteScroll(filteredItems)
+    const activeItems = useMemo(
+        () => filteredItems.filter((item) => item.status === 'active'),
+        [filteredItems]
+    )
+
+    const soldItems = useMemo(
+        () => filteredItems.filter((item) => item.status === 'sold'),
+        [filteredItems]
+    )
+
+    const visibleItems = useMemo(
+        () =>
+            filteredItems.filter((item) => {
+                if (item.status === 'active') return showActive
+                if (item.status === 'sold') return showSold
+                return false
+            }),
+        [filteredItems, showActive, showSold]
+    )
+
+    const {
+        visibleItems: paginatedItems,
+        hasMore,
+        loadMoreRef,
+    } = useInfiniteScroll(visibleItems)
 
     const handleRemoveItem = (url: string) => {
         setRemovedItems((prev) => {
@@ -232,22 +248,11 @@ export function PriceComparisonSection({
         })
     }
 
-    const activeCount = useMemo(
-        () =>
-            priceComparisons.filter((item) => item.status === 'active').length,
-        [priceComparisons]
-    )
-
-    const soldCount = useMemo(
-        () => priceComparisons.filter((item) => item.status === 'sold').length,
-        [priceComparisons]
-    )
-
     return (
         <div className="space-y-6 w-full">
             <div className="flex flex-col space-y-4">
                 <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold">Compare Prices</h2>
+                    <h2 className="text-2xl font-bold">eBay Prices</h2>
                     <div className="flex gap-2">
                         <Button
                             onClick={() => setShowActive(!showActive)}
@@ -259,7 +264,7 @@ export function PriceComparisonSection({
                             }
                             size="sm"
                         >
-                            For Sale ({activeCount})
+                            For Sale ({activeItems.length})
                         </Button>
                         <Button
                             onClick={() => setShowSold(!showSold)}
@@ -271,7 +276,7 @@ export function PriceComparisonSection({
                             }
                             size="sm"
                         >
-                            Sold ({soldCount})
+                            Sold ({soldItems.length})
                         </Button>
                     </div>
                 </div>
@@ -352,15 +357,17 @@ export function PriceComparisonSection({
                 </div>
             )}
 
-            {!isLoadingPrices && visibleItems.length > 0 && (
+            {!isLoadingPrices && paginatedItems.length > 0 && (
                 <>
                     <PriceSummary
                         items={priceComparisons}
-                        removedItems={removedItems}
+                        filteredItems={filteredItems}
+                        activeItems={activeItems}
+                        soldItems={soldItems}
                     />
 
                     <div className="space-y-4">
-                        {visibleItems.map((item, index) => (
+                        {paginatedItems.map((item, index) => (
                             <div
                                 key={index}
                                 className="bg-white shadow-sm rounded-md border border-gray-200 hover:shadow-md transition-shadow flex"
@@ -378,19 +385,20 @@ export function PriceComparisonSection({
                                     </div>
                                 </div>
 
-                                <div className="flex-1 p-4">
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex-1">
-                                            <a
-                                                href={item.url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-blue-600 hover:text-blue-800 font-medium"
-                                            >
-                                                {item.title}
-                                            </a>
-                                        </div>
-                                        <div className="flex flex-col items-end gap-2">
+                                <div className="flex-1 pt-[1px] pl-[3px]">
+                                    <div className="flex flex-col items-start">
+                                        {/* Item Title and X cross */}
+                                        <div className="flex flex-row gap-1">
+                                            <div className="flex-1">
+                                                <a
+                                                    href={item.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-600 hover:text-blue-800 font-medium"
+                                                >
+                                                    {item.title}
+                                                </a>
+                                            </div>
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
@@ -401,10 +409,40 @@ export function PriceComparisonSection({
                                             >
                                                 <X className="h-4 w-4 text-red-600" />
                                             </Button>
-                                            <div className="text-lg font-bold text-green-600">
-                                                £{item.price.toFixed(2)}
-                                            </div>
+                                        </div>
+                                        {/* Price and Shipping */}
 
+                                        <div className="flex flex-row items-center justify-between gap-2">
+                                            <div className="text-lg font-bold text-green-600">
+                                                £
+                                                {getTotalPrice(item).toFixed(2)}
+                                            </div>
+                                            {item.isCollectionOnly ? (
+                                                <div className="text-sm text-amber-600 font-medium">
+                                                    Collect
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    {typeof item.shippingCost ===
+                                                        'number' &&
+                                                        (item.shippingCost >
+                                                        0 ? (
+                                                            <div className="text-sm text-gray-600">
+                                                                £
+                                                                {item.shippingCost.toFixed(
+                                                                    2
+                                                                )}{' '}
+                                                                post
+                                                            </div>
+                                                        ) : (
+                                                            <>
+                                                                <div className="text-sm text-green-600">
+                                                                    Free Post
+                                                                </div>
+                                                            </>
+                                                        ))}
+                                                </>
+                                            )}
                                             <StatusBadge
                                                 status={item.status}
                                                 soldDate={

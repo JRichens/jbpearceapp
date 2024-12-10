@@ -24,7 +24,8 @@ export function FormActions({
             parseFloat(formState.price) > 0 && // Price must be greater than 0
             formState.shippingProfileId && // Shipping Profile is required
             formState.paintCode && // Paint Code is required
-            formState.photos.length > 0 // At least one photo is required
+            formState.photos.length > 0 && // At least one photo is required
+            formState.conditionDescription // Condition Description is required
     )
 
     return (

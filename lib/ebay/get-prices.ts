@@ -1,34 +1,7 @@
-interface EbayItem {
-    title: string
-    price: number
-    url: string
-    condition: string
-    location: string
-    imageUrl: string
-    status: 'active' | 'sold'
-    category: {
-        id: string
-        name: string
-    }
-}
-
-interface CategoryInfo {
-    id: string
-    name: string
-    fullPath: string
-    finalName: string
-}
-
-interface SearchTerms {
-    modelSeries: string
-    year: string
-}
-
-interface EbayPricesResponse {
-    results: EbayItem[]
-    category: CategoryInfo | null
-    searchTerms: SearchTerms
-}
+import {
+    EbayItem,
+    EbayPricesResponse,
+} from '@/app/(landing-page)/ebay-listings/types/ebayTypes'
 
 export async function getEbayPrices(
     partDescription: string,

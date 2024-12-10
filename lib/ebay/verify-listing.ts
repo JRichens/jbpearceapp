@@ -136,6 +136,7 @@ export async function verifyEbayListing(
                 </NameValueList>`)
         }
 
+        // Add placement as a single combined value
         if (placement) {
             itemSpecifics.push(`
                 <NameValueList>
@@ -176,6 +177,13 @@ export async function verifyEbayListing(
                         <Value>${escapeXml(vehicle.dvlaModel)}</Value>
                     </NameValueList>`)
             }
+            if (vehicle.colourCurrent) {
+                itemSpecifics.push(`
+                    <NameValueList>
+                        <Name>Colour</Name>
+                        <Value>${escapeXml(vehicle.colourCurrent)}</Value>
+                    </NameValueList>`)
+            }
         }
 
         itemSpecifics.push(`
@@ -207,6 +215,53 @@ export async function verifyEbayListing(
                 <BestOfferAutoAcceptPrice>${minimumOfferPrice}</BestOfferAutoAcceptPrice>
                </ListingDetails>`
                 : ''
+
+        // Create a simplified version of the Item details for logging
+        const itemDetailsForLogging = {
+            Title: title,
+            PrimaryCategory: { CategoryID: category.trim() },
+            StartPrice: price,
+            ConditionID: getConditionId(condition),
+            ConditionDescription: conditionDescription,
+            ItemSpecifics: itemSpecifics.join(''),
+            Country: 'GB',
+            Currency: currency,
+            DispatchTimeMax: 3,
+            ListingDuration: 'GTC',
+            ListingType: 'FixedPriceItem',
+            Location: location,
+            PaymentMethods: 'PayPal',
+            PayPalEmailAddress: process.env.PAYPAL_EMAIL,
+            PictureDetails: imageUrls.map((url) => ({ PictureURL: url })),
+            Quantity: quantity,
+            BestOfferDetails: allowOffers
+                ? { BestOfferEnabled: true }
+                : undefined,
+            ListingDetails:
+                allowOffers && minimumOfferPrice
+                    ? {
+                          MinimumBestOfferPrice: minimumOfferPrice,
+                          BestOfferAutoAcceptPrice: minimumOfferPrice,
+                      }
+                    : undefined,
+            SellerProfiles: {
+                SellerPaymentProfile: {
+                    PaymentProfileID: '239472522017',
+                    PaymentProfileName: 'eBay Managed Payments (239472522017)',
+                },
+                SellerReturnProfile: {
+                    ReturnProfileID: '239472521017',
+                    ReturnProfileName: '14 days (239472521017)',
+                },
+                SellerShippingProfile: {
+                    ShippingProfileID: shippingProfileId || '240049979017',
+                    ShippingProfileName: shippingProfileName,
+                },
+            },
+        }
+
+        console.log('Verifying eBay listing with the following details:')
+        console.log(JSON.stringify(itemDetailsForLogging, null, 2))
 
         const requestXml = `<?xml version="1.0" encoding="utf-8"?>
                 <VerifyAddFixedPriceItemRequest xmlns="urn:ebay:apis:eBLBaseComponents">

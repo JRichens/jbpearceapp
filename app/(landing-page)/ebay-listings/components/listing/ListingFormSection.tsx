@@ -96,13 +96,24 @@ export function ListingFormSection({
 
     const handlePlacementChange = (value: string) => {
         setSelectedPlacements((prev) => {
+            let newPlacements: string[]
             if (prev.includes(value)) {
-                return prev.filter((p) => p !== value)
+                newPlacements = prev.filter((p) => p !== value)
+            } else if (prev.length < 2) {
+                newPlacements = [...prev, value]
+            } else {
+                newPlacements = prev
             }
-            if (prev.length < 2) {
-                return [...prev, value]
-            }
-            return prev
+
+            // Update formState with the combined placement value
+            setFormState((prevState) => ({
+                ...prevState,
+                placement: newPlacements.sort().join(' '), // Sort to ensure consistent ordering
+                isVerified: false,
+                verificationResult: null,
+            }))
+
+            return newPlacements
         })
     }
 
@@ -157,13 +168,6 @@ export function ListingFormSection({
             formState.partDescription &&
             !isLoadingProductionYear
         ) {
-            if (
-                productionYearInfo &&
-                !formState.selectedTitleParams.has('productionYears')
-            ) {
-                handleTitleParamChange('productionYears')
-            }
-
             // Initialize paint code from vehicle data
             if (vehicle.paintCode && !formState.paintCode) {
                 setFormState((prev) => ({
@@ -209,6 +213,18 @@ export function ListingFormSection({
             />
 
             {hasSearchedVehicle && vehicle && (
+                <CategorySelect
+                    categories={formState.categories}
+                    selectedCategory={formState.selectedCategory}
+                    onCategoryChange={handleCategoryChange}
+                    isCategoriesLoading={formState.isCategoriesLoading}
+                    categoriesError={formState.categoriesError}
+                    vehicle={vehicle}
+                    partDescription={formState.partDescription}
+                />
+            )}
+
+            {formState.selectedCategory && (
                 <>
                     <TitleSection
                         formState={formState}
@@ -219,77 +235,63 @@ export function ListingFormSection({
                         onTitleParamChange={handleTitleParamChange}
                     />
 
-                    <CategorySelect
-                        categories={formState.categories}
-                        selectedCategory={formState.selectedCategory}
-                        onCategoryChange={handleCategoryChange}
-                        isCategoriesLoading={formState.isCategoriesLoading}
-                        categoriesError={formState.categoriesError}
-                        vehicle={vehicle}
-                        partDescription={formState.partDescription}
-                    />
+                    <form
+                        ref={formRef}
+                        onSubmit={handleVerifySubmit}
+                        className="space-y-6"
+                    >
+                        <DetailsSection
+                            formState={formState}
+                            setFormState={setFormState}
+                            onFormChange={handleFormChange}
+                            selectedPlacements={selectedPlacements}
+                            onPlacementChange={handlePlacementChange}
+                        />
 
-                    {formState.selectedCategory && (
-                        <form
-                            ref={formRef}
-                            onSubmit={handleVerifySubmit}
-                            className="space-y-6"
-                        >
-                            <DetailsSection
-                                formState={formState}
-                                setFormState={setFormState}
-                                onFormChange={handleFormChange}
-                                selectedPlacements={selectedPlacements}
-                                onPlacementChange={handlePlacementChange}
-                            />
+                        <PriceQuantityInputs
+                            formState={formState}
+                            setFormState={setFormState}
+                            onPriceChange={handleFormChange}
+                            onQuantityChange={handleFormChange}
+                            onAllowOffersChange={handleAllowOffersChange}
+                            onMinimumOfferPriceChange={
+                                handleMinimumOfferPriceChange
+                            }
+                        />
 
-                            <PriceQuantityInputs
-                                formState={formState}
-                                setFormState={setFormState}
-                                onPriceChange={handleFormChange}
-                                onQuantityChange={handleFormChange}
-                                onAllowOffersChange={handleAllowOffersChange}
-                                onMinimumOfferPriceChange={
-                                    handleMinimumOfferPriceChange
-                                }
-                            />
+                        <ConditionSelect
+                            selectedCondition={formState.selectedCondition}
+                            onConditionChange={(condition) =>
+                                setFormState((prev) => ({
+                                    ...prev,
+                                    selectedCondition: condition,
+                                }))
+                            }
+                            onDescriptionChange={handleFormChange}
+                        />
 
-                            <ConditionSelect
-                                selectedCondition={formState.selectedCondition}
-                                onConditionChange={(condition) =>
-                                    setFormState((prev) => ({
-                                        ...prev,
-                                        selectedCondition: condition,
-                                    }))
-                                }
-                                onDescriptionChange={handleFormChange}
-                            />
+                        <ShippingProfileSelect
+                            formState={formState}
+                            setFormState={setFormState}
+                            onProfileChange={handleFormChange}
+                        />
 
-                            <ShippingProfileSelect
-                                formState={formState}
-                                setFormState={setFormState}
-                                onProfileChange={handleFormChange}
-                            />
+                        <PhotoUploader
+                            photos={formState.photos}
+                            photosPreviews={formState.photosPreviews}
+                            onPhotosChange={handlePhotosChange}
+                            isLoading={formState.isLoading}
+                        />
 
-                            <PhotoUploader
-                                photos={formState.photos}
-                                photosPreviews={formState.photosPreviews}
-                                onPhotosChange={handlePhotosChange}
-                                isLoading={formState.isLoading}
-                            />
-
-                            <FormActions
-                                formState={formState}
-                                setFormState={setFormState}
-                                onFormChange={handleFormChange}
-                                isVerified={formState.isVerified}
-                                isLoading={formState.isLoading}
-                                verificationResult={
-                                    formState.verificationResult
-                                }
-                            />
-                        </form>
-                    )}
+                        <FormActions
+                            formState={formState}
+                            setFormState={setFormState}
+                            onFormChange={handleFormChange}
+                            isVerified={formState.isVerified}
+                            isLoading={formState.isLoading}
+                            verificationResult={formState.verificationResult}
+                        />
+                    </form>
                 </>
             )}
 
