@@ -147,13 +147,13 @@ const MaterialsComponent = ({ tableData, setTableData }: Props) => {
     const columns = useMemo<MRT_ColumnDef<Materials>[]>(
         () => [
             {
-                header: 'UniWin Code',
+                header: 'Seller Code',
                 accessorKey: 'code',
                 size: 30,
                 Cell: ({ cell }) => getDisplayName(cell.getValue() as string),
             },
             {
-                header: 'UniWin',
+                header: 'UniWin Description',
                 accessorKey: 'string24',
             },
             {
