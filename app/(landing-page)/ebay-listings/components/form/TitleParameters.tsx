@@ -27,26 +27,13 @@ export const formatNomCC = (value: any): string => {
 }
 
 const TITLE_PARAMETERS: TitleParameter[] = [
-    { key: 'dvlaMake', label: 'Make' },
     {
         key: 'genuine',
         label: 'Genuine',
         value: '✅ GENUINE',
         isCustom: true,
     },
-    {
-        key: 'passenger',
-        label: 'Passenger',
-        value: 'N/S PASSENGER LEFT',
-        isCustom: true,
-    },
-    {
-        key: 'driver',
-        label: 'Driver',
-        value: 'O/S DRIVER RIGHT',
-        isCustom: true,
-    },
-    { key: 'colourCurrent', label: 'Colour' },
+    { key: 'dvlaMake', label: 'Make' },
     { key: 'dvlaModel', label: 'Model', splitWords: true },
     { key: 'modelSeries', label: 'Model Series', splitWords: true },
     { key: 'modelVariant', label: 'Model Variant', splitWords: true },
@@ -65,6 +52,19 @@ const TITLE_PARAMETERS: TitleParameter[] = [
     { key: 'fuelType', label: 'Fuel Type' },
     { key: 'transmission', label: 'Transmission' },
     { key: 'driveType', label: 'Drive Type' },
+    {
+        key: 'passenger',
+        label: 'Passenger',
+        value: 'N/S PASSENGER LEFT',
+        isCustom: true,
+    },
+    {
+        key: 'driver',
+        label: 'Driver',
+        value: 'O/S DRIVER RIGHT',
+        isCustom: true,
+    },
+    { key: 'colourCurrent', label: 'Colour' },
 ]
 
 interface TitleParametersProps {

@@ -26,6 +26,8 @@ export function useListingForm() {
         useState<ProductionYearInfo | null>(null)
     const [isLoadingProductionYear, setIsLoadingProductionYear] =
         useState(false)
+    const [hasInitializedCategories, setHasInitializedCategories] =
+        useState(false)
     const { toast: shadcnToast } = useToast()
 
     // Effect to update form state when vehicle changes
@@ -38,28 +40,24 @@ export function useListingForm() {
                 make: vehicle.dvlaMake || '',
             }))
 
-            // If we have both vehicle and part description, fetch categories
-            if (formState.partDescription) {
+            // If we have both vehicle and part description, fetch categories only on initial vehicle set
+            if (formState.partDescription && !hasInitializedCategories) {
                 const searchTerm = `${vehicle.dvlaMake} ${formState.partDescription}`
                 fetchCategories(searchTerm)
+                setHasInitializedCategories(true)
             }
         }
     }, [vehicle])
 
-    // Effect to fetch categories when part description changes
-    useEffect(() => {
-        if (vehicle && formState.partDescription) {
-            const searchTerm = `${vehicle.dvlaMake} ${formState.partDescription}`
-            fetchCategories(searchTerm)
-        }
-    }, [formState.partDescription])
+    // Remove the effect that was watching partDescription changes
+    // This prevents re-fetching categories when part description changes
 
-    // Separate effect for production year
+    // Separate effect for production year - only fetch on initial vehicle set
     useEffect(() => {
-        if (vehicle && formState.partDescription) {
+        if (vehicle && formState.partDescription && !hasInitializedCategories) {
             fetchProductionYear()
         }
-    }, [vehicle, formState.partDescription])
+    }, [vehicle, hasInitializedCategories])
 
     useEffect(() => {
         if (!formState.vehicle || !formState.partDescription) return
@@ -329,6 +327,10 @@ export function useListingForm() {
             formData.append('description', formState.title)
             formData.append('price', priceFromForm || formState.price)
             formData.append('condition', formState.selectedCondition)
+            formData.append(
+                'conditionDescription',
+                formState.conditionDescription
+            )
             formData.append('quantity', '1')
             formData.append('category', formState.selectedCategory?.id || '')
             formData.append(
@@ -415,6 +417,7 @@ export function useListingForm() {
         setVehicle(null)
         setProductionYearInfo(null)
         setIsLoadingProductionYear(false)
+        setHasInitializedCategories(false)
     }
 
     return {

@@ -63,6 +63,15 @@ export async function verifyEbayListing(
             })
         }
 
+        // Helper function to strip spaces and hyphens from part numbers and format multiple numbers
+        const formatPartNumbers = (partNum: string): string => {
+            // Split by comma, strip spaces/hyphens from each part, then join with comma + space
+            return partNum
+                .split(',')
+                .map((part) => part.trim().replace(/[\s-]/g, ''))
+                .join(', ')
+        }
+
         // Read the template file
         const templatePath = path.join(
             process.cwd(),
@@ -125,6 +134,7 @@ export async function verifyEbayListing(
 
         if (partNumber) {
             const escapedPartNumber = escapeXml(partNumber)
+            const formattedPartNumber = escapeXml(formatPartNumbers(partNumber))
             itemSpecifics.push(`
                 <NameValueList>
                     <Name>Manufacturer Part Number</Name>
@@ -132,7 +142,7 @@ export async function verifyEbayListing(
                 </NameValueList>
                 <NameValueList>
                     <Name>Reference OE/OEM Number</Name>
-                    <Value>${escapedPartNumber}</Value>
+                    <Value>${formattedPartNumber}</Value>
                 </NameValueList>`)
         }
 
@@ -260,8 +270,8 @@ export async function verifyEbayListing(
             },
         }
 
-        console.log('Verifying eBay listing with the following details:')
-        console.log(JSON.stringify(itemDetailsForLogging, null, 2))
+        // console.log('Verifying eBay listing with the following details:')
+        // console.log(JSON.stringify(itemDetailsForLogging, null, 2))
 
         const requestXml = `<?xml version="1.0" encoding="utf-8"?>
                 <VerifyAddFixedPriceItemRequest xmlns="urn:ebay:apis:eBLBaseComponents">

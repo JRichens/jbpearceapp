@@ -46,6 +46,15 @@ const escapeXml = (str: string): string => {
     })
 }
 
+// Helper function to strip spaces and hyphens from part numbers and format multiple numbers
+const formatPartNumbers = (partNum: string): string => {
+    // Split by comma, strip spaces/hyphens from each part, then join with comma + space
+    return partNum
+        .split(',')
+        .map((part) => part.trim().replace(/[\s-]/g, ''))
+        .join(', ')
+}
+
 export async function addEbayListing(
     params: CreateListingParams
 ): Promise<{ itemId: string }> {
@@ -72,11 +81,6 @@ export async function addEbayListing(
             allowOffers = false,
             minimumOfferPrice,
         } = params
-
-        // Helper function to strip spaces and hyphens from part numbers
-        const stripPartNumber = (partNum: string): string => {
-            return partNum.replace(/[\s-]/g, '')
-        }
 
         // Read the template file
         const templatePath = path.join(
@@ -131,7 +135,7 @@ export async function addEbayListing(
 
         if (partNumber) {
             const escapedPartNumber = escapeXml(partNumber)
-            const strippedPartNumber = escapeXml(stripPartNumber(partNumber))
+            const formattedPartNumber = escapeXml(formatPartNumbers(partNumber))
             itemSpecifics.push(`
                 <NameValueList>
                     <Name>Manufacturer Part Number</Name>
@@ -139,7 +143,7 @@ export async function addEbayListing(
                 </NameValueList>
                 <NameValueList>
                     <Name>Reference OE/OEM Number</Name>
-                    <Value>${strippedPartNumber}</Value>
+                    <Value>${formattedPartNumber}</Value>
                 </NameValueList>`)
         }
 

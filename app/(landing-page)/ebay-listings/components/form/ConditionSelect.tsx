@@ -96,15 +96,11 @@ export function ConditionSelect({
                     <Select
                         name="conditionDescription"
                         required
-                        onValueChange={(value) => {
-                            const description =
-                                CONDITION_DESCRIPTIONS.find(
-                                    (d) => d.id === value
-                                )?.description || ''
+                        onValueChange={(value: string) => {
                             const event = {
                                 target: {
                                     name: 'conditionDescription',
-                                    value: description,
+                                    value: value,
                                 },
                             } as ChangeEvent<HTMLSelectElement>
                             onDescriptionChange(event)
@@ -120,7 +116,7 @@ export function ConditionSelect({
                             {CONDITION_DESCRIPTIONS.map((condition, index) => (
                                 <SelectItem
                                     key={condition.id}
-                                    value={condition.id}
+                                    value={condition.description}
                                     className={cn(
                                         'text-xl break-words whitespace-normal py-3 px-3',
                                         'hover:bg-gray-50 transition-colors',

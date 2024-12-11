@@ -9,6 +9,7 @@ import {
     Car,
     BookA,
     ChevronRight,
+    ChevronDown,
     Store,
     ClipboardCheck,
     Scale,
@@ -20,6 +21,10 @@ import {
     BellRing,
     UserCircle2,
     ListOrdered,
+    Users,
+    Database,
+    Search,
+    ClipboardList,
 } from 'lucide-react'
 import { BiCar } from 'react-icons/bi'
 import { Button } from '@/components/ui/button'
@@ -44,90 +49,107 @@ export const SidebarItem = () => {
     const [landUser, setLandUser] = useState(false)
     const [isPending, startTransition] = useTransition()
     const [loadingMenu, setLoadingMenu] = useState(false)
+    const [openDropdowns, setOpenDropdowns] = useState<string[]>([])
+
+    const toggleDropdown = (category: string) => {
+        setOpenDropdowns((prev) =>
+            prev.includes(category)
+                ? prev.filter((item) => item !== category)
+                : [...prev, category]
+        )
+    }
 
     const routes = [
         {
-            label: 'Breaking Vehicles',
-            icon: <BiCar className="h-6 w-6 mr-2" />,
-            href: `/vehicles-breaking`,
-            access: ['user', 'userplus', 'staff', 'admin', 'super'],
-        },
-        {
-            label: 'Export Vehicles',
-            icon: <Car className="h-6 w-6 mr-2" />,
-            href: `/vehicles-export`,
-            access: ['userplus', 'staff', 'admin', 'super'],
-        },
-        {
-            label: 'UniWin Customers',
-            icon: <UserCircle2 className="h-6 w-6 mr-2" />,
-            href: `/uniwin/customers`,
+            category: 'UniWin',
+            icon: <DatabaseZap className="h-6 w-6 mr-2" />,
             access: ['staff', 'admin', 'super'],
+            items: [
+                {
+                    label: 'Customers',
+                    icon: <Users className="h-5 w-5 mr-2" />,
+                    href: '/uniwin/customers',
+                    access: ['staff', 'admin', 'super'],
+                },
+                {
+                    label: 'Database',
+                    icon: <Database className="h-5 w-5 mr-2" />,
+                    href: '/uniwin',
+                    access: ['admin', 'super'],
+                },
+            ],
         },
-        // {
-        //     label: 'Transport PODs',
-        //     icon: <Truck className="h-6 w-6 mr-2" />,
-        //     href: `/transport-pods`,
-        //     access: ['staff', 'admin', 'super'],
-        // },
         {
             label: 'Weighbridge',
             icon: <Scale className="h-6 w-6 mr-2" />,
-            href: `/weighbridge`,
+            href: '/weighbridge',
             access: ['userplus', 'staff', 'admin', 'super'],
         },
         {
             label: 'Vehicles API',
             icon: <BookA className="h-6 w-6 mr-2" />,
-            href: `/vehicles-api`,
+            href: '/vehicles-api',
             access: ['staff', 'admin', 'super'],
         },
         {
-            label: 'eBay Vehicle Search',
+            label: 'Breaking Vehicles',
+            icon: <BiCar className="h-6 w-6 mr-2" />,
+            href: '/vehicles-breaking',
+            access: ['user', 'userplus', 'staff', 'admin', 'super'],
+        },
+        {
+            label: 'Export Vehicles',
+            icon: <Car className="h-6 w-6 mr-2" />,
+            href: '/vehicles-export',
+            access: ['userplus', 'staff', 'admin', 'super'],
+        },
+        {
+            category: 'eBay',
             icon: <Store className="h-6 w-6 mr-2" />,
-            href: `/ebay-vehicle-search`,
             access: ['staff', 'admin', 'super'],
-        },
-        {
-            label: 'eBay Management',
-            icon: <ListOrdered className="h-6 w-6 mr-2" />,
-            href: `/ebay-listings`,
-            access: ['staff', 'admin', 'super'],
-        },
-        {
-            label: 'Health & Safety',
-            icon: <ClipboardCheck className="h-6 w-6 mr-2" />,
-            href: `/health-and-safety`,
-            access: ['staff', 'admin', 'super'],
-        },
-        {
-            label: 'UniWin',
-            icon: <DatabaseZap className="h-6 w-6 mr-2" />,
-            href: `/uniwin`,
-            access: ['admin', 'super'],
+            items: [
+                {
+                    label: 'Vehicle Search',
+                    icon: <Search className="h-5 w-5 mr-2" />,
+                    href: '/ebay-vehicle-search',
+                    access: ['staff', 'admin', 'super'],
+                },
+                {
+                    label: 'Listing',
+                    icon: <ClipboardList className="h-5 w-5 mr-2" />,
+                    href: '/ebay-listings',
+                    access: ['staff', 'admin', 'super'],
+                },
+            ],
         },
         {
             label: 'Vehicle Reminders',
             icon: <BellRing className="h-6 w-6 mr-2" />,
-            href: `/vehicle-reminders`,
+            href: '/vehicle-reminders',
             access: ['super', 'admin'],
+        },
+        {
+            label: 'Health & Safety',
+            icon: <ClipboardCheck className="h-6 w-6 mr-2" />,
+            href: '/health-and-safety',
+            access: ['staff', 'admin', 'super'],
         },
         {
             label: 'Farm Land',
             icon: <Tractor className="h-6 w-6 mr-2" />,
-            href: `/farm-land`,
+            href: '/farm-land',
             access: ['admin', 'super', 'staff', 'farmland'],
         },
         {
             label: 'Land',
             icon: <MapPinned className="h-6 w-6 mr-2" />,
-            href: `/land-areas`,
+            href: '/land-areas',
             access: ['super', 'land'],
         },
         {
             label: 'Users',
             icon: <UserCog2Icon className="h-6 w-6 mr-2" />,
-            href: `/users`,
+            href: '/users',
             access: ['admin', 'super'],
         },
     ]
@@ -161,34 +183,104 @@ export const SidebarItem = () => {
         )
     }
 
+    const renderMenuItem = (item: any) => {
+        if (item.category) {
+            const isOpen = openDropdowns.includes(item.category)
+            const hasAccessToAnyItem = item.items.some(
+                (subItem: any) =>
+                    subItem.access.includes(userType) ||
+                    subItem.access.includes('user')
+            )
+
+            if (!hasAccessToAnyItem) return null
+
+            return (
+                <div key={item.category} className="w-full">
+                    <Button
+                        className="flex-container flex items-center justify-start rounded-md p-2 w-full text-slate-500 hover:bg-slate-100 hover:text-slate-950"
+                        variant="ghost"
+                        onClick={() => toggleDropdown(item.category)}
+                    >
+                        <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center">
+                                {item.icon}
+                                {item.category}
+                            </div>
+                            <div
+                                className={`transform transition-transform ${
+                                    isOpen ? 'rotate-180' : ''
+                                }`}
+                            >
+                                <ChevronDown className="h-4 w-4" />
+                            </div>
+                        </div>
+                    </Button>
+                    {isOpen && (
+                        <div className="ml-6 mt-1 space-y-1">
+                            {item.items.map(
+                                (subItem: any) =>
+                                    (subItem.access.includes(userType) ||
+                                        subItem.access.includes('user')) && (
+                                        <Button
+                                            key={subItem.href}
+                                            className={`${
+                                                pathname === subItem.href
+                                                    ? 'bg-slate-200 text-slate-950'
+                                                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-950'
+                                            } flex-container flex items-center justify-start rounded-md p-2 w-full`}
+                                            onClick={() =>
+                                                onClick(subItem.href)
+                                            }
+                                            variant="ghost"
+                                        >
+                                            <div className="flex items-center justify-between w-full">
+                                                <div className="flex items-center">
+                                                    {subItem.icon}
+                                                    {subItem.label}
+                                                </div>
+                                                <div className="chevron-animation">
+                                                    <ChevronRight className="h-4 w-4" />
+                                                </div>
+                                            </div>
+                                        </Button>
+                                    )
+                            )}
+                        </div>
+                    )}
+                </div>
+            )
+        }
+
+        return (
+            (item.access.includes(userType) ||
+                item.access.includes('user')) && (
+                <Button
+                    key={item.href}
+                    className={`${
+                        pathname === item.href
+                            ? 'bg-slate-200 text-slate-950'
+                            : 'text-slate-500 hover:bg-slate-100 hover:text-slate-950'
+                    } flex-container flex items-center justify-start rounded-md p-2 w-full`}
+                    onClick={() => onClick(item.href)}
+                    variant="ghost"
+                >
+                    <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center">
+                            {item.icon}
+                            {item.label}
+                        </div>
+                        <div className="chevron-animation">
+                            <ChevronRight className="h-4 w-4" />
+                        </div>
+                    </div>
+                </Button>
+            )
+        )
+    }
+
     return (
         <div className="flex flex-col items-center w-full gap-2 px-2">
-            {routes.map(
-                (item) =>
-                    (item.access.includes(userType) ||
-                        item.access.includes('user')) && (
-                        <Button
-                            key={item.href}
-                            className={`${
-                                pathname === item.href
-                                    ? 'bg-slate-200 text-slate-950'
-                                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-950'
-                            } flex-container flex items-center justify-start rounded-md p-2 w-full`}
-                            onClick={() => onClick(item.href)}
-                            variant="ghost"
-                        >
-                            <div className=" flex items-center justify-between w-full">
-                                <div className="flex items-center">
-                                    {item.icon}
-                                    {item.label}
-                                </div>
-                                <div className="chevron-animation">
-                                    <ChevronRight className="h-4 w-4" />
-                                </div>
-                            </div>
-                        </Button>
-                    )
-            )}
+            {routes.map((item) => renderMenuItem(item))}
         </div>
     )
 }
