@@ -10,6 +10,7 @@ type TitleParameter = {
     key:
         | keyof Car
         | 'genuine'
+        | 'oem'
         | 'passenger'
         | 'driver'
         | 'productionYears'
@@ -31,6 +32,12 @@ const TITLE_PARAMETERS: TitleParameter[] = [
         key: 'genuine',
         label: 'Genuine',
         value: '✅ GENUINE',
+        isCustom: true,
+    },
+    {
+        key: 'oem',
+        label: 'OEM',
+        value: 'OEM',
         isCustom: true,
     },
     { key: 'dvlaMake', label: 'Make' },

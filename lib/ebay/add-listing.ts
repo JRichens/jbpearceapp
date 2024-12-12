@@ -273,6 +273,9 @@ export async function addEbayListing(
                                 .join('')}
                         </PictureDetails>
                         <Quantity>${quantity}</Quantity>
+                        <VATDetails>
+                            <VATPercent>20</VATPercent>
+                        </VATDetails>
                         ${bestOfferDetailsXml}
                         ${listingDetailsXml}
                         <SellerProfiles>
