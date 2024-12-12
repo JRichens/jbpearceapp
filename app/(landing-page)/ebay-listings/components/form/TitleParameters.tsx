@@ -100,12 +100,9 @@ export function TitleParameters({
 
     const formatValue = (param: TitleParameter) => {
         if (param.isCustom) {
-            if (
-                param.key === 'genuine' ||
-                param.key === 'passenger' ||
-                param.key === 'driver'
-            )
+            if (param.value) {
                 return param.value
+            }
             if (productionYearInfo) {
                 if (param.key === 'productionYears') {
                     return `${productionYearInfo.from}-${productionYearInfo.to}`
