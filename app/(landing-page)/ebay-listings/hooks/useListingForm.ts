@@ -49,9 +49,6 @@ export function useListingForm() {
         }
     }, [vehicle])
 
-    // Remove the effect that was watching partDescription changes
-    // This prevents re-fetching categories when part description changes
-
     // Separate effect for production year - only fetch on initial vehicle set
     useEffect(() => {
         if (vehicle && formState.partDescription && !hasInitializedCategories) {
@@ -95,9 +92,12 @@ export function useListingForm() {
             // Handle regular parameters
             else if (formState.selectedTitleParams.has(param.key)) {
                 if (param.isCustom) {
-                    if (param.key === 'passenger' || param.key === 'driver') {
-                        titleParts.push(param.value!)
-                    } else if (formState.productionYearInfo) {
+                    // First check if parameter has a predefined value
+                    if (param.value) {
+                        titleParts.push(param.value)
+                    }
+                    // Then handle production years cases
+                    else if (formState.productionYearInfo) {
                         if (param.key === 'productionYears') {
                             titleParts.push(
                                 `${formState.productionYearInfo.from}-${formState.productionYearInfo.to}`
