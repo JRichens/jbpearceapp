@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label'
 import { FormSectionProps } from '../../types/form.types'
 import { TitleParameters, TITLE_PARAMETERS } from './TitleParameters'
 import { Car } from '@prisma/client'
+import { useRef, useEffect } from 'react'
 
 interface TitleSectionProps extends FormSectionProps {
     vehicle: Car | null
@@ -20,6 +21,8 @@ export function TitleSection({
     productionYearInfo,
     onTitleParamChange,
 }: TitleSectionProps) {
+    const textareaRef = useRef<HTMLTextAreaElement>(null)
+
     const processTitle = (selectedParams: Set<string>, vehicle: Car | null) => {
         if (!vehicle) return ''
 
@@ -41,9 +44,12 @@ export function TitleSection({
             // Handle regular parameters
             else if (selectedParams.has(param.key)) {
                 if (param.isCustom) {
+                    // First check if the parameter has a predefined value
                     if (param.value) {
                         titleParts.push(param.value)
-                    } else if (
+                    }
+                    // Then handle production years cases
+                    else if (
                         param.key === 'productionYears' &&
                         productionYearInfo
                     ) {
@@ -95,16 +101,29 @@ export function TitleSection({
                     {'Title (' + formState.title.length + '/80)'}
                 </Label>
                 <Textarea
+                    ref={textareaRef}
                     id="title"
                     name="title"
                     value={formState.title}
                     onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+                        const textarea = e.target
+                        const start = textarea.selectionStart
+                        const end = textarea.selectionEnd
                         const upperCaseValue = e.target.value.toUpperCase()
+
                         setFormState((prev) => ({
                             ...prev,
                             title: upperCaseValue,
                         }))
                         onFormChange(upperCaseValue)
+
+                        // Use requestAnimationFrame to ensure the cursor is set after React's re-render
+                        requestAnimationFrame(() => {
+                            if (textareaRef.current) {
+                                textareaRef.current.selectionStart = start
+                                textareaRef.current.selectionEnd = end
+                            }
+                        })
                     }}
                     placeholder="Enter item title (up to 80 characters)"
                     required
