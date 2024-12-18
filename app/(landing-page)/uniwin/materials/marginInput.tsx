@@ -67,7 +67,7 @@ const MarginInput = ({ cell, row, data, setData }: MarginInputProps) => {
     return (
         <Input
             className={cn(
-                'w-20 no-spinners textRight',
+                'w-20 no-spinners textRight bg-white',
                 isModified
                     ? 'font-semibold animate-pulse border-2 border-red-500'
                     : '',

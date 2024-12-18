@@ -25,6 +25,7 @@ import {
     Database,
     Search,
     ClipboardList,
+    Package,
 } from 'lucide-react'
 import { BiCar } from 'react-icons/bi'
 import { Button } from '@/components/ui/button'
@@ -75,6 +76,12 @@ export const SidebarItem = () => {
                     label: 'Database',
                     icon: <Database className="h-5 w-5 mr-2" />,
                     href: '/uniwin',
+                    access: ['admin', 'super'],
+                },
+                {
+                    label: 'Materials',
+                    icon: <Package className="h-5 w-5 mr-2" />,
+                    href: '/uniwin/materials',
                     access: ['admin', 'super'],
                 },
             ],

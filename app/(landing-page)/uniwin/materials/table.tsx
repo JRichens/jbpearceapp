@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo } from 'react'
+import React from 'react'
 import { MaterialReactTable, type MRT_ColumnDef } from 'material-react-table'
 import SellingInput from './sellingInput'
 import MarginInput from './marginInput'
@@ -19,32 +19,10 @@ type Props = {
 }
 
 const MaterialsComponent = ({ tableData, setTableData }: Props) => {
-    // Define the priority orders for different categories
-    const ferrousPriorityOrder = [
-        'HIRON',
-        'OS`',
-        'SHEARING',
-        'MM',
-        'LIGHT MIX',
-        'LI',
-        'SC',
-    ]
-
-    const copperPriorityOrder = [
-        'C BRIGHT',
-        'BUZZBAR',
-        'CT',
-        'GB',
-        '98%',
-        'NO 2 WIRE',
-        'CTANK',
-        'BZC',
-        'L WASH',
-    ]
-
     // Define code replacements with exact codes
     const codeReplacements: { [key: string]: string } = {
         // Ferrous replacements
+        BDISC: 'Brake Discs',
         HIRON: 'O/A - Plate & Girder',
         'OS`': 'O/A - Plate & Girder',
         SHEARING: 'No 1&2',
@@ -56,95 +34,109 @@ const MaterialsComponent = ({ tableData, setTableData }: Props) => {
         'C BRIGHT': 'Dry Bright Cu Wire',
         BUZZBAR: 'Clean Flat Electro Cu',
         CT: 'New Cu Tube Candy',
+        HARDDRAWN: 'Harddrawn Cu Wire',
         GB: 'Greasy bright',
         '98%': 'Heavy Cu 98%',
         'NO 2 WIRE': 'No2 CU Wire',
         CTANK: 'Cu Cylinders',
         BZC: 'Braziery Cu',
         'L WASH': 'Lead Washed Rads',
-    }
-
-    // Function to get the matching code from our defined codes
-    const getMatchingCode = (code: string): string => {
-        // First try exact match
-        if (Object.keys(codeReplacements).includes(code)) {
-            return code
-        }
-
-        // Then try to match against the start of the code
-        return (
-            Object.keys(codeReplacements).find((key) => {
-                // For special cases like '98%' and 'NO 2 WIRE', use exact match
-                if (key === '98%' || key === 'NO 2 WIRE') {
-                    return code === key
-                }
-                // For other codes, match the start but ensure it's a complete word
-                const regex = new RegExp(`^${key}(?:[0-9]|$)`)
-                return regex.test(code)
-            }) || code
-        )
+        // copComponents replacements
+        PYRO: 'Clean Pyro',
+        ELEMENTS: 'Elements',
+        MOT: 'Electric Motors',
+        // brassComponents replacements
+        BM: 'Mixed Brass/Honey',
+        BCR: 'Brass/Cu Rads/Ocean',
+        GM: 'Gunmetal',
+        // cableComponets replacements
+        'LOW GRADE': 'Low Grade Cable',
+        PVC: 'Household Cable',
+        'PVC DATA CABLE': 'Data Cable',
+        AC: 'Armoured Cable',
+        // aliComponents replacements
+        ALIW: 'Clean Ali Wheels',
+        'ALLY CAST': 'Cast Ali',
+        ALI: 'Mxd Ali',
+        ALT: 'Comm Ali Swarf',
+        ACR: 'Ali/Cu Rads',
+        'AL RADS': 'Ali Rads',
+        IALI: 'Irony Ali',
+        'IALI CAR': 'Irony Ali',
+        // otherComponents replacements
+        STST: 'Stainless Steel',
+        ZINC: 'Zinc',
+        LEAD: 'Lead',
+        BAT: 'Batteries',
     }
 
     // Function to get display name for a code
     const getDisplayName = (code: string): string => {
-        const matchingCode = getMatchingCode(code)
-        return codeReplacements[matchingCode] || code
+        return codeReplacements[code] || code
     }
 
     // Function to determine material category
-    const getMaterialCategory = (
-        code: string
-    ): 'ferrous' | 'copper' | 'other' => {
-        const matchingCode = getMatchingCode(code)
+    const getMaterialCategory = (code: string): string => {
+        // Define category arrays
+        const ferrousItems = [
+            'BDISC',
+            'HIRON',
+            'OS`',
+            'SHEARING',
+            'MM',
+            'LIGHT MIX',
+            'LI',
+            'SC',
+        ]
+        const copperItems = [
+            'C BRIGHT',
+            'BUZZBAR',
+            'CT',
+            'HARDDRAWN',
+            'GB',
+            '98%',
+            'NO 2 WIRE',
+            'CTANK',
+            'BZC',
+            'L WASH',
+        ]
+        const copperComponents = ['PYRO', 'ELEMENTS', 'MOT']
+        const brassComponents = ['BM', 'BCR', 'GM']
+        const cableComponents = ['LOW GRADE', 'PVC', 'PVC DATA CABLE', 'AC']
+        const aliComponents = [
+            'ALIW',
+            'ALLY CAST',
+            'ALI',
+            'ALT',
+            'ACR',
+            'AL RADS',
+            'IALI',
+            'IALI CAR',
+        ]
+        const otherComponents = ['STST', 'ZINC', 'LEAD', 'BAT']
 
-        if (ferrousPriorityOrder.includes(matchingCode)) {
-            return 'ferrous'
+        // Special cases that need exact matching
+        const specialCases = ['ACR', '98%', 'NO 2 WIRE']
+        if (specialCases.includes(code)) {
+            if (aliComponents.includes(code)) return 'aluminum'
+            if (copperItems.includes(code)) return 'copper'
         }
-        if (copperPriorityOrder.includes(matchingCode)) {
-            return 'copper'
-        }
+
+        // Regular cases that can use startsWith
+        if (ferrousItems.some((item) => code.startsWith(item))) return 'ferrous'
+        if (copperItems.some((item) => code.startsWith(item))) return 'copper'
+        if (copperComponents.some((item) => code.startsWith(item)))
+            return 'copperComponent'
+        if (brassComponents.some((item) => code.startsWith(item)))
+            return 'brass'
+        if (cableComponents.some((item) => code.startsWith(item)))
+            return 'cable'
+        if (aliComponents.some((item) => code.startsWith(item)))
+            return 'aluminum'
         return 'other'
     }
 
-    // Create a sorting function based on priority
-    const sortByPriority = (a: Materials, b: Materials): number => {
-        const aCategory = getMaterialCategory(a.code)
-        const bCategory = getMaterialCategory(b.code)
-
-        // If materials are in different categories
-        if (aCategory !== bCategory) {
-            if (aCategory === 'ferrous') return -1
-            if (bCategory === 'ferrous') return 1
-            if (aCategory === 'copper') return -1
-            if (bCategory === 'copper') return 1
-            return 0
-        }
-
-        const aMatchingCode = getMatchingCode(a.code)
-        const bMatchingCode = getMatchingCode(b.code)
-
-        // If both are ferrous, sort by ferrous priority
-        if (aCategory === 'ferrous') {
-            const aIndex = ferrousPriorityOrder.indexOf(aMatchingCode)
-            const bIndex = ferrousPriorityOrder.indexOf(bMatchingCode)
-            return aIndex - bIndex
-        }
-
-        // If both are copper, sort by copper priority
-        if (aCategory === 'copper') {
-            const aIndex = copperPriorityOrder.indexOf(aMatchingCode)
-            const bIndex = copperPriorityOrder.indexOf(bMatchingCode)
-            return aIndex - bIndex
-        }
-
-        // For other materials, maintain original order
-        return 0
-    }
-
-    // Sort the table data
-    const sortedData = [...tableData].sort(sortByPriority)
-
-    const columns = useMemo<MRT_ColumnDef<Materials>[]>(
+    const columns = React.useMemo<MRT_ColumnDef<Materials>[]>(
         () => [
             {
                 header: 'Seller Code',
@@ -202,11 +194,10 @@ const MaterialsComponent = ({ tableData, setTableData }: Props) => {
         <>
             <MaterialReactTable
                 columns={columns}
-                data={sortedData}
+                data={tableData}
                 initialState={{
                     density: 'compact',
                     pagination: { pageIndex: 0, pageSize: 100 },
-                    sorting: [{ id: 'code', desc: false }],
                 }}
                 enableSorting={false}
                 muiTableBodyRowProps={({ row }) => ({
@@ -216,8 +207,20 @@ const MaterialsComponent = ({ tableData, setTableData }: Props) => {
                                 ? '#f1f5f9' // slate-100 for ferrous
                                 : getMaterialCategory(row.original.code) ===
                                   'copper'
-                                ? '#fff7ed' // orange-50 for copper (very light orange)
-                                : 'inherit',
+                                ? '#fff7ed' // orange-50 for copper
+                                : getMaterialCategory(row.original.code) ===
+                                  'copperComponent'
+                                ? '#fef2f2' // red-50 for copper components
+                                : getMaterialCategory(row.original.code) ===
+                                  'brass'
+                                ? '#f0fdf4' // green-50 for brass components
+                                : getMaterialCategory(row.original.code) ===
+                                  'cable'
+                                ? '#faf5ff' // purple-50 for cable components
+                                : getMaterialCategory(row.original.code) ===
+                                  'aluminum'
+                                ? '#f0f9ff' // sky-50 for aluminum components
+                                : '#f8fafc', // slate-50 for other
                         '&:hover': {
                             backgroundColor:
                                 getMaterialCategory(row.original.code) ===
@@ -225,8 +228,20 @@ const MaterialsComponent = ({ tableData, setTableData }: Props) => {
                                     ? '#e2e8f0' // slate-200 for ferrous hover
                                     : getMaterialCategory(row.original.code) ===
                                       'copper'
-                                    ? '#fed7aa' // orange-200 for copper hover (slightly darker orange)
-                                    : '#f8fafc',
+                                    ? '#fed7aa' // orange-200 for copper hover
+                                    : getMaterialCategory(row.original.code) ===
+                                      'copperComponent'
+                                    ? '#fecaca' // red-200 for copper components hover
+                                    : getMaterialCategory(row.original.code) ===
+                                      'brass'
+                                    ? '#bbf7d0' // green-200 for brass components hover
+                                    : getMaterialCategory(row.original.code) ===
+                                      'cable'
+                                    ? '#e9d5ff' // purple-200 for cable components hover
+                                    : getMaterialCategory(row.original.code) ===
+                                      'aluminum'
+                                    ? '#bae6fd' // sky-200 for aluminum components hover
+                                    : '#e2e8f0', // slate-200 for other hover
                         },
                     },
                 })}
