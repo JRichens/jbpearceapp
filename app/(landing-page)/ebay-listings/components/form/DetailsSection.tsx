@@ -20,38 +20,34 @@ export function DetailsSection({
     onPlacementChange,
 }: DetailsSectionProps) {
     return (
-        <div className="space-y-6">
-            <div className="space-y-2">
-                <Label htmlFor="make">Make</Label>
-                <Input
-                    id="make"
-                    name="make"
-                    value={formState.make}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        const transformedValue = capitalizeWords(
-                            e.target.value.trim()
-                        )
-                        const newEvent = {
-                            ...e,
-                            target: {
-                                ...e.target,
-                                value: transformedValue,
-                            },
-                        } as React.ChangeEvent<HTMLInputElement>
+        <div className="">
+            {/* Hidden input to maintain make/brand data flow */}
+            <input
+                type="hidden"
+                name="make"
+                value={formState.make}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    const transformedValue = capitalizeWords(
+                        e.target.value.trim()
+                    )
+                    const newEvent = {
+                        ...e,
+                        target: {
+                            ...e.target,
+                            value: transformedValue,
+                        },
+                    } as React.ChangeEvent<HTMLInputElement>
 
-                        setFormState((prev) => ({
-                            ...prev,
-                            make: transformedValue,
-                            brand: transformedValue,
-                        }))
-                        onFormChange(newEvent)
-                    }}
-                    placeholder="Enter make"
-                    className="text-xl"
-                />
-            </div>
+                    setFormState((prev) => ({
+                        ...prev,
+                        make: transformedValue,
+                        brand: transformedValue,
+                    }))
+                    onFormChange(newEvent)
+                }}
+            />
 
-            <div className="space-y-2">
+            <div className="space-y-2 mb-4">
                 <Label htmlFor="paintCode">Paint Code</Label>
                 <Input
                     id="paintCode"

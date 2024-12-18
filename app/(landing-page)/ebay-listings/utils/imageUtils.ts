@@ -22,7 +22,7 @@ export async function convertToJPEG(file: File | Blob): Promise<File> {
                     }
                 },
                 'image/jpeg',
-                0.9
+                1.0 // Increased quality to maximum
             )
         }
 
@@ -119,8 +119,11 @@ export async function startCamera(
             const constraints = {
                 video: {
                     facingMode: { ideal: 'environment' },
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 },
+                    width: { ideal: 4096 }, // Increased to 4K resolution
+                    height: { ideal: 2160 }, // Increased to 4K resolution
+                    aspectRatio: { ideal: 4 / 3 },
+                    frameRate: { ideal: 30 },
+                    resizeMode: 'none',
                 },
             }
             console.log('Camera constraints:', constraints)
@@ -140,10 +143,14 @@ export async function startCamera(
                 envError
             )
 
-            // Fallback to any available camera
+            // Fallback to any available camera with high quality
             console.log('Attempting fallback to any available camera...')
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: true,
+                video: {
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 },
+                    frameRate: { ideal: 30 },
+                },
             })
 
             if (!videoRef.current) {
@@ -209,14 +216,22 @@ export async function captureSquarePhoto(
     const canvas = canvasRef.current
     const size = Math.min(video.videoWidth, video.videoHeight)
 
+    // Set canvas to maximum size from video
     canvas.width = size
     canvas.height = size
 
-    const ctx = canvas.getContext('2d')
+    const ctx = canvas.getContext('2d', {
+        alpha: false,
+        desynchronized: true,
+    })
     if (!ctx) return null
 
     const offsetX = (video.videoWidth - size) / 2
     const offsetY = (video.videoHeight - size) / 2
+
+    // Enable image smoothing for better quality
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
 
     ctx.drawImage(video, offsetX, offsetY, size, size, 0, 0, size, size)
 
@@ -236,7 +251,7 @@ export async function captureSquarePhoto(
                 }
             },
             'image/jpeg',
-            0.9
+            1.0 // Increased quality to maximum
         )
     })
 }

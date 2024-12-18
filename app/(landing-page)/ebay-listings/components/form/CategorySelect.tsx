@@ -1,13 +1,11 @@
 'use client'
 
 import { Category } from '../../types/listingTypes'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { ChevronDown } from 'lucide-react'
+import { useState } from 'react'
+import { cn } from '@/lib/utils'
 
 interface CategorySelectProps {
     categories: Category[]
@@ -30,6 +28,8 @@ export function CategorySelect({
     partDescription,
     className,
 }: CategorySelectProps) {
+    const [isCategoryOpen, setIsCategoryOpen] = useState(false)
+
     const getCategoryPlaceholder = () => {
         if (isCategoriesLoading) return 'Loading categories...'
         if (categories.length > 0)
@@ -50,15 +50,10 @@ export function CategorySelect({
         return (
             <div className="flex flex-col gap-2 py-3 px-3">
                 <div className="font-medium whitespace-normal break-words leading-snug flex justify-between items-center text-xl">
-                    <span>{finalPart}</span>
-                    {percentage && (
-                        <span className="text-sm text-muted-foreground ml-2">
-                            ({percentage}%)
-                        </span>
-                    )}
-                </div>
-                <div className="text-sm text-muted-foreground whitespace-pre-wrap break-words leading-snug">
-                    {pathParts.slice(0, -1).join(' > ')}
+                    <span>
+                        {finalPart}
+                        {percentage ? ` (${percentage}%)` : ''}
+                    </span>
                 </div>
             </div>
         )
@@ -66,39 +61,59 @@ export function CategorySelect({
 
     return (
         <div className={className}>
-            <Select
-                name="category"
-                required
-                value={selectedCategory?.id}
-                onValueChange={onCategoryChange}
-            >
-                <SelectTrigger className="h-auto min-h-[40px] py-2 text-xl">
-                    <SelectValue
-                        placeholder={getCategoryPlaceholder()}
-                        className="whitespace-normal break-words text-xl"
-                    />
-                </SelectTrigger>
-                <SelectContent
-                    className="max-h-[300px] w-[var(--radix-select-trigger-width)] min-w-[var(--radix-select-trigger-width)] max-w-none"
-                    position="popper"
-                    side="bottom"
-                    align="start"
-                    sideOffset={4}
-                    avoidCollisions={true}
+            <div className="relative">
+                <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={isCategoryOpen}
+                    className="w-full justify-between text-xl bg-white h-auto min-h-[40px] py-2"
+                    onClick={() => setIsCategoryOpen(true)}
+                    disabled={isCategoriesLoading || categories.length === 0}
                 >
-                    <div className="overflow-y-auto max-h-[300px]">
-                        {categories.map((category) => (
-                            <SelectItem
-                                key={category.id}
-                                value={category.id}
-                                className="py-0 whitespace-normal hover:bg-accent focus:bg-accent"
-                            >
-                                {renderCategoryOption(category)}
-                            </SelectItem>
-                        ))}
-                    </div>
-                </SelectContent>
-            </Select>
+                    <span className="truncate">{getCategoryPlaceholder()}</span>
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+
+                <Dialog open={isCategoryOpen} onOpenChange={setIsCategoryOpen}>
+                    <DialogContent className="p-0 w-[90%] max-w-[600px] [&>button]:hidden">
+                        <div className="py-1 max-h-[400px] overflow-y-auto">
+                            {categories.map((category) => (
+                                <button
+                                    key={category.id}
+                                    type="button"
+                                    className={cn(
+                                        'w-full text-left hover:bg-gray-200',
+                                        selectedCategory?.id === category.id &&
+                                            'bg-gray-100'
+                                    )}
+                                    onClick={() => {
+                                        onCategoryChange(category.id)
+                                        setIsCategoryOpen(false)
+                                    }}
+                                >
+                                    {renderCategoryOption(category)}
+                                </button>
+                            ))}
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
+                <select
+                    name="category"
+                    required
+                    value={selectedCategory?.id || ''}
+                    onChange={(e) => onCategoryChange(e.target.value)}
+                    className="sr-only"
+                >
+                    <option value="">Select a category</option>
+                    {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                            {category.finalName}
+                        </option>
+                    ))}
+                </select>
+            </div>
             {categoriesError && (
                 <p className="text-sm text-red-500">{categoriesError}</p>
             )}

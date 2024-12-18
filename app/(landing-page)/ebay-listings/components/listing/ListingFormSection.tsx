@@ -193,7 +193,7 @@ export function ListingFormSection({
     }, [formState.isVerified, formState.verificationResult])
 
     return (
-        <div className="space-y-6 p-1">
+        <div className="space-y-6 p-1 max-w-full">
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">Create eBay Listing</h2>
             </div>
@@ -240,57 +240,65 @@ export function ListingFormSection({
                         onSubmit={handleVerifySubmit}
                         className="space-y-6"
                     >
-                        <DetailsSection
-                            formState={formState}
-                            setFormState={setFormState}
-                            onFormChange={handleFormChange}
-                            selectedPlacements={selectedPlacements}
-                            onPlacementChange={handlePlacementChange}
-                        />
+                        <div className="grid grid-cols-1 gap-6">
+                            <DetailsSection
+                                formState={formState}
+                                setFormState={setFormState}
+                                onFormChange={handleFormChange}
+                                selectedPlacements={selectedPlacements}
+                                onPlacementChange={handlePlacementChange}
+                            />
 
-                        <PriceQuantityInputs
-                            formState={formState}
-                            setFormState={setFormState}
-                            onPriceChange={handleFormChange}
-                            onQuantityChange={handleFormChange}
-                            onAllowOffersChange={handleAllowOffersChange}
-                            onMinimumOfferPriceChange={
-                                handleMinimumOfferPriceChange
-                            }
-                        />
+                            <PriceQuantityInputs
+                                formState={formState}
+                                setFormState={setFormState}
+                                onPriceChange={handleFormChange}
+                                onQuantityChange={handleFormChange}
+                                onAllowOffersChange={handleAllowOffersChange}
+                                onMinimumOfferPriceChange={
+                                    handleMinimumOfferPriceChange
+                                }
+                            />
 
-                        <ConditionSelect
-                            selectedCondition={formState.selectedCondition}
-                            onConditionChange={(condition) =>
-                                setFormState((prev) => ({
-                                    ...prev,
-                                    selectedCondition: condition,
-                                }))
-                            }
-                            onDescriptionChange={handleFormChange}
-                        />
+                            <div className="w-full">
+                                <ConditionSelect
+                                    selectedCondition={
+                                        formState.selectedCondition
+                                    }
+                                    onConditionChange={(condition) =>
+                                        setFormState((prev) => ({
+                                            ...prev,
+                                            selectedCondition: condition,
+                                        }))
+                                    }
+                                    onDescriptionChange={handleFormChange}
+                                />
+                            </div>
 
-                        <ShippingProfileSelect
-                            formState={formState}
-                            setFormState={setFormState}
-                            onProfileChange={handleFormChange}
-                        />
+                            <ShippingProfileSelect
+                                formState={formState}
+                                setFormState={setFormState}
+                                onProfileChange={handleFormChange}
+                            />
 
-                        <PhotoUploader
-                            photos={formState.photos}
-                            photosPreviews={formState.photosPreviews}
-                            onPhotosChange={handlePhotosChange}
-                            isLoading={formState.isLoading}
-                        />
+                            <PhotoUploader
+                                photos={formState.photos}
+                                photosPreviews={formState.photosPreviews}
+                                onPhotosChange={handlePhotosChange}
+                                isLoading={formState.isLoading}
+                            />
 
-                        <FormActions
-                            formState={formState}
-                            setFormState={setFormState}
-                            onFormChange={handleFormChange}
-                            isVerified={formState.isVerified}
-                            isLoading={formState.isLoading}
-                            verificationResult={formState.verificationResult}
-                        />
+                            <FormActions
+                                formState={formState}
+                                setFormState={setFormState}
+                                onFormChange={handleFormChange}
+                                isVerified={formState.isVerified}
+                                isLoading={formState.isLoading}
+                                verificationResult={
+                                    formState.verificationResult
+                                }
+                            />
+                        </div>
                     </form>
                 </>
             )}

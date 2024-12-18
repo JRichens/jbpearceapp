@@ -1,16 +1,12 @@
 'use client'
 
 import { CONDITIONS } from '../../types/listingTypes'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
-import { ChangeEvent } from 'react'
+import { ChangeEvent, useState } from 'react'
+import { ChevronDown } from 'lucide-react'
 
 interface ConditionSelectProps {
     selectedCondition: string
@@ -53,38 +49,89 @@ export function ConditionSelect({
     onDescriptionChange,
     className,
 }: ConditionSelectProps) {
+    const [isConditionOpen, setIsConditionOpen] = useState(false)
+    const [isDescriptionOpen, setIsDescriptionOpen] = useState(false)
+    const [selectedDescription, setSelectedDescription] = useState<string>('')
+
+    const selectedConditionOption = CONDITIONS.find(
+        (condition) => condition.id === selectedCondition
+    )
+
+    const handleDescriptionChange = (description: string) => {
+        setSelectedDescription(description)
+        const event = {
+            target: {
+                name: 'conditionDescription',
+                value: description,
+            },
+        } as ChangeEvent<HTMLSelectElement>
+        onDescriptionChange(event)
+        setIsDescriptionOpen(false)
+    }
+
     return (
         <div className={className}>
             <div className="space-y-2">
                 <Label htmlFor="condition">Condition *</Label>
-                <Select
-                    name="condition"
-                    required
-                    defaultValue="Used"
-                    onValueChange={onConditionChange}
-                >
-                    <SelectTrigger className="text-xl">
-                        <SelectValue
-                            placeholder="Select condition"
-                            className="text-xl"
-                        />
-                    </SelectTrigger>
-                    <SelectContent>
+                <div className="relative">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={isConditionOpen}
+                        className="w-full justify-between text-xl bg-white"
+                        onClick={() => setIsConditionOpen(true)}
+                    >
+                        <span className="truncate">
+                            {selectedConditionOption?.name ||
+                                'Select condition'}
+                        </span>
+                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+
+                    <Dialog
+                        open={isConditionOpen}
+                        onOpenChange={setIsConditionOpen}
+                    >
+                        <DialogContent className="p-0 w-[90%] max-w-[400px] [&>button]:hidden">
+                            <div className="py-1">
+                                {CONDITIONS.map((condition) => (
+                                    <button
+                                        key={condition.id}
+                                        type="button"
+                                        className={cn(
+                                            'w-full px-4 py-3 text-left text-xl hover:bg-gray-200',
+                                            selectedCondition ===
+                                                condition.id && 'bg-gray-100'
+                                        )}
+                                        onClick={() => {
+                                            onConditionChange(condition.id)
+                                            setIsConditionOpen(false)
+                                            setSelectedDescription('')
+                                        }}
+                                    >
+                                        {condition.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+
+                    <select
+                        name="condition"
+                        required
+                        value={selectedCondition}
+                        onChange={(e) => onConditionChange(e.target.value)}
+                        className="sr-only"
+                    >
+                        <option value="">Select condition</option>
                         {CONDITIONS.map((condition) => (
-                            <SelectItem
-                                key={condition.id}
-                                value={condition.id}
-                                className={cn(
-                                    'text-xl',
-                                    'focus:bg-gray-50 focus:text-gray-900',
-                                    'data-[state=checked]:bg-gray-50'
-                                )}
-                            >
+                            <option key={condition.id} value={condition.id}>
                                 {condition.name}
-                            </SelectItem>
+                            </option>
                         ))}
-                    </SelectContent>
-                </Select>
+                    </select>
+                </div>
             </div>
 
             {(selectedCondition === 'Used' ||
@@ -93,45 +140,80 @@ export function ConditionSelect({
                     <Label htmlFor="conditionDescription">
                         Condition Description *
                     </Label>
-                    <Select
-                        name="conditionDescription"
-                        required
-                        onValueChange={(value: string) => {
-                            const event = {
-                                target: {
-                                    name: 'conditionDescription',
-                                    value: value,
-                                },
-                            } as ChangeEvent<HTMLSelectElement>
-                            onDescriptionChange(event)
-                        }}
-                    >
-                        <SelectTrigger className="text-xl">
-                            <SelectValue
-                                placeholder="Please select..."
-                                className="text-xl"
-                            />
-                        </SelectTrigger>
-                        <SelectContent className="max-w-[90vw] min-w-[90vw] md:min-w-[400px] md:max-w-[400px]">
-                            {CONDITION_DESCRIPTIONS.map((condition, index) => (
-                                <SelectItem
+                    <div className="relative">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={isDescriptionOpen}
+                            className="w-full justify-between text-xl bg-white max-w-full overflow-hidden"
+                            onClick={() => setIsDescriptionOpen(true)}
+                        >
+                            <div className="flex items-center justify-between w-full max-w-full overflow-hidden">
+                                <span className="truncate max-w-[calc(100%-2rem)]">
+                                    {selectedDescription || 'Please select...'}
+                                </span>
+                                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </div>
+                        </Button>
+
+                        <Dialog
+                            open={isDescriptionOpen}
+                            onOpenChange={setIsDescriptionOpen}
+                        >
+                            <DialogContent className="p-0 w-[90%] max-w-[400px] [&>button]:hidden">
+                                <div className="py-1">
+                                    {CONDITION_DESCRIPTIONS.map(
+                                        (condition, index) => (
+                                            <button
+                                                key={condition.id}
+                                                type="button"
+                                                className={cn(
+                                                    'w-full px-4 py-3 text-left text-xl hover:bg-gray-200 break-words whitespace-normal',
+                                                    selectedDescription ===
+                                                        condition.description &&
+                                                        'bg-gray-100',
+                                                    index !==
+                                                        CONDITION_DESCRIPTIONS.length -
+                                                            1 &&
+                                                        'border-b border-gray-100'
+                                                )}
+                                                onClick={() =>
+                                                    handleDescriptionChange(
+                                                        condition.description
+                                                    )
+                                                }
+                                            >
+                                                <div className="break-words whitespace-normal">
+                                                    {condition.description}
+                                                </div>
+                                            </button>
+                                        )
+                                    )}
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+
+                        <select
+                            name="conditionDescription"
+                            required
+                            value={selectedDescription}
+                            onChange={(e) =>
+                                handleDescriptionChange(e.target.value)
+                            }
+                            className="sr-only"
+                        >
+                            <option value="">Please select...</option>
+                            {CONDITION_DESCRIPTIONS.map((condition) => (
+                                <option
                                     key={condition.id}
                                     value={condition.description}
-                                    className={cn(
-                                        'text-xl break-words whitespace-normal py-3 px-3',
-                                        'hover:bg-gray-50 transition-colors',
-                                        'focus:bg-gray-50 focus:text-gray-900',
-                                        'data-[state=checked]:bg-gray-50',
-                                        index !==
-                                            CONDITION_DESCRIPTIONS.length - 1 &&
-                                            'border-b border-gray-100'
-                                    )}
                                 >
                                     {condition.description}
-                                </SelectItem>
+                                </option>
                             ))}
-                        </SelectContent>
-                    </Select>
+                        </select>
+                    </div>
                 </div>
             )}
         </div>
