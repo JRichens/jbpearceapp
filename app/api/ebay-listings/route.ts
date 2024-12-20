@@ -9,6 +9,43 @@ import { EbayListing } from '../../../lib/ebay/types'
 
 const utapi = new UTApi()
 
+// Set a longer timeout for handling multiple high-res images (30 minutes)
+const UPLOAD_TIMEOUT = 30 * 60 * 1000
+
+// Helper function to handle file upload with timeout and retry
+async function uploadFileWithTimeout(
+    photo: File,
+    retryCount = 3
+): Promise<any> {
+    const attemptUpload = async (attempts: number): Promise<any> => {
+        try {
+            return await Promise.race([
+                utapi.uploadFiles(photo),
+                new Promise((_, reject) =>
+                    setTimeout(
+                        () => reject(new Error('Upload timeout')),
+                        UPLOAD_TIMEOUT
+                    )
+                ),
+            ])
+        } catch (error) {
+            if (
+                attempts > 0 &&
+                error instanceof Error &&
+                error.message === 'Upload timeout'
+            ) {
+                console.log(
+                    `Retrying upload, ${attempts} attempts remaining...`
+                )
+                return attemptUpload(attempts - 1)
+            }
+            throw error
+        }
+    }
+
+    return attemptUpload(retryCount)
+}
+
 export async function GET() {
     try {
         const { userId } = auth()
@@ -35,6 +72,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+    const startTime = Date.now()
     try {
         const { userId } = auth()
 
@@ -112,29 +150,75 @@ export async function POST(req: Request) {
             )
         }
 
-        const uploadPromises = photos.map(async (photo) => {
-            const response = await utapi.uploadFiles(photo)
-            return {
-                url: response.data?.url,
-                key: response.data?.key,
-            }
-        })
-
-        const uploadResults = await Promise.all(uploadPromises)
-
-        const imageData = uploadResults.filter(
-            (result): result is { url: string; key: string } =>
-                result.url !== undefined && result.key !== undefined
+        // Upload photos with timeout handling and retries
+        const uploadResults = await Promise.allSettled(
+            photos.map(async (photo, index) => {
+                try {
+                    console.log(
+                        `Starting upload for photo ${index + 1}/${
+                            photos.length
+                        }`
+                    )
+                    const result = await uploadFileWithTimeout(photo)
+                    if (!result.data) {
+                        throw new Error(
+                            result.error?.message || 'Upload failed'
+                        )
+                    }
+                    console.log(
+                        `Successfully uploaded photo ${index + 1}/${
+                            photos.length
+                        }`
+                    )
+                    return {
+                        url: result.data.url,
+                        key: result.data.key,
+                    }
+                } catch (error) {
+                    console.error(
+                        `Failed to upload photo ${index + 1}/${photos.length}:`,
+                        error
+                    )
+                    throw new Error(
+                        error instanceof Error ? error.message : 'Upload failed'
+                    )
+                }
+            })
         )
 
-        if (imageData.length === 0) {
+        // Filter successful uploads and handle failures
+        const successfulUploads = uploadResults.filter(
+            (
+                result
+            ): result is PromiseFulfilledResult<{
+                url: string
+                key: string
+            }> => result.status === 'fulfilled'
+        )
+
+        const failedUploads = uploadResults.filter(
+            (result): result is PromiseRejectedResult =>
+                result.status === 'rejected'
+        )
+
+        if (successfulUploads.length === 0) {
             return NextResponse.json(
-                { error: 'Failed to upload photos' },
+                {
+                    error: 'Failed to upload photos',
+                    details: failedUploads.map((result) => result.reason),
+                },
                 { status: 500 }
             )
         }
 
-        const imageUrls = imageData.map((data) => data.url)
+        // If some uploads failed but we have at least one success, we can proceed
+        if (failedUploads.length > 0) {
+            console.warn(
+                `${failedUploads.length} photo uploads failed, proceeding with ${successfulUploads.length} successful uploads`
+            )
+        }
+
+        const imageUrls = successfulUploads.map((result) => result.value.url)
 
         const listingParams = {
             title,
@@ -177,10 +261,19 @@ export async function POST(req: Request) {
 
         if (isVerification) {
             const verificationResult = await verifyEbayListing(listingParams)
+            const processingTime = Date.now() - startTime
             return NextResponse.json({
                 success: true,
                 message: 'Listing verified successfully',
                 verificationResult,
+                uploadStats: {
+                    successful: successfulUploads.length,
+                    failed: failedUploads.length,
+                    processingTimeMs: processingTime,
+                    processingTimeFormatted: `${(processingTime / 1000).toFixed(
+                        2
+                    )} seconds`,
+                },
             })
         } else {
             const enableEbayListing = process.env.ENABLE_EBAY_LISTING === 'true'

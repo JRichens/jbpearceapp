@@ -22,7 +22,7 @@ export async function convertToJPEG(file: File | Blob): Promise<File> {
                     }
                 },
                 'image/jpeg',
-                1.0 // Increased quality to maximum
+                1.0 // Maximum quality for high resolution images
             )
         }
 
@@ -119,8 +119,8 @@ export async function startCamera(
             const constraints = {
                 video: {
                     facingMode: { ideal: 'environment' },
-                    width: { ideal: 4096 }, // Increased to 4K resolution
-                    height: { ideal: 2160 }, // Increased to 4K resolution
+                    width: { ideal: 4096 }, // 4K resolution for high quality
+                    height: { ideal: 2160 },
                     aspectRatio: { ideal: 4 / 3 },
                     frameRate: { ideal: 30 },
                     resizeMode: 'none',
@@ -147,8 +147,8 @@ export async function startCamera(
             console.log('Attempting fallback to any available camera...')
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: {
-                    width: { ideal: 1920 },
-                    height: { ideal: 1080 },
+                    width: { ideal: 4096 },
+                    height: { ideal: 2160 },
                     frameRate: { ideal: 30 },
                 },
             })
@@ -251,7 +251,7 @@ export async function captureSquarePhoto(
                 }
             },
             'image/jpeg',
-            1.0 // Increased quality to maximum
+            1.0 // Maximum quality for high resolution images
         )
     })
 }
