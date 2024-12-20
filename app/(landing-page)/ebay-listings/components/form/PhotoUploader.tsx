@@ -4,6 +4,7 @@ import { useRef, useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
+import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { MAX_PHOTOS } from '../../types/listingTypes'
 import {
@@ -20,6 +21,12 @@ interface PhotoUploaderProps {
     isLoading: boolean
 }
 
+interface PhotoStatus {
+    id: string
+    isProcessing: boolean
+    isUploading: boolean
+}
+
 export function PhotoUploader({
     photos,
     photosPreviews,
@@ -29,6 +36,8 @@ export function PhotoUploader({
     const [isCameraOpen, setIsCameraOpen] = useState(false)
     const [isCameraInitializing, setIsCameraInitializing] = useState(false)
     const [cameraError, setCameraError] = useState<string | null>(null)
+    const [photoStatuses, setPhotoStatuses] = useState<PhotoStatus[]>([])
+    const [isProcessingBatch, setIsProcessingBatch] = useState(false)
     const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const streamRef = useRef<MediaStream | null>(null)
@@ -114,6 +123,46 @@ export function PhotoUploader({
         }
     }, [isCameraOpen])
 
+    // Update photo statuses when photos change
+    useEffect(() => {
+        setPhotoStatuses((prevStatuses) => {
+            // Remove statuses for photos that no longer exist
+            const currentStatuses = prevStatuses.filter(
+                (status, index) => index < photos.length
+            )
+
+            // Add new statuses for new photos
+            while (currentStatuses.length < photos.length) {
+                currentStatuses.push({
+                    id: Math.random().toString(36).substr(2, 9),
+                    isProcessing: false,
+                    isUploading: false,
+                })
+            }
+
+            return currentStatuses
+        })
+    }, [photos.length])
+
+    // Update upload status when isLoading changes
+    useEffect(() => {
+        if (isLoading) {
+            setPhotoStatuses((prevStatuses) =>
+                prevStatuses.map((status) => ({
+                    ...status,
+                    isUploading: true,
+                }))
+            )
+        } else {
+            setPhotoStatuses((prevStatuses) =>
+                prevStatuses.map((status) => ({
+                    ...status,
+                    isUploading: false,
+                }))
+            )
+        }
+    }, [isLoading])
+
     const handlePhotoChange = async (
         e: React.ChangeEvent<HTMLInputElement>
     ) => {
@@ -125,6 +174,7 @@ export function PhotoUploader({
             return
         }
 
+        setIsProcessingBatch(true)
         const convertedFiles: File[] = []
         const newPreviews: string[] = []
 
@@ -137,11 +187,30 @@ export function PhotoUploader({
                     continue
                 }
 
+                // Add a new status for the processing photo
+                setPhotoStatuses((prev) => [
+                    ...prev,
+                    {
+                        id: Math.random().toString(36).substr(2, 9),
+                        isProcessing: true,
+                        isUploading: false,
+                    },
+                ])
+
                 const jpegFile = await convertToJPEG(file)
                 convertedFiles.push(jpegFile)
 
                 const previewUrl = URL.createObjectURL(jpegFile)
                 newPreviews.push(previewUrl)
+
+                // Update the status to show processing is complete
+                setPhotoStatuses((prev) => {
+                    const newStatuses = [...prev]
+                    if (newStatuses[photos.length + i]) {
+                        newStatuses[photos.length + i].isProcessing = false
+                    }
+                    return newStatuses
+                })
             }
 
             onPhotosChange(
@@ -151,6 +220,8 @@ export function PhotoUploader({
         } catch (error) {
             toast.error('Error processing images')
             console.error('Error processing images:', error)
+        } finally {
+            setIsProcessingBatch(false)
         }
     }
 
@@ -225,10 +296,22 @@ export function PhotoUploader({
                 />
             </div>
 
-            <p className="text-sm text-gray-500">
-                Take photos one by one or select multiple photos. Up to{' '}
-                {MAX_PHOTOS} photos allowed.
-            </p>
+            <div className="flex flex-col gap-2 text-sm">
+                <span className="text-gray-500">
+                    Take photos one by one or select multiple photos. Up to{' '}
+                    {MAX_PHOTOS} photos allowed.
+                </span>
+                {(isProcessingBatch || isLoading) && (
+                    <div className="flex items-center gap-2 text-blue-500">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>
+                            {isProcessingBatch
+                                ? 'Processing photos...'
+                                : 'Uploading photos...'}
+                        </span>
+                    </div>
+                )}
+            </div>
 
             {photosPreviews.length > 0 && (
                 <div className="grid grid-cols-3 gap-2 mt-2">
@@ -239,10 +322,22 @@ export function PhotoUploader({
                                 alt={`Preview ${index + 1}`}
                                 className="w-full h-full object-cover rounded-md"
                             />
+                            {(photoStatuses[index]?.isProcessing ||
+                                photoStatuses[index]?.isUploading) && (
+                                <div className="absolute inset-0 bg-black/50 rounded-md flex flex-col items-center justify-center">
+                                    <Loader2 className="h-6 w-6 animate-spin text-white mb-2" />
+                                    <span className="text-white text-xs">
+                                        {photoStatuses[index]?.isProcessing
+                                            ? 'Processing...'
+                                            : 'Uploading...'}
+                                    </span>
+                                </div>
+                            )}
                             <button
                                 type="button"
                                 className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
                                 onClick={() => removePhoto(index)}
+                                disabled={isLoading}
                             >
                                 ×
                             </button>
