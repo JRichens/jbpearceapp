@@ -3,12 +3,22 @@ export async function convertToJPEG(file: File | Blob): Promise<File> {
     return new Promise((resolve, reject) => {
         const img = new Image()
         const canvas = document.createElement('canvas')
-        const ctx = canvas.getContext('2d')
+        const ctx = canvas.getContext('2d', {
+            alpha: false,
+            willReadFrequently: false,
+        })
 
         img.onload = () => {
+            // Maintain original dimensions for high quality
             canvas.width = img.width
             canvas.height = img.height
-            ctx?.drawImage(img, 0, 0)
+
+            // Enable high-quality image rendering
+            if (ctx) {
+                ctx.imageSmoothingEnabled = true
+                ctx.imageSmoothingQuality = 'high'
+                ctx.drawImage(img, 0, 0, img.width, img.height)
+            }
 
             canvas.toBlob(
                 (blob) => {
@@ -22,14 +32,11 @@ export async function convertToJPEG(file: File | Blob): Promise<File> {
                     }
                 },
                 'image/jpeg',
-                1.0 // Maximum quality for high resolution images
+                1.0 // Maximum quality
             )
         }
 
-        img.onerror = () => {
-            reject(new Error('Failed to load image'))
-        }
-
+        img.onerror = () => reject(new Error('Failed to load image'))
         img.src = URL.createObjectURL(file)
     })
 }

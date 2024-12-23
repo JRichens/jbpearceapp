@@ -59,13 +59,11 @@ export function PhotoUploader({
             setIsCameraInitializing(true)
             setCameraError(null)
 
-            // Add a small delay to ensure the video element is mounted
             initTimeout = setTimeout(async () => {
                 try {
-                    console.log('Starting camera initialization...')
                     if (!videoRef.current) {
                         console.error('Video element not found, retrying...')
-                        return // Early return to allow retry
+                        return
                     }
 
                     const stream = await startCamera(videoRef)
@@ -78,13 +76,11 @@ export function PhotoUploader({
                     }
 
                     if (stream) {
-                        console.log('Camera stream obtained successfully')
                         streamRef.current = stream
 
                         if (videoRef.current) {
                             videoRef.current.onloadedmetadata = () => {
                                 if (!mounted) return
-                                console.log('Video metadata loaded')
                                 videoRef.current?.play().catch((error) => {
                                     console.error('Error playing video:', error)
                                     setCameraError(
@@ -98,8 +94,6 @@ export function PhotoUploader({
                     }
                 } catch (error) {
                     if (!mounted) return
-
-                    console.error('Camera initialization error:', error)
                     const errorMessage =
                         error instanceof Error
                             ? error.message
@@ -111,7 +105,7 @@ export function PhotoUploader({
                         setIsCameraInitializing(false)
                     }
                 }
-            }, 100) // Small delay to ensure DOM is ready
+            }, 100)
         }
 
         initializeCamera()
@@ -123,15 +117,12 @@ export function PhotoUploader({
         }
     }, [isCameraOpen])
 
-    // Update photo statuses when photos change
     useEffect(() => {
         setPhotoStatuses((prevStatuses) => {
-            // Remove statuses for photos that no longer exist
             const currentStatuses = prevStatuses.filter(
                 (status, index) => index < photos.length
             )
 
-            // Add new statuses for new photos
             while (currentStatuses.length < photos.length) {
                 currentStatuses.push({
                     id: Math.random().toString(36).substr(2, 9),
@@ -144,7 +135,6 @@ export function PhotoUploader({
         })
     }, [photos.length])
 
-    // Update upload status when isLoading changes
     useEffect(() => {
         if (isLoading) {
             setPhotoStatuses((prevStatuses) =>
@@ -187,11 +177,10 @@ export function PhotoUploader({
                     continue
                 }
 
-                // Add a new status for the processing photo
                 setPhotoStatuses((prev) => [
                     ...prev,
                     {
-                        id: Math.random().toString(36).substr(2, 9),
+                        id: file.name,
                         isProcessing: true,
                         isUploading: false,
                     },
@@ -203,7 +192,6 @@ export function PhotoUploader({
                 const previewUrl = URL.createObjectURL(jpegFile)
                 newPreviews.push(previewUrl)
 
-                // Update the status to show processing is complete
                 setPhotoStatuses((prev) => {
                     const newStatuses = [...prev]
                     if (newStatuses[photos.length + i]) {
@@ -307,7 +295,7 @@ export function PhotoUploader({
                         <span>
                             {isProcessingBatch
                                 ? 'Processing photos...'
-                                : 'Uploading photos...'}
+                                : 'Uploading photos in batches...'}
                         </span>
                     </div>
                 )}
@@ -346,7 +334,6 @@ export function PhotoUploader({
                 </div>
             )}
 
-            {/* Camera Dialog */}
             <Dialog
                 open={isCameraOpen}
                 onOpenChange={(open) => {

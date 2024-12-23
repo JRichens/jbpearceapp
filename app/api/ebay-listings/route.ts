@@ -11,23 +11,24 @@ const utapi = new UTApi()
 
 // Set a longer timeout for handling multiple high-res images (30 minutes)
 const UPLOAD_TIMEOUT = 30 * 60 * 1000
+const BATCH_SIZE = 4 // Process 4 high-quality images at a time
 
 // Helper function to handle file upload with timeout and retry
 async function uploadFileWithTimeout(
     photo: File,
-    retryCount = 3
+    retryCount = 5
 ): Promise<any> {
     const attemptUpload = async (attempts: number): Promise<any> => {
         try {
-            return await Promise.race([
-                utapi.uploadFiles(photo),
-                new Promise((_, reject) =>
-                    setTimeout(
-                        () => reject(new Error('Upload timeout')),
-                        UPLOAD_TIMEOUT
-                    )
-                ),
-            ])
+            const controller = new AbortController()
+            const timeoutId = setTimeout(
+                () => controller.abort(),
+                UPLOAD_TIMEOUT
+            )
+
+            const response = await utapi.uploadFiles(photo)
+            clearTimeout(timeoutId)
+            return response
         } catch (error) {
             if (
                 attempts > 0 &&
@@ -37,6 +38,10 @@ async function uploadFileWithTimeout(
                 console.log(
                     `Retrying upload, ${attempts} attempts remaining...`
                 )
+                // Add exponential backoff
+                await new Promise((resolve) =>
+                    setTimeout(resolve, Math.pow(2, 6 - attempts) * 1000)
+                )
                 return attemptUpload(attempts - 1)
             }
             throw error
@@ -44,6 +49,23 @@ async function uploadFileWithTimeout(
     }
 
     return attemptUpload(retryCount)
+}
+
+// Function to upload photos in batches
+async function uploadPhotosInBatches(photos: File[]) {
+    const results = []
+    for (let i = 0; i < photos.length; i += BATCH_SIZE) {
+        const batch = photos.slice(i, i + BATCH_SIZE)
+        const batchResults = await Promise.all(
+            batch.map((photo) => uploadFileWithTimeout(photo, 5))
+        )
+        results.push(...batchResults)
+        // Add a small delay between batches to prevent overwhelming the server
+        if (i + BATCH_SIZE < photos.length) {
+            await new Promise((resolve) => setTimeout(resolve, 1000))
+        }
+    }
+    return results
 }
 
 export async function GET() {
@@ -150,62 +172,22 @@ export async function POST(req: Request) {
             )
         }
 
-        // Upload photos with timeout handling and retries
-        const uploadResults = await Promise.allSettled(
-            photos.map(async (photo, index) => {
-                try {
-                    console.log(
-                        `Starting upload for photo ${index + 1}/${
-                            photos.length
-                        }`
-                    )
-                    const result = await uploadFileWithTimeout(photo)
-                    if (!result.data) {
-                        throw new Error(
-                            result.error?.message || 'Upload failed'
-                        )
-                    }
-                    console.log(
-                        `Successfully uploaded photo ${index + 1}/${
-                            photos.length
-                        }`
-                    )
-                    return {
-                        url: result.data.url,
-                        key: result.data.key,
-                    }
-                } catch (error) {
-                    console.error(
-                        `Failed to upload photo ${index + 1}/${photos.length}:`,
-                        error
-                    )
-                    throw new Error(
-                        error instanceof Error ? error.message : 'Upload failed'
-                    )
-                }
-            })
-        )
+        // Upload photos in batches
+        const uploadResults = await uploadPhotosInBatches(photos)
 
-        // Filter successful uploads and handle failures
+        // Filter successful uploads
         const successfulUploads = uploadResults.filter(
-            (
-                result
-            ): result is PromiseFulfilledResult<{
-                url: string
-                key: string
-            }> => result.status === 'fulfilled'
+            (result) => result?.data?.url
         )
-
         const failedUploads = uploadResults.filter(
-            (result): result is PromiseRejectedResult =>
-                result.status === 'rejected'
+            (result) => !result?.data?.url
         )
 
         if (successfulUploads.length === 0) {
             return NextResponse.json(
                 {
                     error: 'Failed to upload photos',
-                    details: failedUploads.map((result) => result.reason),
+                    details: 'No photos were successfully uploaded',
                 },
                 { status: 500 }
             )
@@ -218,7 +200,7 @@ export async function POST(req: Request) {
             )
         }
 
-        const imageUrls = successfulUploads.map((result) => result.value.url)
+        const imageUrls = successfulUploads.map((result) => result.data.url)
 
         const listingParams = {
             title,
