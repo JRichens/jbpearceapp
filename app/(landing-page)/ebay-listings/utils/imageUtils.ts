@@ -23,11 +23,11 @@ const calculateOptimalDimensions = (
 }
 
 export async function convertToJPEG(file: File | Blob): Promise<File> {
-    console.log(
-        `Converting image to JPEG: ${
-            file instanceof File ? file.name : 'blob'
-        }, size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`
-    )
+    // console.log(
+    //     `Converting image to JPEG: ${
+    //         file instanceof File ? file.name : 'blob'
+    //     }, size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`
+    // )
     return new Promise((resolve, reject) => {
         const img = new Image()
         const canvas = document.createElement('canvas')
@@ -42,8 +42,8 @@ export async function convertToJPEG(file: File | Blob): Promise<File> {
                 img.width,
                 img.height
             )
-            console.log(`Original dimensions: ${img.width}x${img.height}`)
-            console.log(`Optimized dimensions: ${width}x${height}`)
+            // console.log(`Original dimensions: ${img.width}x${img.height}`)
+            // console.log(`Optimized dimensions: ${width}x${height}`)
 
             canvas.width = width
             canvas.height = height
@@ -64,18 +64,18 @@ export async function convertToJPEG(file: File | Blob): Promise<File> {
                         const convertedFile = new File([blob], 'ebay.jpg', {
                             type: 'image/jpeg',
                         })
-                        console.log(
-                            `Conversion complete. Output size: ${(
-                                convertedFile.size /
-                                (1024 * 1024)
-                            ).toFixed(2)}MB`
-                        )
-                        console.log(
-                            `Compression ratio: ${(
-                                (1 - convertedFile.size / file.size) *
-                                100
-                            ).toFixed(1)}%`
-                        )
+                        // console.log(
+                        //     `Conversion complete. Output size: ${(
+                        //         convertedFile.size /
+                        //         (1024 * 1024)
+                        //     ).toFixed(2)}MB`
+                        // )
+                        // console.log(
+                        //     `Compression ratio: ${(
+                        //         (1 - convertedFile.size / file.size) *
+                        //         100
+                        //     ).toFixed(1)}%`
+                        // )
                         resolve(convertedFile)
                     } else {
                         reject(new Error('Failed to convert image'))
@@ -138,7 +138,7 @@ export async function startCamera(
     videoRef: React.RefObject<HTMLVideoElement>
 ): Promise<MediaStream | null> {
     try {
-        console.log('Starting camera initialization...')
+        // console.log('Starting camera initialization...')
 
         // Check if we're in a secure context
         if (!window.isSecureContext) {
@@ -172,7 +172,7 @@ export async function startCamera(
 
         // First try with environment-facing camera (rear camera on mobile)
         try {
-            console.log('Trying environment-facing camera...')
+            // console.log('Trying environment-facing camera...')
             const constraints = {
                 video: {
                     facingMode: { ideal: 'environment' },
@@ -183,25 +183,25 @@ export async function startCamera(
                     resizeMode: 'none',
                 },
             }
-            console.log('Camera constraints:', constraints)
+            // console.log('Camera constraints:', constraints)
 
             const stream = await navigator.mediaDevices.getUserMedia(
                 constraints
             )
-            console.log('Environment camera stream obtained')
+            // console.log('Environment camera stream obtained')
 
             videoRef.current.srcObject = stream
             await waitForVideoElement(videoRef.current)
-            console.log('Video element initialized with environment camera')
+            // console.log('Video element initialized with environment camera')
             return stream
         } catch (envError) {
-            console.log(
-                'Environment camera failed, trying fallback...',
-                envError
-            )
+            // console.log(
+            //     'Environment camera failed, trying fallback...',
+            //     envError
+            // )
 
             // Fallback to any available camera with high quality
-            console.log('Attempting fallback to any available camera...')
+            // console.log('Attempting fallback to any available camera...')
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     width: { ideal: 4096 },
@@ -216,7 +216,7 @@ export async function startCamera(
 
             videoRef.current.srcObject = stream
             await waitForVideoElement(videoRef.current)
-            console.log('Video element initialized with fallback camera')
+            // console.log('Video element initialized with fallback camera')
             return stream
         }
     } catch (error) {
@@ -257,7 +257,7 @@ export async function startCamera(
 export function stopCamera(stream: MediaStream | null) {
     if (stream) {
         stream.getTracks().forEach((track) => {
-            console.log('Stopping track:', track.kind, track.label)
+            // console.log('Stopping track:', track.kind, track.label)
             track.stop()
         })
     }
@@ -300,7 +300,7 @@ export async function captureSquarePhoto(
                         const jpegFile = await convertToJPEG(blob)
                         resolve(jpegFile)
                     } catch (error) {
-                        console.error('Error processing captured photo:', error)
+                        // console.error('Error processing captured photo:', error)
                         resolve(null)
                     }
                 } else {

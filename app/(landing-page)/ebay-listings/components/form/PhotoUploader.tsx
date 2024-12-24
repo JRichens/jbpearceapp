@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { MAX_PHOTOS } from '../../types/listingTypes'
 import {
@@ -25,6 +25,7 @@ interface PhotoStatus {
     id: string
     isProcessing: boolean
     isUploading: boolean
+    isDone: boolean
 }
 
 export function PhotoUploader({
@@ -62,7 +63,7 @@ export function PhotoUploader({
             initTimeout = setTimeout(async () => {
                 try {
                     if (!videoRef.current) {
-                        console.error('Video element not found, retrying...')
+                        // console.error('Video element not found, retrying...')
                         return
                     }
 
@@ -82,7 +83,7 @@ export function PhotoUploader({
                             videoRef.current.onloadedmetadata = () => {
                                 if (!mounted) return
                                 videoRef.current?.play().catch((error) => {
-                                    console.error('Error playing video:', error)
+                                    // console.error('Error playing video:', error)
                                     setCameraError(
                                         'Failed to start video preview'
                                     )
@@ -128,6 +129,7 @@ export function PhotoUploader({
                     id: Math.random().toString(36).substr(2, 9),
                     isProcessing: false,
                     isUploading: false,
+                    isDone: false,
                 })
             }
 
@@ -141,6 +143,7 @@ export function PhotoUploader({
                 prevStatuses.map((status) => ({
                     ...status,
                     isUploading: true,
+                    isDone: false,
                 }))
             )
         } else {
@@ -148,6 +151,7 @@ export function PhotoUploader({
                 prevStatuses.map((status) => ({
                     ...status,
                     isUploading: false,
+                    isDone: true,
                 }))
             )
         }
@@ -155,19 +159,19 @@ export function PhotoUploader({
 
     // Helper function to check and process file size
     const processPhoto = async (file: File): Promise<File | null> => {
-        console.log(
-            `Processing photo: ${file.name}, size: ${(
-                file.size /
-                (1024 * 1024)
-            ).toFixed(2)}MB`
-        )
+        // console.log(
+        //     `Processing photo: ${file.name}, size: ${(
+        //         file.size /
+        //         (1024 * 1024)
+        //     ).toFixed(2)}MB`
+        // )
 
         // Check if file is too large (over 20MB)
         const MAX_FILE_SIZE = 20 * 1024 * 1024
         if (file.size > MAX_FILE_SIZE) {
-            console.log(
-                `File ${file.name} exceeds size limit, will attempt compression`
-            )
+            // console.log(
+            //     `File ${file.name} exceeds size limit, will attempt compression`
+            // )
             try {
                 const jpegFile = await convertToJPEG(file)
                 if (jpegFile.size > MAX_FILE_SIZE) {
@@ -177,10 +181,10 @@ export function PhotoUploader({
                 }
                 return jpegFile
             } catch (error) {
-                console.error(
-                    `Failed to process large file ${file.name}:`,
-                    error
-                )
+                // console.error(
+                //     `Failed to process large file ${file.name}:`,
+                //     error
+                // )
                 return null
             }
         }
@@ -194,7 +198,7 @@ export function PhotoUploader({
         try {
             return await convertToJPEG(file)
         } catch (error) {
-            console.error(`Failed to convert ${file.name} to JPEG:`, error)
+            // console.error(`Failed to convert ${file.name} to JPEG:`, error)
             return null
         }
     }
@@ -205,21 +209,21 @@ export function PhotoUploader({
         const files = e.target.files
         if (!files) return
 
-        console.log(
-            `Processing ${files.length} new photos. Current total: ${photos.length}`
-        )
+        // console.log(
+        //     `Processing ${files.length} new photos. Current total: ${photos.length}`
+        // )
 
         // Calculate total size
         const totalSize = Array.from(files).reduce(
             (acc, file) => acc + file.size,
             0
         )
-        console.log(
-            `Total size of selected photos: ${(
-                totalSize /
-                (1024 * 1024)
-            ).toFixed(2)}MB`
-        )
+        // console.log(
+        //     `Total size of selected photos: ${(
+        //         totalSize /
+        //         (1024 * 1024)
+        //     ).toFixed(2)}MB`
+        // )
 
         if (photos.length + files.length > MAX_PHOTOS) {
             toast.error(`Maximum ${MAX_PHOTOS} photos allowed`)
@@ -245,11 +249,11 @@ export function PhotoUploader({
             const BATCH_SIZE = 4
             for (let i = 0; i < files.length; i += BATCH_SIZE) {
                 const batch = Array.from(files).slice(i, i + BATCH_SIZE)
-                console.log(
-                    `Processing batch ${
-                        Math.floor(i / BATCH_SIZE) + 1
-                    }/${Math.ceil(files.length / BATCH_SIZE)}`
-                )
+                // console.log(
+                //     `Processing batch ${
+                //         Math.floor(i / BATCH_SIZE) + 1
+                //     }/${Math.ceil(files.length / BATCH_SIZE)}`
+                // )
 
                 const batchPromises = batch.map(async (file, batchIndex) => {
                     const index = i + batchIndex
@@ -265,20 +269,21 @@ export function PhotoUploader({
                             id: file.name,
                             isProcessing: true,
                             isUploading: false,
+                            isDone: false,
                         },
                     ])
 
                     try {
                         const processedFile = await processPhoto(file)
                         if (processedFile) {
-                            console.log(
-                                `Successfully processed ${
-                                    file.name
-                                }. Final size: ${(
-                                    processedFile.size /
-                                    (1024 * 1024)
-                                ).toFixed(2)}MB`
-                            )
+                            // console.log(
+                            //     `Successfully processed ${
+                            //         file.name
+                            //     }. Final size: ${(
+                            //         processedFile.size /
+                            //         (1024 * 1024)
+                            //     ).toFixed(2)}MB`
+                            // )
                             convertedFiles.push(processedFile)
                             const previewUrl =
                                 URL.createObjectURL(processedFile)
@@ -287,7 +292,7 @@ export function PhotoUploader({
                             errors.push(`Failed to process ${file.name}`)
                         }
                     } catch (error) {
-                        console.error(`Error processing ${file.name}:`, error)
+                        // console.error(`Error processing ${file.name}:`, error)
                         errors.push(`Failed to process ${file.name}`)
                     }
 
@@ -323,7 +328,7 @@ export function PhotoUploader({
             }
         } catch (error) {
             toast.error('Error processing images')
-            console.error('Error processing images:', error)
+            // console.error('Error processing images:', error)
         } finally {
             setIsProcessingBatch(false)
         }
@@ -349,7 +354,7 @@ export function PhotoUploader({
                 toast.error('Failed to capture photo')
             }
         } catch (error) {
-            console.error('Error capturing photo:', error)
+            // console.error('Error capturing photo:', error)
             toast.error('Failed to capture photo')
         }
     }
@@ -426,16 +431,28 @@ export function PhotoUploader({
                                 alt={`Preview ${index + 1}`}
                                 className="w-full h-full object-cover rounded-md"
                             />
-                            {(photoStatuses[index]?.isProcessing ||
-                                photoStatuses[index]?.isUploading) && (
-                                <div className="absolute inset-0 bg-black/50 rounded-md flex flex-col items-center justify-center">
-                                    <Loader2 className="h-6 w-6 animate-spin text-white mb-2" />
-                                    <span className="text-white text-xs">
-                                        {photoStatuses[index]?.isProcessing
-                                            ? 'Processing...'
-                                            : 'Uploading...'}
-                                    </span>
-                                </div>
+                            {photoStatuses[index] && (
+                                <>
+                                    {(photoStatuses[index].isProcessing ||
+                                        photoStatuses[index].isUploading) && (
+                                        <div className="absolute inset-0 bg-black/50 rounded-md flex flex-col items-center justify-center">
+                                            <Loader2 className="h-6 w-6 animate-spin text-white mb-2" />
+                                            <span className="text-white text-xs">
+                                                {photoStatuses[index]
+                                                    .isProcessing
+                                                    ? 'Processing...'
+                                                    : 'Uploading...'}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {photoStatuses[index].isDone &&
+                                        !photoStatuses[index].isProcessing &&
+                                        !photoStatuses[index].isUploading && (
+                                            <div className="absolute top-2 left-2 bg-green-500 rounded-full p-1">
+                                                <Check className="h-4 w-4 text-white" />
+                                            </div>
+                                        )}
+                                </>
                             )}
                             <button
                                 type="button"
