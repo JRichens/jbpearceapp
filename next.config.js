@@ -12,6 +12,11 @@ const nextConfig = {
             },
             {
                 protocol: 'https',
+                hostname: 'ws.carwebuk.com',
+                pathname: '/**',
+            },
+            {
+                protocol: 'https',
                 hostname: '**',
             },
         ],
