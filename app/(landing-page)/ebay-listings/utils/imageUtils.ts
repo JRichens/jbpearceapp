@@ -1,5 +1,10 @@
 // Function to convert image to JPEG format
 export async function convertToJPEG(file: File | Blob): Promise<File> {
+    console.log(
+        `Converting image to JPEG: ${
+            file instanceof File ? file.name : 'blob'
+        }, size: ${file.size} bytes`
+    )
     return new Promise((resolve, reject) => {
         const img = new Image()
         const canvas = document.createElement('canvas')
@@ -26,6 +31,9 @@ export async function convertToJPEG(file: File | Blob): Promise<File> {
                         const convertedFile = new File([blob], 'ebay.jpg', {
                             type: 'image/jpeg',
                         })
+                        console.log(
+                            `Conversion complete. Output size: ${convertedFile.size} bytes`
+                        )
                         resolve(convertedFile)
                     } else {
                         reject(new Error('Failed to convert image'))

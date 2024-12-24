@@ -159,6 +159,10 @@ export function PhotoUploader({
         const files = e.target.files
         if (!files) return
 
+        console.log(
+            `Processing ${files.length} new photos. Current total: ${photos.length}`
+        )
+
         if (photos.length + files.length > MAX_PHOTOS) {
             toast.error(`Maximum ${MAX_PHOTOS} photos allowed`)
             return
@@ -171,6 +175,11 @@ export function PhotoUploader({
         try {
             for (let i = 0; i < files.length; i++) {
                 const file = files[i]
+                console.log(
+                    `Processing photo ${i + 1}/${files.length}: ${
+                        file.name
+                    }, type: ${file.type}, size: ${file.size} bytes`
+                )
 
                 if (!file.type.startsWith('image/')) {
                     toast.error(`${file.name} is not an image file`)
@@ -187,6 +196,9 @@ export function PhotoUploader({
                 ])
 
                 const jpegFile = await convertToJPEG(file)
+                console.log(
+                    `JPEG conversion complete for ${file.name}. New size: ${jpegFile.size} bytes`
+                )
                 convertedFiles.push(jpegFile)
 
                 const previewUrl = URL.createObjectURL(jpegFile)

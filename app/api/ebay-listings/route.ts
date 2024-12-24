@@ -18,6 +18,9 @@ async function uploadFileWithTimeout(
     photo: File,
     retryCount = 5
 ): Promise<any> {
+    console.log(
+        `Starting upload for photo, size: ${photo.size} bytes, retry count: ${retryCount}`
+    )
     const attemptUpload = async (attempts: number): Promise<any> => {
         try {
             const controller = new AbortController()
@@ -28,6 +31,7 @@ async function uploadFileWithTimeout(
 
             const response = await utapi.uploadFiles(photo)
             clearTimeout(timeoutId)
+            console.log(`Upload successful for photo, response:`, response)
             return response
         } catch (error) {
             if (
@@ -53,9 +57,17 @@ async function uploadFileWithTimeout(
 
 // Function to upload photos in batches
 async function uploadPhotosInBatches(photos: File[]) {
+    console.log(
+        `Starting batch upload process for ${photos.length} photos. Batch size: ${BATCH_SIZE}`
+    )
     const results = []
     for (let i = 0; i < photos.length; i += BATCH_SIZE) {
         const batch = photos.slice(i, i + BATCH_SIZE)
+        console.log(
+            `Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(
+                photos.length / BATCH_SIZE
+            )}, size: ${batch.length} photos`
+        )
         const batchResults = await Promise.all(
             batch.map((photo) => uploadFileWithTimeout(photo, 5))
         )
@@ -95,6 +107,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
     const startTime = Date.now()
+    console.log('Starting POST request processing')
     try {
         const { userId } = auth()
 
@@ -104,6 +117,11 @@ export async function POST(req: Request) {
 
         const formData = await req.formData()
         const isVerification = formData.get('action') === 'verify'
+        console.log(
+            `Request type: ${
+                isVerification ? 'Verification' : 'Listing creation'
+            }`
+        )
 
         const title = formData.get('title') as string
         const description = formData.get('description') as string
@@ -165,6 +183,12 @@ export async function POST(req: Request) {
         }
 
         const photos = formData.getAll('photos') as File[]
+        console.log(
+            `Received ${photos.length} photos. Total size: ${photos.reduce(
+                (acc, photo) => acc + photo.size,
+                0
+            )} bytes`
+        )
         if (photos.length === 0) {
             return NextResponse.json(
                 { error: 'At least one photo is required' },
@@ -173,7 +197,9 @@ export async function POST(req: Request) {
         }
 
         // Upload photos in batches
+        console.log('Starting photo upload process')
         const uploadResults = await uploadPhotosInBatches(photos)
+        console.log('Photo upload process complete', uploadResults)
 
         // Filter successful uploads
         const successfulUploads = uploadResults.filter(
@@ -242,8 +268,16 @@ export async function POST(req: Request) {
         }
 
         if (isVerification) {
+            console.log('Starting eBay listing verification')
             const verificationResult = await verifyEbayListing(listingParams)
             const processingTime = Date.now() - startTime
+            console.log('Verification complete', {
+                result: verificationResult,
+                processingTime: `${(processingTime / 1000).toFixed(2)} seconds`,
+                totalPhotos: photos.length,
+                successfulUploads: successfulUploads.length,
+                failedUploads: failedUploads.length,
+            })
             return NextResponse.json({
                 success: true,
                 message: 'Listing verified successfully',
@@ -281,6 +315,7 @@ export async function POST(req: Request) {
         }
     } catch (error: any) {
         console.error('Error processing eBay listing:', error)
+        console.error('Stack trace:', error.stack)
         return NextResponse.json(
             {
                 error: 'Failed to process eBay listing',
