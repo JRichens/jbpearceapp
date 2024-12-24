@@ -153,6 +153,52 @@ export function PhotoUploader({
         }
     }, [isLoading])
 
+    // Helper function to check and process file size
+    const processPhoto = async (file: File): Promise<File | null> => {
+        console.log(
+            `Processing photo: ${file.name}, size: ${(
+                file.size /
+                (1024 * 1024)
+            ).toFixed(2)}MB`
+        )
+
+        // Check if file is too large (over 20MB)
+        const MAX_FILE_SIZE = 20 * 1024 * 1024
+        if (file.size > MAX_FILE_SIZE) {
+            console.log(
+                `File ${file.name} exceeds size limit, will attempt compression`
+            )
+            try {
+                const jpegFile = await convertToJPEG(file)
+                if (jpegFile.size > MAX_FILE_SIZE) {
+                    throw new Error(
+                        `File ${file.name} is still too large after compression`
+                    )
+                }
+                return jpegFile
+            } catch (error) {
+                console.error(
+                    `Failed to process large file ${file.name}:`,
+                    error
+                )
+                return null
+            }
+        }
+
+        // If it's already a JPEG and under size limit, return as is
+        if (file.type === 'image/jpeg' && file.size <= MAX_FILE_SIZE) {
+            return file
+        }
+
+        // Otherwise convert to JPEG for consistency
+        try {
+            return await convertToJPEG(file)
+        } catch (error) {
+            console.error(`Failed to convert ${file.name} to JPEG:`, error)
+            return null
+        }
+    }
+
     const handlePhotoChange = async (
         e: React.ChangeEvent<HTMLInputElement>
     ) => {
@@ -163,60 +209,118 @@ export function PhotoUploader({
             `Processing ${files.length} new photos. Current total: ${photos.length}`
         )
 
+        // Calculate total size
+        const totalSize = Array.from(files).reduce(
+            (acc, file) => acc + file.size,
+            0
+        )
+        console.log(
+            `Total size of selected photos: ${(
+                totalSize /
+                (1024 * 1024)
+            ).toFixed(2)}MB`
+        )
+
         if (photos.length + files.length > MAX_PHOTOS) {
             toast.error(`Maximum ${MAX_PHOTOS} photos allowed`)
+            return
+        }
+
+        // Check total size
+        const MAX_TOTAL_SIZE = 100 * 1024 * 1024 // 100MB total limit
+        if (totalSize > MAX_TOTAL_SIZE) {
+            toast.error(
+                'Total size of selected photos is too large. Please select fewer or smaller photos.'
+            )
             return
         }
 
         setIsProcessingBatch(true)
         const convertedFiles: File[] = []
         const newPreviews: string[] = []
+        const errors: string[] = []
 
         try {
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i]
+            // Process photos in smaller batches
+            const BATCH_SIZE = 4
+            for (let i = 0; i < files.length; i += BATCH_SIZE) {
+                const batch = Array.from(files).slice(i, i + BATCH_SIZE)
                 console.log(
-                    `Processing photo ${i + 1}/${files.length}: ${
-                        file.name
-                    }, type: ${file.type}, size: ${file.size} bytes`
+                    `Processing batch ${
+                        Math.floor(i / BATCH_SIZE) + 1
+                    }/${Math.ceil(files.length / BATCH_SIZE)}`
                 )
 
-                if (!file.type.startsWith('image/')) {
-                    toast.error(`${file.name} is not an image file`)
-                    continue
-                }
+                const batchPromises = batch.map(async (file, batchIndex) => {
+                    const index = i + batchIndex
 
-                setPhotoStatuses((prev) => [
-                    ...prev,
-                    {
-                        id: file.name,
-                        isProcessing: true,
-                        isUploading: false,
-                    },
-                ])
-
-                const jpegFile = await convertToJPEG(file)
-                console.log(
-                    `JPEG conversion complete for ${file.name}. New size: ${jpegFile.size} bytes`
-                )
-                convertedFiles.push(jpegFile)
-
-                const previewUrl = URL.createObjectURL(jpegFile)
-                newPreviews.push(previewUrl)
-
-                setPhotoStatuses((prev) => {
-                    const newStatuses = [...prev]
-                    if (newStatuses[photos.length + i]) {
-                        newStatuses[photos.length + i].isProcessing = false
+                    if (!file.type.startsWith('image/')) {
+                        errors.push(`${file.name} is not an image file`)
+                        return
                     }
-                    return newStatuses
+
+                    setPhotoStatuses((prev) => [
+                        ...prev,
+                        {
+                            id: file.name,
+                            isProcessing: true,
+                            isUploading: false,
+                        },
+                    ])
+
+                    try {
+                        const processedFile = await processPhoto(file)
+                        if (processedFile) {
+                            console.log(
+                                `Successfully processed ${
+                                    file.name
+                                }. Final size: ${(
+                                    processedFile.size /
+                                    (1024 * 1024)
+                                ).toFixed(2)}MB`
+                            )
+                            convertedFiles.push(processedFile)
+                            const previewUrl =
+                                URL.createObjectURL(processedFile)
+                            newPreviews.push(previewUrl)
+                        } else {
+                            errors.push(`Failed to process ${file.name}`)
+                        }
+                    } catch (error) {
+                        console.error(`Error processing ${file.name}:`, error)
+                        errors.push(`Failed to process ${file.name}`)
+                    }
+
+                    setPhotoStatuses((prev) => {
+                        const newStatuses = [...prev]
+                        if (newStatuses[photos.length + index]) {
+                            newStatuses[photos.length + index].isProcessing =
+                                false
+                        }
+                        return newStatuses
+                    })
                 })
+
+                await Promise.all(batchPromises)
+
+                // Small delay between batches to prevent memory issues
+                if (i + BATCH_SIZE < files.length) {
+                    await new Promise((resolve) => setTimeout(resolve, 500))
+                }
             }
 
-            onPhotosChange(
-                [...photos, ...convertedFiles],
-                [...photosPreviews, ...newPreviews]
-            )
+            if (errors.length > 0) {
+                toast.error(
+                    `Some photos couldn't be processed: ${errors.join(', ')}`
+                )
+            }
+
+            if (convertedFiles.length > 0) {
+                onPhotosChange(
+                    [...photos, ...convertedFiles],
+                    [...photosPreviews, ...newPreviews]
+                )
+            }
         } catch (error) {
             toast.error('Error processing images')
             console.error('Error processing images:', error)

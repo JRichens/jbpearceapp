@@ -1,4 +1,8 @@
 import { NextResponse } from 'next/server'
+// For App Router, we use runtime configuration
+export const runtime = 'nodejs' // Enable Node.js runtime
+export const dynamic = 'force-dynamic' // Disable static optimization
+export const maxDuration = 300 // Set maximum duration to 5 minutes
 import { getMyEbayListings } from '../../../lib/ebay/get-listings'
 import { verifyEbayListing } from '../../../lib/ebay/verify-listing'
 import { addEbayListing } from '../../../lib/ebay/add-listing'
@@ -11,9 +15,24 @@ const utapi = new UTApi()
 
 // Set a longer timeout for handling multiple high-res images (30 minutes)
 const UPLOAD_TIMEOUT = 30 * 60 * 1000
-const BATCH_SIZE = 4 // Process 4 high-quality images at a time
+const BATCH_SIZE = 2 // Reduce batch size for larger photos
+const MAX_CHUNK_SIZE = 5 * 1024 * 1024 // 5MB chunks for streaming
 
-// Helper function to handle file upload with timeout and retry
+// Helper function to read request body as stream
+async function readStream(req: Request): Promise<FormData> {
+    const contentType = req.headers.get('content-type') || ''
+
+    if (contentType.includes('multipart/form-data')) {
+        try {
+            return await req.formData()
+        } catch (error) {
+            console.error('Error reading form data:', error)
+            throw new Error('Failed to parse form data')
+        }
+    }
+    throw new Error('Invalid content type')
+}
+
 async function uploadFileWithTimeout(
     photo: File,
     retryCount = 5
@@ -29,6 +48,7 @@ async function uploadFileWithTimeout(
                 UPLOAD_TIMEOUT
             )
 
+            // Upload directly using uploadthing
             const response = await utapi.uploadFiles(photo)
             clearTimeout(timeoutId)
             console.log(`Upload successful for photo, response:`, response)
@@ -115,7 +135,9 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const formData = await req.formData()
+        console.log('Reading form data from request stream...')
+        const formData = await readStream(req)
+        console.log('Form data read successfully')
         const isVerification = formData.get('action') === 'verify'
         console.log(
             `Request type: ${

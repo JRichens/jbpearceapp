@@ -1,9 +1,32 @@
 // Function to convert image to JPEG format
+// Calculate optimal dimensions while maintaining aspect ratio
+const calculateOptimalDimensions = (
+    width: number,
+    height: number,
+    maxDimension: number = 2048
+) => {
+    if (width <= maxDimension && height <= maxDimension) {
+        return { width, height }
+    }
+
+    const aspectRatio = width / height
+    if (width > height) {
+        return {
+            width: maxDimension,
+            height: Math.round(maxDimension / aspectRatio),
+        }
+    }
+    return {
+        width: Math.round(maxDimension * aspectRatio),
+        height: maxDimension,
+    }
+}
+
 export async function convertToJPEG(file: File | Blob): Promise<File> {
     console.log(
         `Converting image to JPEG: ${
             file instanceof File ? file.name : 'blob'
-        }, size: ${file.size} bytes`
+        }, size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`
     )
     return new Promise((resolve, reject) => {
         const img = new Image()
@@ -14,15 +37,25 @@ export async function convertToJPEG(file: File | Blob): Promise<File> {
         })
 
         img.onload = () => {
-            // Maintain original dimensions for high quality
-            canvas.width = img.width
-            canvas.height = img.height
+            // Calculate optimal dimensions for the image
+            const { width, height } = calculateOptimalDimensions(
+                img.width,
+                img.height
+            )
+            console.log(`Original dimensions: ${img.width}x${img.height}`)
+            console.log(`Optimized dimensions: ${width}x${height}`)
+
+            canvas.width = width
+            canvas.height = height
 
             // Enable high-quality image rendering
             if (ctx) {
                 ctx.imageSmoothingEnabled = true
                 ctx.imageSmoothingQuality = 'high'
-                ctx.drawImage(img, 0, 0, img.width, img.height)
+                // Use better quality settings
+                ctx.imageSmoothingEnabled = true
+                ctx.imageSmoothingQuality = 'high'
+                ctx.drawImage(img, 0, 0, width, height)
             }
 
             canvas.toBlob(
@@ -32,7 +65,16 @@ export async function convertToJPEG(file: File | Blob): Promise<File> {
                             type: 'image/jpeg',
                         })
                         console.log(
-                            `Conversion complete. Output size: ${convertedFile.size} bytes`
+                            `Conversion complete. Output size: ${(
+                                convertedFile.size /
+                                (1024 * 1024)
+                            ).toFixed(2)}MB`
+                        )
+                        console.log(
+                            `Compression ratio: ${(
+                                (1 - convertedFile.size / file.size) *
+                                100
+                            ).toFixed(1)}%`
                         )
                         resolve(convertedFile)
                     } else {
