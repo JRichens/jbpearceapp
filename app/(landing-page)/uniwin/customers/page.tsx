@@ -35,6 +35,7 @@ const NewAccount = () => {
     const [searchQuery, setSearchQuery] = useState('')
     const [gettingCustomers, setGettingCustomers] = useState(false)
     const [customers, setCustomers] = useState<IdData[]>([])
+    const [refreshCustomers, setRefreshCustomers] = useState(0)
     const [selectedCustomer, setSelectedCustomer] = useState<IdData | null>(
         null
     )
@@ -95,7 +96,7 @@ const NewAccount = () => {
         }
 
         fetchData()
-    }, [])
+    }, [refreshCustomers])
 
     const handleFormSubmit = async () => {
         if (!isFormValid(formValues)) {
@@ -112,7 +113,7 @@ const NewAccount = () => {
             }
 
             const formData = createFormData(imageFile!, {
-                code: formValues.code,
+                code: formValues.code.toUpperCase(),
                 name: formValues.fullName,
                 address: formValues.firstLineAddress,
                 postcode: formValues.postcode,
@@ -152,6 +153,9 @@ const NewAccount = () => {
                 description: 'New customer created successfully',
                 className: 'bg-green-500 text-white border-none',
             })
+
+            // Trigger customers refresh
+            setRefreshCustomers((prev) => prev + 1)
 
             setFormValues({
                 code: '',
@@ -216,7 +220,7 @@ const NewAccount = () => {
             } else {
                 setIdData({
                     ...response,
-                    code: response.fullName.toUpperCase(),
+                    code: response.fullName.toUpperCase().slice(0, 24),
                     paymentType: 'BACS',
                     registration: '',
                     sortCode: '',
@@ -368,7 +372,7 @@ const NewAccount = () => {
     useEffect(() => {
         setFormValues((prev) => ({
             ...prev,
-            code: prev.fullName.toUpperCase(),
+            code: prev.fullName.toUpperCase().slice(0, 24),
         }))
     }, [formValues.fullName])
 
@@ -461,6 +465,7 @@ const NewAccount = () => {
                                                 style: {
                                                     textTransform: 'uppercase',
                                                 },
+                                                maxLength: 24,
                                             }}
                                         />
                                         <TextField
