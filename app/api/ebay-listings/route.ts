@@ -8,15 +8,7 @@ import { verifyEbayListing } from '../../../lib/ebay/verify-listing'
 import { addEbayListing } from '../../../lib/ebay/add-listing'
 import { getCategoryFeatures } from '../../../lib/ebay/get-category-features'
 import { auth } from '@clerk/nextjs'
-import { UTApi } from 'uploadthing/server'
 import { EbayListing } from '../../../lib/ebay/types'
-
-const utapi = new UTApi()
-
-// Set a longer timeout for handling multiple high-res images (30 minutes)
-const UPLOAD_TIMEOUT = 30 * 60 * 1000
-const BATCH_SIZE = 2 // Reduce batch size for larger photos
-const MAX_CHUNK_SIZE = 5 * 1024 * 1024 // 5MB chunks for streaming
 
 // Helper function to read request body as stream
 async function readStream(req: Request): Promise<FormData> {
@@ -31,73 +23,6 @@ async function readStream(req: Request): Promise<FormData> {
         }
     }
     throw new Error('Invalid content type')
-}
-
-async function uploadFileWithTimeout(
-    photo: File,
-    retryCount = 5
-): Promise<any> {
-    // console.log(
-    //     `Starting upload for photo, size: ${photo.size} bytes, retry count: ${retryCount}`
-    // )
-    const attemptUpload = async (attempts: number): Promise<any> => {
-        try {
-            const controller = new AbortController()
-            const timeoutId = setTimeout(
-                () => controller.abort(),
-                UPLOAD_TIMEOUT
-            )
-
-            // Upload directly using uploadthing
-            const response = await utapi.uploadFiles(photo)
-            clearTimeout(timeoutId)
-            // console.log(`Upload successful for photo, response:`, response)
-            return response
-        } catch (error) {
-            if (
-                attempts > 0 &&
-                error instanceof Error &&
-                error.message === 'Upload timeout'
-            ) {
-                // console.log(
-                //     `Retrying upload, ${attempts} attempts remaining...`
-                // )
-                // Add exponential backoff
-                await new Promise((resolve) =>
-                    setTimeout(resolve, Math.pow(2, 6 - attempts) * 1000)
-                )
-                return attemptUpload(attempts - 1)
-            }
-            throw error
-        }
-    }
-
-    return attemptUpload(retryCount)
-}
-
-// Function to upload photos in batches
-async function uploadPhotosInBatches(photos: File[]) {
-    // console.log(
-    //     `Starting batch upload process for ${photos.length} photos. Batch size: ${BATCH_SIZE}`
-    // )
-    const results = []
-    for (let i = 0; i < photos.length; i += BATCH_SIZE) {
-        const batch = photos.slice(i, i + BATCH_SIZE)
-        // console.log(
-        //     `Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(
-        //         photos.length / BATCH_SIZE
-        //     )}, size: ${batch.length} photos`
-        // )
-        const batchResults = await Promise.all(
-            batch.map((photo) => uploadFileWithTimeout(photo, 5))
-        )
-        results.push(...batchResults)
-        // Add a small delay between batches to prevent overwhelming the server
-        if (i + BATCH_SIZE < photos.length) {
-            await new Promise((resolve) => setTimeout(resolve, 1000))
-        }
-    }
-    return results
 }
 
 export async function GET() {
@@ -204,51 +129,21 @@ export async function POST(req: Request) {
             )
         }
 
-        const photos = formData.getAll('photos') as File[]
-        // console.log(
-        //     `Received ${photos.length} photos. Total size: ${photos.reduce(
-        //         (acc, photo) => acc + photo.size,
-        //         0
-        //     )} bytes`
-        // )
-        if (photos.length === 0) {
+        const imageUrlsStr = formData.get('imageUrls') as string
+        if (!imageUrlsStr) {
             return NextResponse.json(
-                { error: 'At least one photo is required' },
+                { error: 'At least one photo URL is required' },
                 { status: 400 }
             )
         }
 
-        // Upload photos in batches
-        // console.log('Starting photo upload process')
-        const uploadResults = await uploadPhotosInBatches(photos)
-        // console.log('Photo upload process complete', uploadResults)
-
-        // Filter successful uploads
-        const successfulUploads = uploadResults.filter(
-            (result) => result?.data?.url
-        )
-        const failedUploads = uploadResults.filter(
-            (result) => !result?.data?.url
-        )
-
-        if (successfulUploads.length === 0) {
+        const imageUrls = JSON.parse(imageUrlsStr)
+        if (!Array.isArray(imageUrls) || imageUrls.length === 0) {
             return NextResponse.json(
-                {
-                    error: 'Failed to upload photos',
-                    details: 'No photos were successfully uploaded',
-                },
-                { status: 500 }
+                { error: 'Invalid or empty photo URLs' },
+                { status: 400 }
             )
         }
-
-        // If some uploads failed but we have at least one success, we can proceed
-        if (failedUploads.length > 0) {
-            console.warn(
-                `${failedUploads.length} photo uploads failed, proceeding with ${successfulUploads.length} successful uploads`
-            )
-        }
-
-        const imageUrls = successfulUploads.map((result) => result.data.url)
 
         const listingParams = {
             title,
@@ -293,25 +188,11 @@ export async function POST(req: Request) {
             // console.log('Starting eBay listing verification')
             const verificationResult = await verifyEbayListing(listingParams)
             const processingTime = Date.now() - startTime
-            // console.log('Verification complete', {
-            //     result: verificationResult,
-            //     processingTime: `${(processingTime / 1000).toFixed(2)} seconds`,
-            //     totalPhotos: photos.length,
-            //     successfulUploads: successfulUploads.length,
-            //     failedUploads: failedUploads.length,
-            // })
+            // console.log('Verification complete')
             return NextResponse.json({
                 success: true,
                 message: 'Listing verified successfully',
                 verificationResult,
-                uploadStats: {
-                    successful: successfulUploads.length,
-                    failed: failedUploads.length,
-                    processingTimeMs: processingTime,
-                    processingTimeFormatted: `${(processingTime / 1000).toFixed(
-                        2
-                    )} seconds`,
-                },
             })
         } else {
             const enableEbayListing = process.env.ENABLE_EBAY_LISTING === 'true'

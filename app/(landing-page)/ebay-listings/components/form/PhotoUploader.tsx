@@ -44,6 +44,7 @@ export function PhotoUploader({
 }: PhotoUploaderProps) {
     const [isCameraOpen, setIsCameraOpen] = useState(false)
     const [isCameraInitializing, setIsCameraInitializing] = useState(false)
+    const [isProcessingCapture, setIsProcessingCapture] = useState(false)
     const [cameraError, setCameraError] = useState<string | null>(null)
     const [photoStatuses, setPhotoStatuses] = useState<PhotoStatus[]>([])
     const [isProcessingBatch, setIsProcessingBatch] = useState(false)
@@ -56,6 +57,7 @@ export function PhotoUploader({
         setIsCameraOpen(false)
         setCameraError(null)
         setIsCameraInitializing(false)
+        setIsProcessingCapture(false)
     }
 
     useEffect(() => {
@@ -71,7 +73,6 @@ export function PhotoUploader({
             initTimeout = setTimeout(async () => {
                 try {
                     if (!videoRef.current) {
-                        // console.error('Video element not found, retrying...')
                         return
                     }
 
@@ -91,7 +92,6 @@ export function PhotoUploader({
                             videoRef.current.onloadedmetadata = () => {
                                 if (!mounted) return
                                 videoRef.current?.play().catch((error) => {
-                                    // console.error('Error playing video:', error)
                                     setCameraError(
                                         'Failed to start video preview'
                                     )
@@ -165,21 +165,9 @@ export function PhotoUploader({
         }
     }, [isLoading])
 
-    // Helper function to check and process file size
     const processPhoto = async (file: File): Promise<File | null> => {
-        // console.log(
-        //     `Processing photo: ${file.name}, size: ${(
-        //         file.size /
-        //         (1024 * 1024)
-        //     ).toFixed(2)}MB`
-        // )
-
-        // Check if file is too large (over 20MB)
         const MAX_FILE_SIZE = 20 * 1024 * 1024
         if (file.size > MAX_FILE_SIZE) {
-            // console.log(
-            //     `File ${file.name} exceeds size limit, will attempt compression`
-            // )
             try {
                 const jpegFile = await convertToJPEG(file)
                 if (jpegFile.size > MAX_FILE_SIZE) {
@@ -189,24 +177,17 @@ export function PhotoUploader({
                 }
                 return jpegFile
             } catch (error) {
-                // console.error(
-                //     `Failed to process large file ${file.name}:`,
-                //     error
-                // )
                 return null
             }
         }
 
-        // If it's already a JPEG and under size limit, return as is
         if (file.type === 'image/jpeg' && file.size <= MAX_FILE_SIZE) {
             return file
         }
 
-        // Otherwise convert to JPEG for consistency
         try {
             return await convertToJPEG(file)
         } catch (error) {
-            // console.error(`Failed to convert ${file.name} to JPEG:`, error)
             return null
         }
     }
@@ -286,10 +267,8 @@ export function PhotoUploader({
                 try {
                     const processedFile = await processPhoto(file)
                     if (processedFile) {
-                        // Create preview immediately
                         const previewUrl = URL.createObjectURL(processedFile)
 
-                        // Start upload
                         setPhotoStatuses((prev) => {
                             const newStatuses = [...prev]
                             const statusIndex = photos.length + index
@@ -300,7 +279,6 @@ export function PhotoUploader({
                             return newStatuses
                         })
 
-                        // Upload the processed file
                         const uploadedUrl = await uploadPhoto(
                             processedFile,
                             index
@@ -362,22 +340,12 @@ export function PhotoUploader({
         }
 
         try {
+            setIsProcessingCapture(true)
             const capturedFile = await captureSquarePhoto(videoRef, canvasRef)
             if (capturedFile) {
                 const previewUrl = URL.createObjectURL(capturedFile)
-                // Process and upload the captured photo
                 const processedFile = await processPhoto(capturedFile)
                 if (processedFile) {
-                    setPhotoStatuses((prev) => [
-                        ...prev,
-                        {
-                            id: Math.random().toString(36).substr(2, 9),
-                            isProcessing: false,
-                            isUploading: true,
-                            isDone: false,
-                        },
-                    ])
-
                     const uploadedUrl = await uploadPhoto(
                         processedFile,
                         photos.length
@@ -388,27 +356,23 @@ export function PhotoUploader({
                             [...photosPreviews, previewUrl],
                             [...uploadedPhotoUrls, uploadedUrl]
                         )
-                        setPhotoStatuses((prev) => {
-                            const newStatuses = [...prev]
-                            if (newStatuses[photos.length]) {
-                                newStatuses[photos.length].isUploading = false
-                                newStatuses[photos.length].isDone = true
-                            }
-                            return newStatuses
-                        })
+                        handleCameraClose()
+                        toast.success('Photo captured successfully')
                     } else {
                         URL.revokeObjectURL(previewUrl)
                         toast.error('Failed to upload photo')
                     }
+                } else {
+                    URL.revokeObjectURL(previewUrl)
+                    toast.error('Failed to process photo')
                 }
-                handleCameraClose()
-                toast.success('Photo captured successfully')
             } else {
                 toast.error('Failed to capture photo')
             }
         } catch (error) {
-            // console.error('Error capturing photo:', error)
             toast.error('Failed to capture photo')
+        } finally {
+            setIsProcessingCapture(false)
         }
     }
 
@@ -418,7 +382,6 @@ export function PhotoUploader({
         URL.revokeObjectURL(newPreviews[index])
         newPhotos.splice(index, 1)
         newPreviews.splice(index, 1)
-        // Remove the corresponding uploaded URL
         const newUploadedUrls = [...uploadedPhotoUrls]
         newUploadedUrls.splice(index, 1)
         onPhotosChange(newPhotos, newPreviews, newUploadedUrls)
@@ -536,9 +499,14 @@ export function PhotoUploader({
                 <DialogContent className="sm:max-w-[600px] p-0">
                     <div className="relative">
                         <div className="relative aspect-square w-full bg-black overflow-hidden">
-                            {isCameraInitializing && (
-                                <div className="absolute inset-0 flex items-center justify-center text-white bg-black bg-opacity-50 z-10">
-                                    Initializing camera...
+                            {(isCameraInitializing || isProcessingCapture) && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-white bg-black bg-opacity-50 z-10">
+                                    <Loader2 className="h-6 w-6 animate-spin text-white mb-2" />
+                                    <span>
+                                        {isCameraInitializing
+                                            ? 'Initializing camera...'
+                                            : 'Processing and uploading photo...'}
+                                    </span>
                                 </div>
                             )}
                             {cameraError && (
@@ -579,7 +547,11 @@ export function PhotoUploader({
                                 type="button"
                                 className="rounded-full w-16 h-16 bg-white"
                                 onClick={capturePhoto}
-                                disabled={isCameraInitializing || !!cameraError}
+                                disabled={
+                                    isCameraInitializing ||
+                                    isProcessingCapture ||
+                                    !!cameraError
+                                }
                             >
                                 <div className="rounded-full w-14 h-14 border-2 border-black" />
                             </Button>
