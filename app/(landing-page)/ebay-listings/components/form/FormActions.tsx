@@ -25,6 +25,7 @@ export function FormActions({
             formState.shippingProfileId && // Shipping Profile is required
             formState.paintCode && // Paint Code is required
             formState.photos.length > 0 && // At least one photo is required
+            formState.uploadedPhotoUrls.length === formState.photos.length && // All photos must be uploaded
             formState.conditionDescription // Condition Description is required
     )
 

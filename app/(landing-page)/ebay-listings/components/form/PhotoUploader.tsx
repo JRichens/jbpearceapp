@@ -17,8 +17,14 @@ import {
 interface PhotoUploaderProps {
     photos: File[]
     photosPreviews: string[]
-    onPhotosChange: (photos: File[], previews: string[]) => void
+    uploadedPhotoUrls: string[]
+    onPhotosChange: (
+        photos: File[],
+        previews: string[],
+        uploadedUrls: string[]
+    ) => void
     isLoading: boolean
+    isUploadingPhotos: boolean
 }
 
 interface PhotoStatus {
@@ -31,8 +37,10 @@ interface PhotoStatus {
 export function PhotoUploader({
     photos,
     photosPreviews,
+    uploadedPhotoUrls,
     onPhotosChange,
     isLoading,
+    isUploadingPhotos,
 }: PhotoUploaderProps) {
     const [isCameraOpen, setIsCameraOpen] = useState(false)
     const [isCameraInitializing, setIsCameraInitializing] = useState(false)
@@ -203,34 +211,46 @@ export function PhotoUploader({
         }
     }
 
+    const uploadPhoto = async (
+        file: File,
+        index: number
+    ): Promise<string | null> => {
+        try {
+            const formData = new FormData()
+            formData.append('photos', file)
+
+            const response = await fetch('/api/ebay-listings/upload', {
+                method: 'POST',
+                body: formData,
+            })
+
+            if (!response.ok) {
+                throw new Error('Failed to upload photo')
+            }
+
+            const data = await response.json()
+            return data.url
+        } catch (error) {
+            console.error('Error uploading photo:', error)
+            return null
+        }
+    }
+
     const handlePhotoChange = async (
         e: React.ChangeEvent<HTMLInputElement>
     ) => {
         const files = e.target.files
         if (!files) return
 
-        // console.log(
-        //     `Processing ${files.length} new photos. Current total: ${photos.length}`
-        // )
-
-        // Calculate total size
-        const totalSize = Array.from(files).reduce(
-            (acc, file) => acc + file.size,
-            0
-        )
-        // console.log(
-        //     `Total size of selected photos: ${(
-        //         totalSize /
-        //         (1024 * 1024)
-        //     ).toFixed(2)}MB`
-        // )
-
         if (photos.length + files.length > MAX_PHOTOS) {
             toast.error(`Maximum ${MAX_PHOTOS} photos allowed`)
             return
         }
 
-        // Check total size
+        const totalSize = Array.from(files).reduce(
+            (acc, file) => acc + file.size,
+            0
+        )
         const MAX_TOTAL_SIZE = 100 * 1024 * 1024 // 100MB total limit
         if (totalSize > MAX_TOTAL_SIZE) {
             toast.error(
@@ -242,77 +262,77 @@ export function PhotoUploader({
         setIsProcessingBatch(true)
         const convertedFiles: File[] = []
         const newPreviews: string[] = []
+        const newUploadedUrls: string[] = []
         const errors: string[] = []
 
         try {
-            // Process photos in smaller batches
-            const BATCH_SIZE = 4
-            for (let i = 0; i < files.length; i += BATCH_SIZE) {
-                const batch = Array.from(files).slice(i, i + BATCH_SIZE)
-                // console.log(
-                //     `Processing batch ${
-                //         Math.floor(i / BATCH_SIZE) + 1
-                //     }/${Math.ceil(files.length / BATCH_SIZE)}`
-                // )
+            const fileArray = Array.from(files)
+            const processPromises = fileArray.map(async (file, index) => {
+                if (!file.type.startsWith('image/')) {
+                    errors.push(`${file.name} is not an image file`)
+                    return
+                }
 
-                const batchPromises = batch.map(async (file, batchIndex) => {
-                    const index = i + batchIndex
+                setPhotoStatuses((prev) => [
+                    ...prev,
+                    {
+                        id: file.name,
+                        isProcessing: true,
+                        isUploading: false,
+                        isDone: false,
+                    },
+                ])
 
-                    if (!file.type.startsWith('image/')) {
-                        errors.push(`${file.name} is not an image file`)
-                        return
-                    }
+                try {
+                    const processedFile = await processPhoto(file)
+                    if (processedFile) {
+                        // Create preview immediately
+                        const previewUrl = URL.createObjectURL(processedFile)
 
-                    setPhotoStatuses((prev) => [
-                        ...prev,
-                        {
-                            id: file.name,
-                            isProcessing: true,
-                            isUploading: false,
-                            isDone: false,
-                        },
-                    ])
+                        // Start upload
+                        setPhotoStatuses((prev) => {
+                            const newStatuses = [...prev]
+                            const statusIndex = photos.length + index
+                            if (newStatuses[statusIndex]) {
+                                newStatuses[statusIndex].isProcessing = false
+                                newStatuses[statusIndex].isUploading = true
+                            }
+                            return newStatuses
+                        })
 
-                    try {
-                        const processedFile = await processPhoto(file)
-                        if (processedFile) {
-                            // console.log(
-                            //     `Successfully processed ${
-                            //         file.name
-                            //     }. Final size: ${(
-                            //         processedFile.size /
-                            //         (1024 * 1024)
-                            //     ).toFixed(2)}MB`
-                            // )
+                        // Upload the processed file
+                        const uploadedUrl = await uploadPhoto(
+                            processedFile,
+                            index
+                        )
+
+                        if (uploadedUrl) {
                             convertedFiles.push(processedFile)
-                            const previewUrl =
-                                URL.createObjectURL(processedFile)
                             newPreviews.push(previewUrl)
+                            newUploadedUrls.push(uploadedUrl)
+
+                            setPhotoStatuses((prev) => {
+                                const newStatuses = [...prev]
+                                const statusIndex = photos.length + index
+                                if (newStatuses[statusIndex]) {
+                                    newStatuses[statusIndex].isUploading = false
+                                    newStatuses[statusIndex].isDone = true
+                                }
+                                return newStatuses
+                            })
                         } else {
-                            errors.push(`Failed to process ${file.name}`)
+                            errors.push(`Failed to upload ${file.name}`)
+                            URL.revokeObjectURL(previewUrl)
                         }
-                    } catch (error) {
-                        // console.error(`Error processing ${file.name}:`, error)
+                    } else {
                         errors.push(`Failed to process ${file.name}`)
                     }
-
-                    setPhotoStatuses((prev) => {
-                        const newStatuses = [...prev]
-                        if (newStatuses[photos.length + index]) {
-                            newStatuses[photos.length + index].isProcessing =
-                                false
-                        }
-                        return newStatuses
-                    })
-                })
-
-                await Promise.all(batchPromises)
-
-                // Small delay between batches to prevent memory issues
-                if (i + BATCH_SIZE < files.length) {
-                    await new Promise((resolve) => setTimeout(resolve, 500))
+                } catch (error) {
+                    errors.push(`Failed to process ${file.name}`)
                 }
-            }
+            })
+
+            await Promise.all(processPromises)
 
             if (errors.length > 0) {
                 toast.error(
@@ -323,12 +343,13 @@ export function PhotoUploader({
             if (convertedFiles.length > 0) {
                 onPhotosChange(
                     [...photos, ...convertedFiles],
-                    [...photosPreviews, ...newPreviews]
+                    [...photosPreviews, ...newPreviews],
+                    [...uploadedPhotoUrls, ...newUploadedUrls]
                 )
             }
         } catch (error) {
             toast.error('Error processing images')
-            // console.error('Error processing images:', error)
+            console.error('Error processing images:', error)
         } finally {
             setIsProcessingBatch(false)
         }
@@ -344,10 +365,42 @@ export function PhotoUploader({
             const capturedFile = await captureSquarePhoto(videoRef, canvasRef)
             if (capturedFile) {
                 const previewUrl = URL.createObjectURL(capturedFile)
-                onPhotosChange(
-                    [...photos, capturedFile],
-                    [...photosPreviews, previewUrl]
-                )
+                // Process and upload the captured photo
+                const processedFile = await processPhoto(capturedFile)
+                if (processedFile) {
+                    setPhotoStatuses((prev) => [
+                        ...prev,
+                        {
+                            id: Math.random().toString(36).substr(2, 9),
+                            isProcessing: false,
+                            isUploading: true,
+                            isDone: false,
+                        },
+                    ])
+
+                    const uploadedUrl = await uploadPhoto(
+                        processedFile,
+                        photos.length
+                    )
+                    if (uploadedUrl) {
+                        onPhotosChange(
+                            [...photos, processedFile],
+                            [...photosPreviews, previewUrl],
+                            [...uploadedPhotoUrls, uploadedUrl]
+                        )
+                        setPhotoStatuses((prev) => {
+                            const newStatuses = [...prev]
+                            if (newStatuses[photos.length]) {
+                                newStatuses[photos.length].isUploading = false
+                                newStatuses[photos.length].isDone = true
+                            }
+                            return newStatuses
+                        })
+                    } else {
+                        URL.revokeObjectURL(previewUrl)
+                        toast.error('Failed to upload photo')
+                    }
+                }
                 handleCameraClose()
                 toast.success('Photo captured successfully')
             } else {
@@ -365,7 +418,10 @@ export function PhotoUploader({
         URL.revokeObjectURL(newPreviews[index])
         newPhotos.splice(index, 1)
         newPreviews.splice(index, 1)
-        onPhotosChange(newPhotos, newPreviews)
+        // Remove the corresponding uploaded URL
+        const newUploadedUrls = [...uploadedPhotoUrls]
+        newUploadedUrls.splice(index, 1)
+        onPhotosChange(newPhotos, newPreviews, newUploadedUrls)
     }
 
     return (

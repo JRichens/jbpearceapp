@@ -284,8 +284,10 @@ export function ListingFormSection({
                             <PhotoUploader
                                 photos={formState.photos}
                                 photosPreviews={formState.photosPreviews}
+                                uploadedPhotoUrls={formState.uploadedPhotoUrls}
                                 onPhotosChange={handlePhotosChange}
                                 isLoading={formState.isLoading}
+                                isUploadingPhotos={formState.isUploadingPhotos}
                             />
 
                             <FormActions

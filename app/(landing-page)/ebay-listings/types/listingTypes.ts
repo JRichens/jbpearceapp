@@ -46,6 +46,8 @@ export interface FormState {
     isLoading: boolean
     photos: File[]
     photosPreviews: string[]
+    uploadedPhotoUrls: string[]
+    isUploadingPhotos: boolean
     categories: Category[]
     isCategoriesLoading: boolean
     categoriesError: string | null
@@ -88,6 +90,8 @@ export const initialFormState: FormState = {
     isLoading: false,
     photos: [],
     photosPreviews: [],
+    uploadedPhotoUrls: [],
+    isUploadingPhotos: false,
     categories: [],
     isCategoriesLoading: false,
     categoriesError: null,

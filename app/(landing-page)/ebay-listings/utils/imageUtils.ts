@@ -93,14 +93,6 @@ export async function convertToJPEG(file: File | Blob): Promise<File> {
 
 // Check if the browser supports getUserMedia with better browser compatibility
 const hasGetUserMedia = () => {
-    // Check if we're in a secure context (HTTPS or localhost)
-    if (!window.isSecureContext) {
-        console.error(
-            'Not in secure context - camera access requires HTTPS or localhost'
-        )
-        return false
-    }
-
     // Check for various implementations of getUserMedia
     const mediaDevices = navigator.mediaDevices || {}
 
@@ -139,13 +131,6 @@ export async function startCamera(
 ): Promise<MediaStream | null> {
     try {
         // console.log('Starting camera initialization...')
-
-        // Check if we're in a secure context
-        if (!window.isSecureContext) {
-            throw new Error(
-                'Camera access requires a secure connection (HTTPS) or localhost.'
-            )
-        }
 
         // Check if browser supports getUserMedia
         if (!hasGetUserMedia()) {
@@ -226,7 +211,7 @@ export async function startCamera(
             switch (error.name) {
                 case 'NotAllowedError':
                     throw new Error(
-                        'Camera access denied. Please grant permission to use the camera in your browser settings.'
+                        'Camera access denied. Please ensure you are using HTTPS or localhost, and grant permission to use the camera in your browser settings.'
                     )
                 case 'NotFoundError':
                     throw new Error('No camera found on this device.')

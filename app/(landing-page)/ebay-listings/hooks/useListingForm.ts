@@ -231,11 +231,16 @@ export function useListingForm() {
         }))
     }
 
-    const handlePhotosChange = (newPhotos: File[], newPreviews: string[]) => {
+    const handlePhotosChange = (
+        newPhotos: File[],
+        newPreviews: string[],
+        newUploadedUrls: string[]
+    ) => {
         setFormState((prev) => ({
             ...prev,
             photos: newPhotos,
             photosPreviews: newPreviews,
+            uploadedPhotoUrls: newUploadedUrls,
             isVerified: false,
             verificationResult: null,
         }))
@@ -356,9 +361,11 @@ export function useListingForm() {
             if (formState.placement)
                 formData.append('placement', formState.placement)
 
-            formState.photos.forEach((photo) => {
-                formData.append('photos', photo)
-            })
+            // Use pre-uploaded photo URLs instead of uploading again
+            formData.append(
+                'imageUrls',
+                JSON.stringify(formState.uploadedPhotoUrls)
+            )
 
             if (formState.vehicle) {
                 formData.append(
