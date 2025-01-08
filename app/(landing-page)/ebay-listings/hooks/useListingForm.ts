@@ -234,13 +234,15 @@ export function useListingForm() {
     const handlePhotosChange = (
         newPhotos: File[],
         newPreviews: string[],
-        newUploadedUrls: string[]
+        newUploadedUrls: string[],
+        isUploading: boolean
     ) => {
         setFormState((prev) => ({
             ...prev,
             photos: newPhotos,
             photosPreviews: newPreviews,
             uploadedPhotoUrls: newUploadedUrls,
+            isUploadingPhotos: isUploading,
             isVerified: false,
             verificationResult: null,
         }))

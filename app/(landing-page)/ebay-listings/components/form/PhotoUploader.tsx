@@ -21,7 +21,8 @@ interface PhotoUploaderProps {
     onPhotosChange: (
         photos: File[],
         previews: string[],
-        uploadedUrls: string[]
+        uploadedUrls: string[],
+        isUploading: boolean
     ) => void
     isLoading: boolean
     isUploadingPhotos: boolean
@@ -32,12 +33,6 @@ interface PhotoStatus {
     isProcessing: boolean
     isUploading: boolean
     isDone: boolean
-}
-
-interface UploadQueueItem {
-    file: File
-    previewUrl: string
-    index: number
 }
 
 export function PhotoUploader({
@@ -62,7 +57,7 @@ export function PhotoUploader({
     const latestPhotos = useRef<File[]>(photos)
     const latestPreviews = useRef<string[]>(photosPreviews)
     const latestUrls = useRef<string[]>(uploadedPhotoUrls)
-    const uploadQueue = useRef<UploadQueueItem[]>([])
+    const activeUploads = useRef<number>(0)
 
     // Update refs when props change
     useEffect(() => {
@@ -229,7 +224,15 @@ export function PhotoUploader({
 
         if (uploadedUrl) {
             currentUrls[index] = uploadedUrl
-            onPhotosChange(currentPhotos, currentPreviews, currentUrls)
+            activeUploads.current -= 1
+            const isStillUploading = activeUploads.current > 0
+
+            onPhotosChange(
+                currentPhotos,
+                currentPreviews,
+                currentUrls,
+                isStillUploading
+            )
 
             setPhotoStatuses((prev) =>
                 prev.map((status, idx) =>
@@ -239,7 +242,15 @@ export function PhotoUploader({
                 )
             )
         } else {
-            // Handle upload failure
+            activeUploads.current -= 1
+            const isStillUploading = activeUploads.current > 0
+            onPhotosChange(
+                currentPhotos,
+                currentPreviews,
+                currentUrls,
+                isStillUploading
+            )
+
             setPhotoStatuses((prev) =>
                 prev.map((status, idx) =>
                     idx === index
@@ -256,7 +267,8 @@ export function PhotoUploader({
         const newUrls = [...latestUrls.current, '']
         const newIndex = newPhotos.length - 1
 
-        onPhotosChange(newPhotos, newPreviews, newUrls)
+        activeUploads.current += 1
+        onPhotosChange(newPhotos, newPreviews, newUrls, true)
 
         setPhotoStatuses((prev) => [
             ...prev,
@@ -391,7 +403,12 @@ export function PhotoUploader({
         newPreviews.splice(index, 1)
         const newUploadedUrls = [...uploadedPhotoUrls]
         newUploadedUrls.splice(index, 1)
-        onPhotosChange(newPhotos, newPreviews, newUploadedUrls)
+        onPhotosChange(
+            newPhotos,
+            newPreviews,
+            newUploadedUrls,
+            activeUploads.current > 0
+        )
     }
 
     return (
