@@ -72,26 +72,21 @@ export function PhotoUploader({
 
             initTimeout = setTimeout(async () => {
                 try {
-                    if (!videoRef.current) {
-                        return
-                    }
+                    if (!videoRef.current) return
 
                     const stream = await startCamera(videoRef)
 
                     if (!mounted) {
-                        if (stream) {
-                            stopCamera(stream)
-                        }
+                        if (stream) stopCamera(stream)
                         return
                     }
 
                     if (stream) {
                         streamRef.current = stream
-
                         if (videoRef.current) {
                             videoRef.current.onloadedmetadata = () => {
                                 if (!mounted) return
-                                videoRef.current?.play().catch((error) => {
+                                videoRef.current?.play().catch(() => {
                                     setCameraError(
                                         'Failed to start video preview'
                                     )
@@ -110,9 +105,7 @@ export function PhotoUploader({
                     setCameraError(errorMessage)
                     toast.error(errorMessage)
                 } finally {
-                    if (mounted) {
-                        setIsCameraInitializing(false)
-                    }
+                    if (mounted) setIsCameraInitializing(false)
                 }
             }, 100)
         }
@@ -129,9 +122,8 @@ export function PhotoUploader({
     useEffect(() => {
         setPhotoStatuses((prevStatuses) => {
             const currentStatuses = prevStatuses.filter(
-                (status, index) => index < photos.length
+                (_, index) => index < photos.length
             )
-
             while (currentStatuses.length < photos.length) {
                 currentStatuses.push({
                     id: Math.random().toString(36).substr(2, 9),
@@ -140,7 +132,6 @@ export function PhotoUploader({
                     isDone: false,
                 })
             }
-
             return currentStatuses
         })
     }, [photos.length])
@@ -192,10 +183,7 @@ export function PhotoUploader({
         }
     }
 
-    const uploadPhoto = async (
-        file: File,
-        index: number
-    ): Promise<string | null> => {
+    const uploadPhoto = async (file: File): Promise<string | null> => {
         try {
             const formData = new FormData()
             formData.append('photos', file)
@@ -205,9 +193,7 @@ export function PhotoUploader({
                 body: formData,
             })
 
-            if (!response.ok) {
-                throw new Error('Failed to upload photo')
-            }
+            if (!response.ok) throw new Error('Failed to upload photo')
 
             const data = await response.json()
             return data.url
@@ -254,14 +240,13 @@ export function PhotoUploader({
                 const processedFile = await processPhoto(file)
                 if (processedFile) {
                     const previewUrl = URL.createObjectURL(processedFile)
-                    const newIndex = photos.length + i
+                    const currentPhotos = [...photos, processedFile]
+                    const currentPreviews = [...photosPreviews, previewUrl]
+                    const currentUrls = [...uploadedPhotoUrls, '']
+                    const newIndex = currentPhotos.length - 1
 
-                    // Add to grid immediately with processing state
-                    onPhotosChange(
-                        [...photos, processedFile],
-                        [...photosPreviews, previewUrl],
-                        [...uploadedPhotoUrls, ''] // Empty URL until upload completes
-                    )
+                    // Add to grid immediately
+                    onPhotosChange(currentPhotos, currentPreviews, currentUrls)
 
                     // Update status to show uploading
                     setPhotoStatuses((prev) => [
@@ -275,13 +260,14 @@ export function PhotoUploader({
                     ])
 
                     // Handle upload in background
-                    uploadPhoto(processedFile, newIndex)
+                    uploadPhoto(processedFile)
                         .then((uploadedUrl) => {
                             if (uploadedUrl) {
+                                // Update with the uploaded URL while preserving current state
                                 onPhotosChange(
-                                    photos,
-                                    photosPreviews,
-                                    uploadedPhotoUrls.map((url, idx) =>
+                                    currentPhotos,
+                                    currentPreviews,
+                                    currentUrls.map((url, idx) =>
                                         idx === newIndex ? uploadedUrl : url
                                     )
                                 )
@@ -340,18 +326,18 @@ export function PhotoUploader({
                 const previewUrl = URL.createObjectURL(capturedFile)
                 const processedFile = await processPhoto(capturedFile)
                 if (processedFile) {
-                    // Add the photo to the grid immediately with processing state
-                    const newIndex = photos.length
-                    onPhotosChange(
-                        [...photos, processedFile],
-                        [...photosPreviews, previewUrl],
-                        [...uploadedPhotoUrls, ''] // Empty URL until upload completes
-                    )
+                    const currentPhotos = [...photos, processedFile]
+                    const currentPreviews = [...photosPreviews, previewUrl]
+                    const currentUrls = [...uploadedPhotoUrls, '']
+                    const newIndex = currentPhotos.length - 1
+
+                    // Add to grid immediately
+                    onPhotosChange(currentPhotos, currentPreviews, currentUrls)
 
                     // Close camera dialog immediately
                     handleCameraClose()
 
-                    // Update status to show processing
+                    // Update status to show uploading
                     setPhotoStatuses((prev) => [
                         ...prev,
                         {
@@ -362,22 +348,21 @@ export function PhotoUploader({
                         },
                     ])
 
-                    // Handle upload in the background
-                    uploadPhoto(processedFile, newIndex)
+                    // Handle upload in background
+                    uploadPhoto(processedFile)
                         .then((uploadedUrl) => {
                             if (uploadedUrl) {
-                                // Update the uploaded URL
+                                // Update with the uploaded URL while preserving current state
                                 onPhotosChange(
-                                    photos,
-                                    photosPreviews,
-                                    uploadedPhotoUrls.map((url, i) =>
-                                        i === newIndex ? uploadedUrl : url
+                                    currentPhotos,
+                                    currentPreviews,
+                                    currentUrls.map((url, idx) =>
+                                        idx === newIndex ? uploadedUrl : url
                                     )
                                 )
-                                // Update status to show completion
                                 setPhotoStatuses((prev) =>
-                                    prev.map((status, i) =>
-                                        i === newIndex
+                                    prev.map((status, idx) =>
+                                        idx === newIndex
                                             ? {
                                                   ...status,
                                                   isUploading: false,
@@ -394,10 +379,9 @@ export function PhotoUploader({
                         .catch((error) => {
                             console.error('Upload error:', error)
                             toast.error('Failed to upload photo')
-                            // Update status to show error
                             setPhotoStatuses((prev) =>
-                                prev.map((status, i) =>
-                                    i === newIndex
+                                prev.map((status, idx) =>
+                                    idx === newIndex
                                         ? {
                                               ...status,
                                               isUploading: false,
@@ -535,11 +519,8 @@ export function PhotoUploader({
             <Dialog
                 open={isCameraOpen}
                 onOpenChange={(open) => {
-                    if (!open) {
-                        handleCameraClose()
-                    } else {
-                        setIsCameraOpen(true)
-                    }
+                    if (!open) handleCameraClose()
+                    else setIsCameraOpen(true)
                 }}
             >
                 <DialogContent className="sm:max-w-[600px] p-0">
@@ -551,7 +532,7 @@ export function PhotoUploader({
                                     <span>
                                         {isCameraInitializing
                                             ? 'Initializing camera...'
-                                            : 'Processing and uploading photo...'}
+                                            : 'Processing photo...'}
                                     </span>
                                 </div>
                             )}
