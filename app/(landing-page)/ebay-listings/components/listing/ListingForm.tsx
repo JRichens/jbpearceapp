@@ -45,7 +45,19 @@ export function ListingForm() {
                         isLoadingProductionYear={isLoadingProductionYear}
                         handleFormChange={handleFormChange}
                         handleSubmit={handleSubmit}
-                        handlePhotosChange={handlePhotosChange}
+                        handlePhotosChange={(
+                            photos,
+                            previews,
+                            uploadedUrls,
+                            isUploading
+                        ) =>
+                            handlePhotosChange(
+                                photos,
+                                previews,
+                                uploadedUrls,
+                                isUploading
+                            )
+                        }
                         handleCategoryChange={handleCategoryChange}
                         handleTitleParamChange={handleTitleParamChange}
                         resetForm={resetForm}

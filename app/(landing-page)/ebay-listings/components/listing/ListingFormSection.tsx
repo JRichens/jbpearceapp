@@ -35,7 +35,8 @@ interface ListingFormSectionProps {
     handlePhotosChange: (
         photos: File[],
         previews: string[],
-        uploadedUrls: string[]
+        uploadedUrls: string[],
+        isUploading: boolean
     ) => void
     handleCategoryChange: (categoryId: string) => void
     handleTitleParamChange: (param: string) => void
