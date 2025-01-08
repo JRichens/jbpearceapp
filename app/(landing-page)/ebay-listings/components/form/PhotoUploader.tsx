@@ -34,6 +34,12 @@ interface PhotoStatus {
     isDone: boolean
 }
 
+interface UploadQueueItem {
+    file: File
+    previewUrl: string
+    index: number
+}
+
 export function PhotoUploader({
     photos,
     photosPreviews,
@@ -51,6 +57,19 @@ export function PhotoUploader({
     const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const streamRef = useRef<MediaStream | null>(null)
+
+    // Refs to track latest state
+    const latestPhotos = useRef<File[]>(photos)
+    const latestPreviews = useRef<string[]>(photosPreviews)
+    const latestUrls = useRef<string[]>(uploadedPhotoUrls)
+    const uploadQueue = useRef<UploadQueueItem[]>([])
+
+    // Update refs when props change
+    useEffect(() => {
+        latestPhotos.current = photos
+        latestPreviews.current = photosPreviews
+        latestUrls.current = uploadedPhotoUrls
+    }, [photos, photosPreviews, uploadedPhotoUrls])
 
     const handleCameraClose = () => {
         stopCamera(streamRef.current)
@@ -203,6 +222,55 @@ export function PhotoUploader({
         }
     }
 
+    const updatePhotoState = (index: number, uploadedUrl: string | null) => {
+        const currentPhotos = [...latestPhotos.current]
+        const currentPreviews = [...latestPreviews.current]
+        const currentUrls = [...latestUrls.current]
+
+        if (uploadedUrl) {
+            currentUrls[index] = uploadedUrl
+            onPhotosChange(currentPhotos, currentPreviews, currentUrls)
+
+            setPhotoStatuses((prev) =>
+                prev.map((status, idx) =>
+                    idx === index
+                        ? { ...status, isUploading: false, isDone: true }
+                        : status
+                )
+            )
+        } else {
+            // Handle upload failure
+            setPhotoStatuses((prev) =>
+                prev.map((status, idx) =>
+                    idx === index
+                        ? { ...status, isUploading: false, isDone: false }
+                        : status
+                )
+            )
+        }
+    }
+
+    const addPhotoToState = (processedFile: File, previewUrl: string) => {
+        const newPhotos = [...latestPhotos.current, processedFile]
+        const newPreviews = [...latestPreviews.current, previewUrl]
+        const newUrls = [...latestUrls.current, '']
+        const newIndex = newPhotos.length - 1
+
+        onPhotosChange(newPhotos, newPreviews, newUrls)
+
+        setPhotoStatuses((prev) => [
+            ...prev,
+            {
+                id: Math.random().toString(36).substr(2, 9),
+                isProcessing: false,
+                isUploading: true,
+                isDone: false,
+            },
+        ])
+
+        return newIndex
+    }
+
     const handlePhotoChange = async (
         e: React.ChangeEvent<HTMLInputElement>
     ) => {
@@ -240,66 +308,20 @@ export function PhotoUploader({
                 const processedFile = await processPhoto(file)
                 if (processedFile) {
                     const previewUrl = URL.createObjectURL(processedFile)
-                    const currentPhotos = [...photos, processedFile]
-                    const currentPreviews = [...photosPreviews, previewUrl]
-                    const currentUrls = [...uploadedPhotoUrls, '']
-                    const newIndex = currentPhotos.length - 1
-
-                    // Add to grid immediately
-                    onPhotosChange(currentPhotos, currentPreviews, currentUrls)
-
-                    // Update status to show uploading
-                    setPhotoStatuses((prev) => [
-                        ...prev,
-                        {
-                            id: Math.random().toString(36).substr(2, 9),
-                            isProcessing: false,
-                            isUploading: true,
-                            isDone: false,
-                        },
-                    ])
+                    const newIndex = addPhotoToState(processedFile, previewUrl)
 
                     // Handle upload in background
                     uploadPhoto(processedFile)
                         .then((uploadedUrl) => {
-                            if (uploadedUrl) {
-                                // Update with the uploaded URL while preserving current state
-                                onPhotosChange(
-                                    currentPhotos,
-                                    currentPreviews,
-                                    currentUrls.map((url, idx) =>
-                                        idx === newIndex ? uploadedUrl : url
-                                    )
-                                )
-                                setPhotoStatuses((prev) =>
-                                    prev.map((status, idx) =>
-                                        idx === newIndex
-                                            ? {
-                                                  ...status,
-                                                  isUploading: false,
-                                                  isDone: true,
-                                              }
-                                            : status
-                                    )
-                                )
-                            } else {
-                                throw new Error('Failed to upload photo')
+                            updatePhotoState(newIndex, uploadedUrl)
+                            if (!uploadedUrl) {
+                                toast.error(`Failed to upload ${file.name}`)
                             }
                         })
                         .catch((error) => {
                             console.error('Upload error:', error)
                             toast.error(`Failed to upload ${file.name}`)
-                            setPhotoStatuses((prev) =>
-                                prev.map((status, idx) =>
-                                    idx === newIndex
-                                        ? {
-                                              ...status,
-                                              isUploading: false,
-                                              isDone: false,
-                                          }
-                                        : status
-                                )
-                            )
+                            updatePhotoState(newIndex, null)
                         })
                 } else {
                     toast.error(`Failed to process ${file.name}`)
@@ -326,70 +348,25 @@ export function PhotoUploader({
                 const previewUrl = URL.createObjectURL(capturedFile)
                 const processedFile = await processPhoto(capturedFile)
                 if (processedFile) {
-                    const currentPhotos = [...photos, processedFile]
-                    const currentPreviews = [...photosPreviews, previewUrl]
-                    const currentUrls = [...uploadedPhotoUrls, '']
-                    const newIndex = currentPhotos.length - 1
-
-                    // Add to grid immediately
-                    onPhotosChange(currentPhotos, currentPreviews, currentUrls)
+                    const newIndex = addPhotoToState(processedFile, previewUrl)
 
                     // Close camera dialog immediately
                     handleCameraClose()
 
-                    // Update status to show uploading
-                    setPhotoStatuses((prev) => [
-                        ...prev,
-                        {
-                            id: Math.random().toString(36).substr(2, 9),
-                            isProcessing: false,
-                            isUploading: true,
-                            isDone: false,
-                        },
-                    ])
-
                     // Handle upload in background
                     uploadPhoto(processedFile)
                         .then((uploadedUrl) => {
+                            updatePhotoState(newIndex, uploadedUrl)
                             if (uploadedUrl) {
-                                // Update with the uploaded URL while preserving current state
-                                onPhotosChange(
-                                    currentPhotos,
-                                    currentPreviews,
-                                    currentUrls.map((url, idx) =>
-                                        idx === newIndex ? uploadedUrl : url
-                                    )
-                                )
-                                setPhotoStatuses((prev) =>
-                                    prev.map((status, idx) =>
-                                        idx === newIndex
-                                            ? {
-                                                  ...status,
-                                                  isUploading: false,
-                                                  isDone: true,
-                                              }
-                                            : status
-                                    )
-                                )
                                 toast.success('Photo uploaded successfully')
                             } else {
-                                throw new Error('Failed to upload photo')
+                                toast.error('Failed to upload photo')
                             }
                         })
                         .catch((error) => {
                             console.error('Upload error:', error)
                             toast.error('Failed to upload photo')
-                            setPhotoStatuses((prev) =>
-                                prev.map((status, idx) =>
-                                    idx === newIndex
-                                        ? {
-                                              ...status,
-                                              isUploading: false,
-                                              isDone: false,
-                                          }
-                                        : status
-                                )
-                            )
+                            updatePhotoState(newIndex, null)
                         })
                 } else {
                     URL.revokeObjectURL(previewUrl)
