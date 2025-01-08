@@ -241,96 +241,90 @@ export function PhotoUploader({
         }
 
         setIsProcessingBatch(true)
-        const convertedFiles: File[] = []
-        const newPreviews: string[] = []
-        const newUploadedUrls: string[] = []
-        const errors: string[] = []
+        const fileArray = Array.from(files)
 
-        try {
-            const fileArray = Array.from(files)
-            const processPromises = fileArray.map(async (file, index) => {
-                if (!file.type.startsWith('image/')) {
-                    errors.push(`${file.name} is not an image file`)
-                    return
-                }
+        for (let i = 0; i < fileArray.length; i++) {
+            const file = fileArray[i]
+            if (!file.type.startsWith('image/')) {
+                toast.error(`${file.name} is not an image file`)
+                continue
+            }
 
-                setPhotoStatuses((prev) => [
-                    ...prev,
-                    {
-                        id: file.name,
-                        isProcessing: true,
-                        isUploading: false,
-                        isDone: false,
-                    },
-                ])
+            try {
+                const processedFile = await processPhoto(file)
+                if (processedFile) {
+                    const previewUrl = URL.createObjectURL(processedFile)
+                    const newIndex = photos.length + i
 
-                try {
-                    const processedFile = await processPhoto(file)
-                    if (processedFile) {
-                        const previewUrl = URL.createObjectURL(processedFile)
+                    // Add to grid immediately with processing state
+                    onPhotosChange(
+                        [...photos, processedFile],
+                        [...photosPreviews, previewUrl],
+                        [...uploadedPhotoUrls, ''] // Empty URL until upload completes
+                    )
 
-                        setPhotoStatuses((prev) => {
-                            const newStatuses = [...prev]
-                            const statusIndex = photos.length + index
-                            if (newStatuses[statusIndex]) {
-                                newStatuses[statusIndex].isProcessing = false
-                                newStatuses[statusIndex].isUploading = true
+                    // Update status to show uploading
+                    setPhotoStatuses((prev) => [
+                        ...prev,
+                        {
+                            id: Math.random().toString(36).substr(2, 9),
+                            isProcessing: false,
+                            isUploading: true,
+                            isDone: false,
+                        },
+                    ])
+
+                    // Handle upload in background
+                    uploadPhoto(processedFile, newIndex)
+                        .then((uploadedUrl) => {
+                            if (uploadedUrl) {
+                                onPhotosChange(
+                                    photos,
+                                    photosPreviews,
+                                    uploadedPhotoUrls.map((url, idx) =>
+                                        idx === newIndex ? uploadedUrl : url
+                                    )
+                                )
+                                setPhotoStatuses((prev) =>
+                                    prev.map((status, idx) =>
+                                        idx === newIndex
+                                            ? {
+                                                  ...status,
+                                                  isUploading: false,
+                                                  isDone: true,
+                                              }
+                                            : status
+                                    )
+                                )
+                            } else {
+                                throw new Error('Failed to upload photo')
                             }
-                            return newStatuses
                         })
-
-                        const uploadedUrl = await uploadPhoto(
-                            processedFile,
-                            index
-                        )
-
-                        if (uploadedUrl) {
-                            convertedFiles.push(processedFile)
-                            newPreviews.push(previewUrl)
-                            newUploadedUrls.push(uploadedUrl)
-
-                            setPhotoStatuses((prev) => {
-                                const newStatuses = [...prev]
-                                const statusIndex = photos.length + index
-                                if (newStatuses[statusIndex]) {
-                                    newStatuses[statusIndex].isUploading = false
-                                    newStatuses[statusIndex].isDone = true
-                                }
-                                return newStatuses
-                            })
-                        } else {
-                            errors.push(`Failed to upload ${file.name}`)
-                            URL.revokeObjectURL(previewUrl)
-                        }
-                    } else {
-                        errors.push(`Failed to process ${file.name}`)
-                    }
-                } catch (error) {
-                    errors.push(`Failed to process ${file.name}`)
+                        .catch((error) => {
+                            console.error('Upload error:', error)
+                            toast.error(`Failed to upload ${file.name}`)
+                            setPhotoStatuses((prev) =>
+                                prev.map((status, idx) =>
+                                    idx === newIndex
+                                        ? {
+                                              ...status,
+                                              isUploading: false,
+                                              isDone: false,
+                                          }
+                                        : status
+                                )
+                            )
+                        })
+                } else {
+                    toast.error(`Failed to process ${file.name}`)
                 }
-            })
-
-            await Promise.all(processPromises)
-
-            if (errors.length > 0) {
-                toast.error(
-                    `Some photos couldn't be processed: ${errors.join(', ')}`
-                )
+            } catch (error) {
+                console.error('Processing error:', error)
+                toast.error(`Failed to process ${file.name}`)
             }
-
-            if (convertedFiles.length > 0) {
-                onPhotosChange(
-                    [...photos, ...convertedFiles],
-                    [...photosPreviews, ...newPreviews],
-                    [...uploadedPhotoUrls, ...newUploadedUrls]
-                )
-            }
-        } catch (error) {
-            toast.error('Error processing images')
-            console.error('Error processing images:', error)
-        } finally {
-            setIsProcessingBatch(false)
         }
+
+        setIsProcessingBatch(false)
     }
 
     const capturePhoto = async () => {
@@ -346,22 +340,73 @@ export function PhotoUploader({
                 const previewUrl = URL.createObjectURL(capturedFile)
                 const processedFile = await processPhoto(capturedFile)
                 if (processedFile) {
-                    const uploadedUrl = await uploadPhoto(
-                        processedFile,
-                        photos.length
+                    // Add the photo to the grid immediately with processing state
+                    const newIndex = photos.length
+                    onPhotosChange(
+                        [...photos, processedFile],
+                        [...photosPreviews, previewUrl],
+                        [...uploadedPhotoUrls, ''] // Empty URL until upload completes
                     )
-                    if (uploadedUrl) {
-                        onPhotosChange(
-                            [...photos, processedFile],
-                            [...photosPreviews, previewUrl],
-                            [...uploadedPhotoUrls, uploadedUrl]
-                        )
-                        handleCameraClose()
-                        toast.success('Photo captured successfully')
-                    } else {
-                        URL.revokeObjectURL(previewUrl)
-                        toast.error('Failed to upload photo')
-                    }
+
+                    // Close camera dialog immediately
+                    handleCameraClose()
+
+                    // Update status to show processing
+                    setPhotoStatuses((prev) => [
+                        ...prev,
+                        {
+                            id: Math.random().toString(36).substr(2, 9),
+                            isProcessing: false,
+                            isUploading: true,
+                            isDone: false,
+                        },
+                    ])
+
+                    // Handle upload in the background
+                    uploadPhoto(processedFile, newIndex)
+                        .then((uploadedUrl) => {
+                            if (uploadedUrl) {
+                                // Update the uploaded URL
+                                onPhotosChange(
+                                    photos,
+                                    photosPreviews,
+                                    uploadedPhotoUrls.map((url, i) =>
+                                        i === newIndex ? uploadedUrl : url
+                                    )
+                                )
+                                // Update status to show completion
+                                setPhotoStatuses((prev) =>
+                                    prev.map((status, i) =>
+                                        i === newIndex
+                                            ? {
+                                                  ...status,
+                                                  isUploading: false,
+                                                  isDone: true,
+                                              }
+                                            : status
+                                    )
+                                )
+                                toast.success('Photo uploaded successfully')
+                            } else {
+                                throw new Error('Failed to upload photo')
+                            }
+                        })
+                        .catch((error) => {
+                            console.error('Upload error:', error)
+                            toast.error('Failed to upload photo')
+                            // Update status to show error
+                            setPhotoStatuses((prev) =>
+                                prev.map((status, i) =>
+                                    i === newIndex
+                                        ? {
+                                              ...status,
+                                              isUploading: false,
+                                              isDone: false,
+                                          }
+                                        : status
+                                )
+                            )
+                        })
                 } else {
                     URL.revokeObjectURL(previewUrl)
                     toast.error('Failed to process photo')
@@ -370,6 +415,7 @@ export function PhotoUploader({
                 toast.error('Failed to capture photo')
             }
         } catch (error) {
+            console.error('Capture error:', error)
             toast.error('Failed to capture photo')
         } finally {
             setIsProcessingCapture(false)
