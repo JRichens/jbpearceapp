@@ -32,7 +32,11 @@ interface ListingFormSectionProps {
         e: React.FormEvent<HTMLFormElement>,
         action: 'verify' | 'submit'
     ) => Promise<void>
-    handlePhotosChange: (photos: File[], previews: string[]) => void
+    handlePhotosChange: (
+        photos: File[],
+        previews: string[],
+        uploadedUrls: string[]
+    ) => void
     handleCategoryChange: (categoryId: string) => void
     handleTitleParamChange: (param: string) => void
     resetForm: () => void
