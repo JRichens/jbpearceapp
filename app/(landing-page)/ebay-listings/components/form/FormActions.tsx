@@ -9,6 +9,7 @@ interface FormActionsProps extends FormSectionProps {
     isVerified: boolean
     isLoading: boolean
     verificationResult: any
+    isUploadingPhotos: boolean
 }
 
 export function FormActions({
@@ -16,6 +17,7 @@ export function FormActions({
     isVerified,
     isLoading,
     verificationResult,
+    isUploadingPhotos,
 }: FormActionsProps) {
     // Check if all required fields are filled
     const isFormValid = Boolean(
@@ -43,7 +45,8 @@ export function FormActions({
                         disabled={
                             isLoading ||
                             formState.isCategoriesLoading ||
-                            !isFormValid
+                            !isFormValid ||
+                            isUploadingPhotos
                         }
                     >
                         {isLoading ? (

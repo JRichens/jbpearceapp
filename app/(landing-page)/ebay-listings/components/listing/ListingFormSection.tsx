@@ -303,6 +303,7 @@ export function ListingFormSection({
                                 verificationResult={
                                     formState.verificationResult
                                 }
+                                isUploadingPhotos={formState.isUploadingPhotos}
                             />
                         </div>
                     </form>
