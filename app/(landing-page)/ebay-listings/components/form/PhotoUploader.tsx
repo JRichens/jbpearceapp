@@ -398,15 +398,30 @@ export function PhotoUploader({
     const removePhoto = (index: number) => {
         const newPhotos = [...photos]
         const newPreviews = [...photosPreviews]
+        const newUploadedUrls = [...uploadedPhotoUrls]
+
+        // Cleanup the preview URL
         URL.revokeObjectURL(newPreviews[index])
+
+        // Remove the items at the specified index
         newPhotos.splice(index, 1)
         newPreviews.splice(index, 1)
-        const newUploadedUrls = [...uploadedPhotoUrls]
         newUploadedUrls.splice(index, 1)
+
+        // Filter out any undefined or empty values from uploadedUrls
+        const compactedUrls = newUploadedUrls.filter(
+            (url) => url && url.trim() !== ''
+        )
+
+        // Decrement active uploads if we're removing an uploading photo
+        if (index < photos.length && !uploadedPhotoUrls[index]) {
+            activeUploads.current = Math.max(0, activeUploads.current - 1)
+        }
+
         onPhotosChange(
             newPhotos,
             newPreviews,
-            newUploadedUrls,
+            compactedUrls,
             activeUploads.current > 0
         )
     }

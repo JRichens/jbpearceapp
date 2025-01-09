@@ -264,6 +264,7 @@ export async function addEbayListing(
                         }</PayPalEmailAddress>
                         <PictureDetails>
                             ${imageUrls
+                                .filter((url) => url && url.trim() !== '')
                                 .map(
                                     (url) =>
                                         `<PictureURL>${escapeXml(

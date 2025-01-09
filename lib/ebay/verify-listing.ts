@@ -242,7 +242,9 @@ export async function verifyEbayListing(
             Location: location,
             PaymentMethods: 'PayPal',
             PayPalEmailAddress: process.env.PAYPAL_EMAIL,
-            PictureDetails: imageUrls.map((url) => ({ PictureURL: url })),
+            PictureDetails: imageUrls
+                .filter((url) => url && url.trim() !== '')
+                .map((url) => ({ PictureURL: url })),
             Quantity: quantity,
             BestOfferDetails: allowOffers
                 ? { BestOfferEnabled: true }
@@ -310,6 +312,7 @@ export async function verifyEbayListing(
                         }</PayPalEmailAddress>
                         <PictureDetails>
                             ${imageUrls
+                                .filter((url) => url && url.trim() !== '')
                                 .map(
                                     (url) =>
                                         `<PictureURL>${escapeXml(
