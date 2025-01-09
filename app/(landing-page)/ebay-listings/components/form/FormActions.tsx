@@ -19,16 +19,46 @@ export function FormActions({
     verificationResult,
     isUploadingPhotos,
 }: FormActionsProps) {
+    // Detailed requirement checks with status messages
+    const requirements = {
+        partNumber: {
+            isMissing: !formState.partNumbers.some((num) => num.trim() !== ''),
+            message: 'At least one part number is required',
+        },
+        partDescription: {
+            isMissing: !formState.partDescription,
+            message: 'Part description is required',
+        },
+        price: {
+            isMissing: !(parseFloat(formState.price) > 0),
+            message: `Valid price is required (current: ${formState.price})`,
+        },
+        shippingProfile: {
+            isMissing: !formState.shippingProfileId,
+            message: 'Shipping profile selection is required',
+        },
+        paintCode: {
+            isMissing: !formState.paintCode,
+            message: 'Paint code is required',
+        },
+        photos: {
+            isMissing: formState.photos.length === 0,
+            message: 'At least one photo is required',
+        },
+        photoUploads: {
+            isMissing:
+                formState.photos.length > formState.uploadedPhotoUrls.length,
+            message: `Waiting for photo uploads to complete (${formState.uploadedPhotoUrls.length}/${formState.photos.length})`,
+        },
+        conditionDescription: {
+            isMissing: !formState.conditionDescription,
+            message: 'Condition description is required',
+        },
+    }
+
     // Check if all required fields are filled
-    const isFormValid = Boolean(
-        formState.partNumbers.some((num) => num.trim() !== '') && // At least one part number is filled
-            formState.partDescription && // Part Description is required
-            parseFloat(formState.price) > 0 && // Price must be greater than 0
-            formState.shippingProfileId && // Shipping Profile is required
-            formState.paintCode && // Paint Code is required
-            formState.photos.length > 0 && // At least one photo is required
-            formState.uploadedPhotoUrls.length === formState.photos.length && // All photos must be uploaded
-            formState.conditionDescription // Condition Description is required
+    const isFormValid = !Object.values(requirements).some(
+        (req) => req.isMissing
     )
 
     return (
@@ -37,27 +67,57 @@ export function FormActions({
                 <VerificationResult result={verificationResult} />
             )}
 
-            <div className="pt-4">
+            <div className="space-y-4">
                 {!isVerified && (
-                    <Button
-                        type="submit"
-                        className="w-full text-xl"
-                        disabled={
-                            isLoading ||
-                            formState.isCategoriesLoading ||
-                            !isFormValid ||
-                            isUploadingPhotos
-                        }
-                    >
-                        {isLoading ? (
-                            <div className="flex items-center gap-2">
-                                <Loader2 className="h-6 w-6 animate-spin" />
-                                <span>Verifying...</span>
+                    <>
+                        <Button
+                            type="submit"
+                            className="w-full text-xl"
+                            disabled={
+                                isLoading ||
+                                formState.isCategoriesLoading ||
+                                !isFormValid ||
+                                isUploadingPhotos
+                            }
+                        >
+                            {isLoading ? (
+                                <div className="flex items-center gap-2">
+                                    <Loader2 className="h-6 w-6 animate-spin" />
+                                    <span>Verifying...</span>
+                                </div>
+                            ) : (
+                                'Verify Listing'
+                            )}
+                        </Button>
+
+                        {/* Missing Requirements List */}
+                        {(!isFormValid || isUploadingPhotos) && (
+                            <div className="text-sm space-y-1">
+                                <p className="font-medium text-red-500">
+                                    Missing Requirements:
+                                </p>
+                                <ul className="list-disc pl-5 space-y-1">
+                                    {Object.entries(requirements).map(
+                                        ([key, requirement]) =>
+                                            requirement.isMissing && (
+                                                <li
+                                                    key={key}
+                                                    className="text-red-500"
+                                                >
+                                                    {requirement.message}
+                                                </li>
+                                            )
+                                    )}
+                                </ul>
+                                {isUploadingPhotos && (
+                                    <p className="text-blue-500 mt-2">
+                                        Please wait for all photo uploads to
+                                        complete before verifying
+                                    </p>
+                                )}
                             </div>
-                        ) : (
-                            'Verify Listing'
                         )}
-                    </Button>
+                    </>
                 )}
             </div>
         </div>
