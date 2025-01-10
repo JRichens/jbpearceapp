@@ -32,11 +32,17 @@ export async function getGroupedListings() {
                     },
                 })
 
+                // Get car details from the first listing
+                const carDetails = listings[0]?.car
+
                 return {
                     carReg: group.carReg,
                     firstListed: group._min.dateListed,
                     totalListed: group._sum.priceListed || 0,
                     totalSold: group._sum.priceSold || 0,
+                    dvlaMake: carDetails?.dvlaMake || 'N/A',
+                    dvlaModel: carDetails?.dvlaModel || 'N/A',
+                    modelSeries: carDetails?.modelSeries || 'N/A',
                     listings: listings,
                 }
             })

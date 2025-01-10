@@ -33,6 +33,18 @@ export default function Page() {
                 header: 'Registration',
             },
             {
+                accessorKey: 'dvlaMake',
+                header: 'Make',
+            },
+            {
+                accessorKey: 'dvlaModel',
+                header: 'Model',
+            },
+            {
+                accessorKey: 'modelSeries',
+                header: 'Series',
+            },
+            {
                 accessorKey: 'firstListed',
                 header: 'First Listed',
                 Cell: ({ row }) =>
