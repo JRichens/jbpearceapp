@@ -22,12 +22,16 @@ export const Form = ({ setVehicle, search, autoFocus = true }: FormProps) => {
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault()
 
+        // Strip all spaces from registration before searching
+        const cleanReg = reg.replace(/\s+/g, '')
+        setReg(cleanReg) // Update the input field to show cleaned registration
+
         setPending(true)
-        console.log('set pending, reg:', reg)
+        console.log('set pending, reg:', cleanReg)
 
         try {
             console.log('getting vehicle data')
-            const vehicleData: Car | null = await getCarDetailsAsJSON(reg)
+            const vehicleData: Car | null = await getCarDetailsAsJSON(cleanReg)
             console.log('got vehicleData')
             console.log('This is our vehicle:', vehicleData)
 
