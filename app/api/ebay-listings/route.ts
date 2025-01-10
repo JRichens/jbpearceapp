@@ -3,12 +3,14 @@ import { NextResponse } from 'next/server'
 export const runtime = 'nodejs' // Enable Node.js runtime
 export const dynamic = 'force-dynamic' // Disable static optimization
 export const maxDuration = 300 // Set maximum duration to 5 minutes
-import { getMyEbayListings } from '../../../lib/ebay/get-listings'
-import { verifyEbayListing } from '../../../lib/ebay/verify-listing'
-import { addEbayListing } from '../../../lib/ebay/add-listing'
-import { getCategoryFeatures } from '../../../lib/ebay/get-category-features'
+import { getMyEbayListings } from '@/lib/ebay/get-listings'
+import { verifyEbayListing } from '@/lib/ebay/verify-listing'
+import { addEbayListing } from '@/lib/ebay/add-listing'
+import { getCategoryFeatures } from '@/lib/ebay/get-category-features'
 import { auth } from '@clerk/nextjs'
-import { EbayListing } from '../../../lib/ebay/types'
+import { EbayListing } from '@/lib/ebay/types'
+import { db } from '@/lib/db'
+import { GetUser } from '@/actions/get-user'
 
 // Helper function to read request body as stream
 async function readStream(req: Request): Promise<FormData> {
@@ -52,23 +54,24 @@ export async function GET() {
 
 export async function POST(req: Request) {
     const startTime = Date.now()
-    // console.log('Starting POST request processing')
     try {
-        const { userId } = auth()
+        const { userId: clerkId } = auth()
 
-        if (!userId) {
+        if (!clerkId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        // console.log('Reading form data from request stream...')
+        // Get the database user
+        const user = await GetUser()
+        if (!user) {
+            return NextResponse.json(
+                { error: 'User not found' },
+                { status: 404 }
+            )
+        }
+
         const formData = await readStream(req)
-        // console.log('Form data read successfully')
         const isVerification = formData.get('action') === 'verify'
-        // console.log(
-        //     `Request type: ${
-        //         isVerification ? 'Verification' : 'Listing creation'
-        //     }`
-        // )
 
         const title = formData.get('title') as string
         const description = formData.get('description') as string
@@ -185,10 +188,7 @@ export async function POST(req: Request) {
         }
 
         if (isVerification) {
-            // console.log('Starting eBay listing verification')
             const verificationResult = await verifyEbayListing(listingParams)
-            const processingTime = Date.now() - startTime
-            // console.log('Verification complete')
             return NextResponse.json({
                 success: true,
                 message: 'Listing verified successfully',
@@ -209,6 +209,20 @@ export async function POST(req: Request) {
 
             const result = await addEbayListing(listingParams)
 
+            // Create eBay listing record in database
+            if (vehicle) {
+                await db.ebayListing.create({
+                    data: {
+                        carReg: vehicle.reg,
+                        userId: user.id,
+                        partDescription: title,
+                        ebayUrl: `https://www.ebay.co.uk/itm/${result.itemId}`,
+                        priceListed: price,
+                        dateListed: new Date(),
+                    },
+                })
+            }
+
             return NextResponse.json({
                 success: true,
                 message: 'Listing submitted successfully to eBay',
@@ -217,8 +231,6 @@ export async function POST(req: Request) {
             })
         }
     } catch (error: any) {
-        // console.error('Error processing eBay listing:', error)
-        // console.error('Stack trace:', error.stack)
         return NextResponse.json(
             {
                 error: 'Failed to process eBay listing',

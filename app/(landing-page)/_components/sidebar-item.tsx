@@ -127,6 +127,12 @@ export const SidebarItem = () => {
                     href: '/ebay-listings',
                     access: ['staff', 'admin', 'super'],
                 },
+                {
+                    label: 'All Listings',
+                    icon: <ListOrdered className="h-5 w-5 mr-2" />,
+                    href: '/ebay-all-listings',
+                    access: ['staff', 'admin', 'super'],
+                },
             ],
         },
         {
