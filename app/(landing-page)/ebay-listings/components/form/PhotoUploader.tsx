@@ -13,6 +13,7 @@ import {
     captureSquarePhoto,
     convertToJPEG,
 } from '../../utils/imageUtils'
+import { useUploadThing } from '@/utils/uploadthing'
 
 interface PhotoUploaderProps {
     photos: File[]
@@ -52,6 +53,9 @@ export function PhotoUploader({
     const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const streamRef = useRef<MediaStream | null>(null)
+
+    // Initialize UploadThing client
+    const { startUpload } = useUploadThing('ebayPhotos')
 
     // Refs to track latest state
     const latestPhotos = useRef<File[]>(photos)
@@ -199,26 +203,13 @@ export function PhotoUploader({
 
     const uploadPhoto = async (file: File): Promise<string | null> => {
         try {
-            const endpoint = '/api/uploadthing'
-            const fileType = 'ebayPhotos'
+            const uploadResponse = await startUpload([file])
 
-            // Create FormData with the required fields for UploadThing
-            const formData = new FormData()
-            formData.append('files', file)
-            formData.append('fileType', fileType)
-
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                body: formData,
-            })
-
-            if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.message || 'Failed to upload photo')
+            if (!uploadResponse || uploadResponse.length === 0) {
+                throw new Error('Upload failed - no response')
             }
 
-            const data = await response.json()
-            return data[0]?.url || null
+            return uploadResponse[0].url
         } catch (error) {
             console.error('Error uploading photo:', error)
             toast.error(
@@ -476,8 +467,8 @@ export function PhotoUploader({
 
             <div className="flex flex-col gap-2 text-sm">
                 <span className="text-gray-500">
-                    Take photos one by one or select multiple photos. Up to $
-                    {MAX_PHOTOS.toString()} photos allowed.
+                    Take photos one by one or select multiple photos. Up to{' '}
+                    {MAX_PHOTOS} photos allowed.
                 </span>
                 {(isProcessingBatch || isLoading) && (
                     <div className="flex items-center gap-2 text-blue-500">
