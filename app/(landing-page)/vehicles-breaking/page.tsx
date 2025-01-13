@@ -334,7 +334,7 @@ const BreakingVehicles = () => {
                                                                 'hidden',
                                                         }}
                                                         key={vehicle.id}
-                                                        endpoint="imageUploader"
+                                                        endpoint="ebayPhotos"
                                                         onBeforeUploadBegin={async (
                                                             files
                                                         ) => {
