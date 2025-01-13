@@ -199,20 +199,31 @@ export function PhotoUploader({
 
     const uploadPhoto = async (file: File): Promise<string | null> => {
         try {
-            const formData = new FormData()
-            formData.append('photos', file)
+            const endpoint = '/api/uploadthing'
+            const fileType = 'ebayPhotos'
 
-            const response = await fetch('/api/ebay-listings/upload', {
+            // Create FormData with the required fields for UploadThing
+            const formData = new FormData()
+            formData.append('files', file)
+            formData.append('fileType', fileType)
+
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 body: formData,
             })
 
-            if (!response.ok) throw new Error('Failed to upload photo')
+            if (!response.ok) {
+                const error = await response.json()
+                throw new Error(error.message || 'Failed to upload photo')
+            }
 
             const data = await response.json()
-            return data.url
+            return data[0]?.url || null
         } catch (error) {
             console.error('Error uploading photo:', error)
+            toast.error(
+                error instanceof Error ? error.message : 'Upload failed'
+            )
             return null
         }
     }
@@ -465,8 +476,8 @@ export function PhotoUploader({
 
             <div className="flex flex-col gap-2 text-sm">
                 <span className="text-gray-500">
-                    Take photos one by one or select multiple photos. Up to{' '}
-                    {MAX_PHOTOS} photos allowed.
+                    Take photos one by one or select multiple photos. Up to $
+                    {MAX_PHOTOS.toString()} photos allowed.
                 </span>
                 {(isProcessingBatch || isLoading) && (
                     <div className="flex items-center gap-2 text-blue-500">
