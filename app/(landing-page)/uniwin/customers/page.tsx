@@ -56,8 +56,16 @@ const NewAccount = () => {
         accountNo: '',
         sortCode: '',
     })
+    const [lastCreatedName, setLastCreatedName] = useState<string | null>(null)
 
     const { toast } = useToast()
+
+    useEffect(() => {
+        const storedName = localStorage.getItem('lastCreatedCustomerName')
+        if (storedName) {
+            setLastCreatedName(storedName)
+        }
+    }, [])
 
     const filteredCustomers = customers
         .filter((customer) =>
@@ -153,6 +161,10 @@ const NewAccount = () => {
                 description: 'New customer created successfully',
                 className: 'bg-green-500 text-white border-none',
             })
+
+            // Store the last created customer name
+            localStorage.setItem('lastCreatedCustomerName', formValues.fullName)
+            setLastCreatedName(formValues.fullName)
 
             // Trigger customers refresh
             setRefreshCustomers((prev) => prev + 1)
@@ -386,9 +398,16 @@ const NewAccount = () => {
                 {/* New Account */}
                 <TabsContent value="newaccount">
                     <Card className="p-6 space-y-6">
-                        <h1 className="text-2xl font-bold text-center">
-                            New Account Setup
-                        </h1>
+                        <div className="space-y-2">
+                            <h1 className="text-2xl font-bold text-center">
+                                New Account Setup
+                            </h1>
+                            {lastCreatedName && !selectedImage && !idData && (
+                                <p className="text-sm text-gray-500 text-center">
+                                    Last created customer: {lastCreatedName}
+                                </p>
+                            )}
+                        </div>
 
                         <div className="space-y-4">
                             <input

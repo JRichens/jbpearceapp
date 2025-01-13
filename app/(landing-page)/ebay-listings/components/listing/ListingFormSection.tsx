@@ -286,14 +286,24 @@ export function ListingFormSection({
                                 onProfileChange={handleFormChange}
                             />
 
-                            <PhotoUploader
-                                photos={formState.photos}
-                                photosPreviews={formState.photosPreviews}
-                                uploadedPhotoUrls={formState.uploadedPhotoUrls}
-                                onPhotosChange={handlePhotosChange}
-                                isLoading={formState.isLoading}
-                                isUploadingPhotos={formState.isUploadingPhotos}
-                            />
+                            {formState.shippingProfileId &&
+                                formState.selectedCondition &&
+                                parseFloat(formState.price) > 0 && (
+                                    <PhotoUploader
+                                        photos={formState.photos}
+                                        photosPreviews={
+                                            formState.photosPreviews
+                                        }
+                                        uploadedPhotoUrls={
+                                            formState.uploadedPhotoUrls
+                                        }
+                                        onPhotosChange={handlePhotosChange}
+                                        isLoading={formState.isLoading}
+                                        isUploadingPhotos={
+                                            formState.isUploadingPhotos
+                                        }
+                                    />
+                                )}
 
                             <FormActions
                                 formState={formState}
