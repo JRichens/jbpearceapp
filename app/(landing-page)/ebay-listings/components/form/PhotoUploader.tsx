@@ -15,6 +15,7 @@ import {
 } from '../../utils/imageUtils'
 import { useUploadThing } from '@/utils/uploadthing'
 
+// Rest of the file remains unchanged
 interface PhotoUploaderProps {
     photos: File[]
     photosPreviews: string[]
@@ -203,42 +204,36 @@ export function PhotoUploader({
 
     const uploadPhoto = async (file: File): Promise<string | null> => {
         try {
-            console.log('Starting upload for file:', file.name)
+            console.log('Starting upload for file:', {
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                startUploadExists: !!startUpload,
+            })
 
             if (!startUpload) {
                 throw new Error('Upload client not initialized')
             }
 
+            console.log('Initiating upload...')
             const uploadResponse = await startUpload([file])
-            console.log('Upload response:', uploadResponse)
+            console.log('Upload response received:', uploadResponse)
 
             if (!uploadResponse || uploadResponse.length === 0) {
                 throw new Error('Upload failed - no response from server')
             }
 
-            if (!uploadResponse[0].url) {
-                throw new Error('Upload failed - no URL in response')
-            }
-
-            console.log('Upload successful:', uploadResponse[0].url)
-            return uploadResponse[0].url
+            const url = uploadResponse[0].url
+            console.log('Final URL:', url)
+            return url
         } catch (error) {
-            console.error('Detailed upload error:', error)
-
-            // Provide more specific error messages
-            let errorMessage = 'Upload failed'
-            if (error instanceof Error) {
-                if (error.message.includes('Unauthorized')) {
-                    errorMessage = 'Upload failed - please log in again'
-                } else if (error.message.includes('network')) {
-                    errorMessage = 'Upload failed - network error'
-                } else {
-                    errorMessage = `Upload failed - ${error.message}`
-                }
-            }
-
-            toast.error(errorMessage)
-            return null
+            console.error('Upload error:', {
+                error,
+                message:
+                    error instanceof Error ? error.message : 'Unknown error',
+                stack: error instanceof Error ? error.stack : undefined,
+            })
+            throw error
         }
     }
 
