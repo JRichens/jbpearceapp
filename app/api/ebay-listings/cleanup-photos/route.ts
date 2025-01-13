@@ -19,10 +19,10 @@ export async function DELETE(req: Request) {
         }
 
         // Get all files from UploadThing
-        const files = await utapi.listFiles()
+        const response = await utapi.listFiles()
 
         // Filter for ebay.jpg files
-        const ebayPhotos = files.filter(
+        const ebayPhotos = response.files.filter(
             (file) =>
                 file.name === 'ebay.jpg' &&
                 // Only delete files that are fully uploaded
