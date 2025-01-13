@@ -203,18 +203,41 @@ export function PhotoUploader({
 
     const uploadPhoto = async (file: File): Promise<string | null> => {
         try {
-            const uploadResponse = await startUpload([file])
+            console.log('Starting upload for file:', file.name)
 
-            if (!uploadResponse || uploadResponse.length === 0) {
-                throw new Error('Upload failed - no response')
+            if (!startUpload) {
+                throw new Error('Upload client not initialized')
             }
 
+            const uploadResponse = await startUpload([file])
+            console.log('Upload response:', uploadResponse)
+
+            if (!uploadResponse || uploadResponse.length === 0) {
+                throw new Error('Upload failed - no response from server')
+            }
+
+            if (!uploadResponse[0].url) {
+                throw new Error('Upload failed - no URL in response')
+            }
+
+            console.log('Upload successful:', uploadResponse[0].url)
             return uploadResponse[0].url
         } catch (error) {
-            console.error('Error uploading photo:', error)
-            toast.error(
-                error instanceof Error ? error.message : 'Upload failed'
-            )
+            console.error('Detailed upload error:', error)
+
+            // Provide more specific error messages
+            let errorMessage = 'Upload failed'
+            if (error instanceof Error) {
+                if (error.message.includes('Unauthorized')) {
+                    errorMessage = 'Upload failed - please log in again'
+                } else if (error.message.includes('network')) {
+                    errorMessage = 'Upload failed - network error'
+                } else {
+                    errorMessage = `Upload failed - ${error.message}`
+                }
+            }
+
+            toast.error(errorMessage)
             return null
         }
     }
@@ -358,36 +381,38 @@ export function PhotoUploader({
         try {
             setIsProcessingCapture(true)
             const capturedFile = await captureSquarePhoto(videoRef, canvasRef)
-            if (capturedFile) {
-                const previewUrl = URL.createObjectURL(capturedFile)
-                const processedFile = await processPhoto(capturedFile)
-                if (processedFile) {
-                    const newIndex = addPhotoToState(processedFile, previewUrl)
-
-                    // Close camera dialog immediately
-                    handleCameraClose()
-
-                    // Handle upload in background
-                    uploadPhoto(processedFile)
-                        .then((uploadedUrl) => {
-                            updatePhotoState(newIndex, uploadedUrl)
-                            if (uploadedUrl) {
-                                toast.success('Photo uploaded successfully')
-                            } else {
-                                toast.error('Failed to upload photo')
-                            }
-                        })
-                        .catch((error) => {
-                            console.error('Upload error:', error)
-                            toast.error('Failed to upload photo')
-                            updatePhotoState(newIndex, null)
-                        })
-                } else {
-                    URL.revokeObjectURL(previewUrl)
-                    toast.error('Failed to process photo')
-                }
-            } else {
+            if (!capturedFile) {
                 toast.error('Failed to capture photo')
+                return
+            }
+
+            const previewUrl = URL.createObjectURL(capturedFile)
+            const processedFile = await processPhoto(capturedFile)
+            if (!processedFile) {
+                URL.revokeObjectURL(previewUrl)
+                toast.error('Failed to process photo')
+                return
+            }
+
+            const newIndex = addPhotoToState(processedFile, previewUrl)
+
+            // Close camera dialog immediately
+            handleCameraClose()
+
+            // Start upload immediately and await the result
+            try {
+                const uploadedUrl = await uploadPhoto(processedFile)
+                if (uploadedUrl) {
+                    updatePhotoState(newIndex, uploadedUrl)
+                    toast.success('Photo uploaded successfully')
+                } else {
+                    toast.error('Failed to upload photo')
+                    updatePhotoState(newIndex, null)
+                }
+            } catch (error) {
+                console.error('Upload error:', error)
+                toast.error('Failed to upload photo')
+                updatePhotoState(newIndex, null)
             }
         } catch (error) {
             console.error('Capture error:', error)
