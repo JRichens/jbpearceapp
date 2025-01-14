@@ -54,21 +54,14 @@ export const uploadRouter = {
                     appId: process.env.UPLOADTHING_APP_ID,
                 })
 
-                // Construct response with callback URL for verification
-                const response = {
+                // Return direct response without callback URL
+                return {
                     url: `https://utfs.io/f/${file.key}`,
                     key: file.key,
                     name: file.name,
                     size: file.size,
-                    callbackUrl: `/api/uploadthing/${file.key}/callback`,
-                }
-
-                console.log('[UploadThing] Sending response:', {
-                    ...response,
                     timestamp,
-                })
-
-                return response
+                }
             } catch (error) {
                 const timestamp = new Date().toISOString()
                 console.error('[UploadThing] Error in upload completion:', {

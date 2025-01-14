@@ -182,35 +182,6 @@ export function PhotoUploader({
         }
     }
 
-    const verifyUploadCompletion = async (
-        key: string,
-        maxAttempts = 5
-    ): Promise<boolean> => {
-        for (let i = 0; i < maxAttempts; i++) {
-            try {
-                const response = await fetch(
-                    `/api/uploadthing/${key}/callback`,
-                    {
-                        method: 'POST',
-                    }
-                )
-
-                if (response.ok) {
-                    const data = await response.json()
-                    if (data.success) return true
-                }
-            } catch (error) {
-                console.warn('[Upload] Verification attempt failed:', {
-                    attempt: i + 1,
-                    key,
-                })
-            }
-            // Shorter delay between attempts
-            await new Promise((resolve) => setTimeout(resolve, 1000))
-        }
-        return false
-    }
-
     const uploadPhoto = async (file: File): Promise<string | null> => {
         try {
             console.log('[Upload] Starting upload process:', {
@@ -220,31 +191,20 @@ export function PhotoUploader({
             })
 
             const uploadResponse = await startUpload?.([file])
-            if (!uploadResponse?.[0]?.key) {
-                throw new Error('Upload failed - no file key received')
-            }
+            const uploadResult = uploadResponse?.[0]
 
-            const fileKey = uploadResponse[0].key
-            const fileUrl = `https://utfs.io/f/${fileKey}`
-
-            // Always verify upload completion
-            const isVerified = await verifyUploadCompletion(fileKey)
-            if (!isVerified && process.env.NODE_ENV === 'production') {
-                console.warn('[Upload] Upload verification failed:', {
-                    fileKey,
-                    environment: process.env.NODE_ENV,
-                })
-                // In production, don't continue if verification fails
-                throw new Error('Upload verification failed')
+            if (!uploadResult?.url) {
+                throw new Error('Upload failed - no URL received')
             }
 
             console.log('[Upload] Process completed:', {
                 fileName: file.name,
-                fileKey,
-                fileUrl,
+                fileKey: uploadResult.key,
+                fileUrl: uploadResult.url,
+                timestamp: new Date().toISOString(),
             })
 
-            return fileUrl
+            return uploadResult.url
         } catch (error) {
             console.error('[Upload] Error:', {
                 error: error instanceof Error ? error.message : 'Unknown error',
