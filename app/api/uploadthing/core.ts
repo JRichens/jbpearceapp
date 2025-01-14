@@ -24,12 +24,35 @@ export const uploadRouter = {
         })
         .onUploadComplete(async ({ metadata, file }) => {
             try {
-                console.log('Upload complete for userId:', metadata.userId)
-                console.log('File URL:', file.url)
+                // Enhanced logging
+                console.log('Upload complete event triggered:', {
+                    userId: metadata.userId,
+                    fileUrl: file.url,
+                    fileKey: file.key,
+                    timestamp: new Date().toISOString(),
+                })
 
-                return { url: file.url }
+                // Ensure we're returning a properly structured response
+                const response = { url: file.url }
+                console.log('Sending response:', response)
+
+                return response
             } catch (error) {
-                console.error('Error in onUploadComplete:', error)
+                // Enhanced error logging
+                console.error('Error in onUploadComplete:', {
+                    error:
+                        error instanceof Error
+                            ? error.message
+                            : 'Unknown error',
+                    stack: error instanceof Error ? error.stack : undefined,
+                    metadata,
+                    fileInfo: {
+                        key: file.key,
+                        url: file.url,
+                    },
+                })
+
+                // Re-throw the error to ensure proper error handling
                 throw error
             }
         }),
