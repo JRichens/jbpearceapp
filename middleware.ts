@@ -22,7 +22,17 @@ export default authMiddleware({
 
         // Redirect to sign-in if not authenticated
         if (!auth.userId) {
-            return redirectToSignIn({ returnBackUrl: `${req.url}` })
+            // Get the base URL without query parameters
+            const baseUrl = new URL(req.url).pathname
+            return redirectToSignIn({ returnBackUrl: baseUrl })
+        }
+
+        // If authenticated but still on sign-in/up pages, redirect to home
+        if (
+            auth.userId &&
+            (req.url.includes('/sign-in') || req.url.includes('/sign-up'))
+        ) {
+            return Response.redirect(new URL('/', req.url))
         }
     },
     apiRoutes: [],
