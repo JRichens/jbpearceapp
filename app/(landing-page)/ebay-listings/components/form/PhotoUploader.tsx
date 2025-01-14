@@ -268,79 +268,8 @@ export function PhotoUploader({
                 throw new Error('Upload failed - no URL or key in response')
             }
 
-            // Progressive delay strategy with enhanced logging
-            const baseDelay = 3000 // Fixed delay since we can't reliably detect environment
-            console.log('[Upload] Starting delay:', {
-                baseDelay,
-                isProduction: process.env.NODE_ENV === 'production',
-                timestamp: new Date().toISOString(),
-            })
-
-            try {
-                await new Promise((resolve) => {
-                    console.log('[Upload] Delay started')
-                    setTimeout(() => {
-                        console.log('[Upload] Delay completed')
-                        resolve(true)
-                    }, baseDelay)
-                })
-            } catch (delayError) {
-                console.error('[Upload] Error during delay:', delayError)
-            }
-
-            // Verify URL is accessible with retries (always use multiple retries)
-            const maxRetries = 3
-            let retryCount = 0
-            let urlVerified = false
-
-            while (retryCount < maxRetries && !urlVerified) {
-                try {
-                    console.log(
-                        `[Upload] Attempting URL verification (attempt ${
-                            retryCount + 1
-                        }/${maxRetries})`
-                    )
-                    const urlCheck = await fetch(finalUrl, { method: 'HEAD' })
-
-                    if (urlCheck.ok) {
-                        console.log('[Upload] URL verification successful')
-                        urlVerified = true
-                        break
-                    } else {
-                        console.log('[Upload] URL verification failed:', {
-                            status: urlCheck.status,
-                            attempt: retryCount + 1,
-                            maxRetries,
-                        })
-
-                        if (retryCount < maxRetries - 1) {
-                            const retryDelay = (retryCount + 1) * 2000 // Exponential backoff
-                            console.log(
-                                `[Upload] Waiting ${retryDelay}ms before retry...`
-                            )
-                            await new Promise((resolve) =>
-                                setTimeout(resolve, retryDelay)
-                            )
-                        }
-                    }
-                } catch (error) {
-                    console.error('[Upload] URL verification error:', {
-                        error,
-                        attempt: retryCount + 1,
-                        maxRetries,
-                    })
-                }
-                retryCount++
-            }
-
-            if (!urlVerified) {
-                console.log(
-                    '[Upload] URL verification ultimately failed, but continuing...'
-                )
-            }
-
-            // Log success and return the URL
-            console.log('[Upload] Successfully completed:', {
+            // Log completion and return the URL - the upload has already succeeded at this point
+            console.log('[Upload] Upload completed:', {
                 fileName: file.name,
                 finalUrl,
                 timestamp: new Date().toISOString(),

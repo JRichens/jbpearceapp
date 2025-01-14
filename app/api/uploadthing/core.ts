@@ -6,6 +6,15 @@ const f = createUploadthing()
 // FileRouter for your app, can contain multiple FileRoutes
 export const uploadRouter = {
     ebayPhotos: f({ image: { maxFileSize: '16MB', maxFileCount: 24 } })
+        .onUploadError(({ error, fileKey }) => {
+            console.error('[UploadThing] Upload error occurred:', {
+                errorMessage: error.message,
+                errorCode: error.code,
+                fileKey,
+                timestamp: new Date().toISOString(),
+            })
+            throw error
+        })
         .middleware(async () => {
             try {
                 const { userId } = auth()
@@ -34,24 +43,18 @@ export const uploadRouter = {
             const uploadId = Math.random().toString(36).substring(7)
 
             try {
-                // Enhanced logging with upload details
-                console.log('[UploadThing] Starting upload completion:', {
+                // Log upload details
+                console.log('[UploadThing] Processing upload:', {
                     userId: metadata.userId,
-                    appId: process.env.UPLOADTHING_APP_ID,
                     uploadId,
+                    fileKey: file.key,
                     timestamp,
-                    fileDetails: {
-                        size: file.size,
-                        name: file.name,
-                        type: file.type,
-                        key: file.key,
-                    },
                 })
 
-                // Construct and validate the URL
+                // Construct URL - at this point, the file has already been uploaded successfully
                 const fileUrl = file.url || `https://utfs.io/f/${file.key}`
 
-                // Construct response with additional metadata
+                // Construct and immediately return response
                 const response = {
                     url: fileUrl,
                     key: file.key,
@@ -62,11 +65,8 @@ export const uploadRouter = {
                     type: file.type,
                 }
 
-                // Add a small delay before sending response
-                await new Promise((resolve) => setTimeout(resolve, 1000))
-
-                // Log successful completion
-                console.log('[UploadThing] Upload completed successfully:', {
+                // Log success before returning
+                console.log('[UploadThing] Upload successful:', {
                     userId: metadata.userId,
                     uploadId,
                     fileUrl,
@@ -75,7 +75,6 @@ export const uploadRouter = {
 
                 return response
             } catch (error) {
-                // Log error with full context
                 console.error('[UploadThing] Error in upload completion:', {
                     userId: metadata.userId,
                     uploadId,
@@ -83,13 +82,9 @@ export const uploadRouter = {
                     timestamp,
                     error:
                         error instanceof Error
-                            ? {
-                                  message: error.message,
-                                  stack: error.stack,
-                              }
+                            ? error.message
                             : 'Unknown error',
                 })
-
                 throw error
             }
         }),
