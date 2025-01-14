@@ -39,20 +39,36 @@ export const uploadRouter = {
             }
         })
         .onUploadComplete(async ({ metadata, file }) => {
-            console.log('[UploadThing] Upload completed on server:', {
-                userId: metadata.userId,
-                fileKey: file.key,
-                fileName: file.name,
-                fileSize: file.size,
-                timestamp: new Date().toISOString(),
-            })
+            const timestamp = new Date().toISOString()
 
             try {
-                // Construct and return minimal response
-                return {
+                // Log detailed upload completion with request info
+                console.log('[UploadThing] Upload completed on server:', {
+                    userId: metadata.userId,
+                    fileKey: file.key,
+                    fileName: file.name,
+                    fileSize: file.size,
+                    timestamp,
+                    url: `https://utfs.io/f/${file.key}`,
+                    env: process.env.NODE_ENV,
+                    appId: process.env.UPLOADTHING_APP_ID,
+                })
+
+                // Construct response with callback URL for verification
+                const response = {
                     url: `https://utfs.io/f/${file.key}`,
                     key: file.key,
+                    name: file.name,
+                    size: file.size,
+                    callbackUrl: `/api/uploadthing/${file.key}/callback`,
                 }
+
+                console.log('[UploadThing] Sending response:', {
+                    ...response,
+                    timestamp,
+                })
+
+                return response
             } catch (error) {
                 const timestamp = new Date().toISOString()
                 console.error('[UploadThing] Error in upload completion:', {

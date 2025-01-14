@@ -182,23 +182,31 @@ export function PhotoUploader({
         }
     }
 
-    const pollForUploadCompletion = async (
+    const verifyUploadCompletion = async (
         key: string,
-        maxAttempts = 10
+        maxAttempts = 5
     ): Promise<boolean> => {
         for (let i = 0; i < maxAttempts; i++) {
             try {
-                const response = await fetch(`https://utfs.io/f/${key}`, {
-                    method: 'HEAD',
-                })
-                if (response.ok) return true
+                const response = await fetch(
+                    `/api/uploadthing/${key}/callback`,
+                    {
+                        method: 'POST',
+                    }
+                )
+
+                if (response.ok) {
+                    const data = await response.json()
+                    if (data.success) return true
+                }
             } catch (error) {
-                console.warn('[Upload] Poll attempt failed:', {
+                console.warn('[Upload] Verification attempt failed:', {
                     attempt: i + 1,
                     key,
                 })
             }
-            await new Promise((resolve) => setTimeout(resolve, 2000)) // 2 second delay between attempts
+            // Shorter delay between attempts
+            await new Promise((resolve) => setTimeout(resolve, 1000))
         }
         return false
     }
@@ -219,15 +227,15 @@ export function PhotoUploader({
             const fileKey = uploadResponse[0].key
             const fileUrl = `https://utfs.io/f/${fileKey}`
 
-            // In production, poll for the file to be available
-            if (process.env.NODE_ENV === 'production') {
-                const isAvailable = await pollForUploadCompletion(fileKey)
-                if (!isAvailable) {
-                    console.warn('[Upload] File not available after polling:', {
-                        fileKey,
-                    })
-                    // Continue anyway since the upload might have succeeded
-                }
+            // Always verify upload completion
+            const isVerified = await verifyUploadCompletion(fileKey)
+            if (!isVerified && process.env.NODE_ENV === 'production') {
+                console.warn('[Upload] Upload verification failed:', {
+                    fileKey,
+                    environment: process.env.NODE_ENV,
+                })
+                // In production, don't continue if verification fails
+                throw new Error('Upload verification failed')
             }
 
             console.log('[Upload] Process completed:', {

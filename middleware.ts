@@ -4,6 +4,7 @@ export default authMiddleware({
     publicRoutes: [
         '/api/dailychecks',
         '/api/uploadthing',
+        '/api/uploadthing/(.*)', // Allow all uploadthing routes
         '/api/revoke-sessions',
         '/sign-in',
         '/sign-up',
