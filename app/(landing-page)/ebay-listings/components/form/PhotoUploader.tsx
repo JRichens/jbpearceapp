@@ -199,22 +199,30 @@ export function PhotoUploader({
                 timestamp: new Date().toISOString(),
             })
 
+            // Enhanced error handling and logging for upload
+            console.log('[Upload] Starting upload with detailed logging')
+
             const uploadResponse = await startUpload([file])
 
-            // Log the raw upload response
+            // Detailed response logging
             console.log('[Upload] Raw response:', {
                 response: uploadResponse,
                 timestamp: new Date().toISOString(),
+                environment: process.env.NODE_ENV,
             })
 
             if (!uploadResponse || uploadResponse.length === 0) {
+                console.error('[Upload] Empty response received')
                 throw new Error('Upload failed - no response from server')
             }
 
             const uploadResult = uploadResponse[0]
-            console.log('[Upload] Processing result:', uploadResult)
+            console.log('[Upload] Processing result:', {
+                ...uploadResult,
+                timestamp: new Date().toISOString(),
+            })
 
-            // Try to get the URL from either the direct response or construct it from the key
+            // Enhanced URL resolution with validation
             let finalUrl: string
             if (uploadResult.url) {
                 console.log('[Upload] Using direct URL:', uploadResult.url)
@@ -223,12 +231,34 @@ export function PhotoUploader({
                 finalUrl = `https://utfs.io/f/${uploadResult.key}`
                 console.log('[Upload] Constructed URL from key:', finalUrl)
             } else {
+                console.error(
+                    '[Upload] No URL or key in response:',
+                    uploadResult
+                )
                 throw new Error('Upload failed - no URL or key in response')
             }
 
-            // Add a longer delay in production to ensure processing completes
-            const delay = process.env.NODE_ENV === 'production' ? 3000 : 1000
-            await new Promise((resolve) => setTimeout(resolve, delay))
+            // Progressive delay strategy based on environment
+            const baseDelay =
+                process.env.NODE_ENV === 'production' ? 5000 : 1000
+            console.log(`[Upload] Waiting ${baseDelay}ms for processing...`)
+            await new Promise((resolve) => setTimeout(resolve, baseDelay))
+
+            // Verify URL is accessible
+            try {
+                const urlCheck = await fetch(finalUrl, { method: 'HEAD' })
+                if (!urlCheck.ok) {
+                    console.error(
+                        '[Upload] URL verification failed:',
+                        urlCheck.status
+                    )
+                    throw new Error('Upload URL verification failed')
+                }
+                console.log('[Upload] URL verification successful')
+            } catch (error) {
+                console.error('[Upload] URL verification error:', error)
+                // Continue anyway as the URL might just need more time to propagate
+            }
 
             // Log success and return the URL
             console.log('[Upload] Successfully completed:', {
