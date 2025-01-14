@@ -155,26 +155,6 @@ export function PhotoUploader({
         })
     }, [photos.length])
 
-    useEffect(() => {
-        if (isLoading) {
-            setPhotoStatuses((prevStatuses) =>
-                prevStatuses.map((status) => ({
-                    ...status,
-                    isUploading: true,
-                    isDone: false,
-                }))
-            )
-        } else {
-            setPhotoStatuses((prevStatuses) =>
-                prevStatuses.map((status) => ({
-                    ...status,
-                    isUploading: false,
-                    isDone: true,
-                }))
-            )
-        }
-    }, [isLoading])
-
     const processPhoto = async (file: File): Promise<File | null> => {
         const MAX_FILE_SIZE = 20 * 1024 * 1024
         if (file.size > MAX_FILE_SIZE) {
@@ -202,18 +182,29 @@ export function PhotoUploader({
         }
     }
 
-    const uploadPhoto = async (file: File): Promise<string | null> => {
+    const uploadPhoto = async (
+        file: File,
+        index: number
+    ): Promise<string | null> => {
         try {
-            console.log('Starting upload for file:', {
+            console.log(`Starting upload for file at index ${index}:`, {
                 name: file.name,
                 size: file.size,
                 type: file.type,
-                startUploadExists: !!startUpload,
             })
 
             if (!startUpload) {
                 throw new Error('Upload client not initialized')
             }
+
+            // Update status to uploading
+            setPhotoStatuses((prev) =>
+                prev.map((status, idx) =>
+                    idx === index
+                        ? { ...status, isUploading: true, isDone: false }
+                        : status
+                )
+            )
 
             console.log('Initiating upload...')
             const uploadResponse = await startUpload([file])
@@ -224,7 +215,17 @@ export function PhotoUploader({
             }
 
             const url = uploadResponse[0].url
-            console.log('Final URL:', url)
+            console.log('Upload completed successfully:', url)
+
+            // Update status to done
+            setPhotoStatuses((prev) =>
+                prev.map((status, idx) =>
+                    idx === index
+                        ? { ...status, isUploading: false, isDone: true }
+                        : status
+                )
+            )
+
             return url
         } catch (error) {
             console.error('Upload error:', {
@@ -238,14 +239,17 @@ export function PhotoUploader({
     }
 
     const updatePhotoState = (index: number, uploadedUrl: string | null) => {
+        console.log('Updating photo state:', { index, uploadedUrl })
         const currentPhotos = [...latestPhotos.current]
         const currentPreviews = [...latestPreviews.current]
         const currentUrls = [...latestUrls.current]
 
         if (uploadedUrl) {
+            console.log('Setting successful upload state for index:', index)
             currentUrls[index] = uploadedUrl
-            activeUploads.current -= 1
+            activeUploads.current = Math.max(0, activeUploads.current - 1)
             const isStillUploading = activeUploads.current > 0
+            console.log('Active uploads remaining:', activeUploads.current)
 
             onPhotosChange(
                 currentPhotos,
@@ -254,16 +258,21 @@ export function PhotoUploader({
                 isStillUploading
             )
 
-            setPhotoStatuses((prev) =>
-                prev.map((status, idx) =>
+            setPhotoStatuses((prev) => {
+                const newStatuses = prev.map((status, idx) =>
                     idx === index
                         ? { ...status, isUploading: false, isDone: true }
                         : status
                 )
-            )
+                console.log('Updated photo statuses:', newStatuses)
+                return newStatuses
+            })
         } else {
-            activeUploads.current -= 1
+            console.log('Setting failed upload state for index:', index)
+            activeUploads.current = Math.max(0, activeUploads.current - 1)
             const isStillUploading = activeUploads.current > 0
+            console.log('Active uploads remaining:', activeUploads.current)
+
             onPhotosChange(
                 currentPhotos,
                 currentPreviews,
@@ -271,13 +280,15 @@ export function PhotoUploader({
                 isStillUploading
             )
 
-            setPhotoStatuses((prev) =>
-                prev.map((status, idx) =>
+            setPhotoStatuses((prev) => {
+                const newStatuses = prev.map((status, idx) =>
                     idx === index
                         ? { ...status, isUploading: false, isDone: false }
                         : status
                 )
-            )
+                console.log('Updated photo statuses:', newStatuses)
+                return newStatuses
+            })
         }
     }
 
@@ -343,17 +354,32 @@ export function PhotoUploader({
                     const newIndex = addPhotoToState(processedFile, previewUrl)
 
                     // Handle upload in background
-                    uploadPhoto(processedFile)
+                    uploadPhoto(processedFile, newIndex)
                         .then((uploadedUrl) => {
-                            updatePhotoState(newIndex, uploadedUrl)
-                            if (!uploadedUrl) {
+                            if (uploadedUrl) {
+                                updatePhotoState(newIndex, uploadedUrl)
+                            } else {
                                 toast.error(`Failed to upload ${file.name}`)
+                                updatePhotoState(newIndex, null)
                             }
                         })
                         .catch((error) => {
                             console.error('Upload error:', error)
                             toast.error(`Failed to upload ${file.name}`)
                             updatePhotoState(newIndex, null)
+
+                            // Update status to error
+                            setPhotoStatuses((prev) =>
+                                prev.map((status, idx) =>
+                                    idx === newIndex
+                                        ? {
+                                              ...status,
+                                              isUploading: false,
+                                              isDone: false,
+                                          }
+                                        : status
+                                )
+                            )
                         })
                 } else {
                     toast.error(`Failed to process ${file.name}`)
@@ -396,7 +422,7 @@ export function PhotoUploader({
 
             // Start upload immediately and await the result
             try {
-                const uploadedUrl = await uploadPhoto(processedFile)
+                const uploadedUrl = await uploadPhoto(processedFile, newIndex)
                 if (uploadedUrl) {
                     updatePhotoState(newIndex, uploadedUrl)
                     toast.success('Photo uploaded successfully')
@@ -408,6 +434,19 @@ export function PhotoUploader({
                 console.error('Upload error:', error)
                 toast.error('Failed to upload photo')
                 updatePhotoState(newIndex, null)
+
+                // Update status to error
+                setPhotoStatuses((prev) =>
+                    prev.map((status, idx) =>
+                        idx === newIndex
+                            ? {
+                                  ...status,
+                                  isUploading: false,
+                                  isDone: false,
+                              }
+                            : status
+                    )
+                )
             }
         } catch (error) {
             console.error('Capture error:', error)
