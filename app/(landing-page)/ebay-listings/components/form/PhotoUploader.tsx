@@ -184,34 +184,24 @@ export function PhotoUploader({
 
     const uploadPhoto = async (file: File): Promise<string | null> => {
         try {
-            console.log('Starting upload for file:', {
-                name: file.name,
-                size: file.size,
-                type: file.type,
-                startUploadExists: !!startUpload,
-            })
+            // Use toast for important status updates that should be visible in production
+            toast.info(`Uploading ${file.name}...`)
 
             if (!startUpload) {
                 throw new Error('Upload client not initialized')
             }
 
-            console.log('Initiating upload...')
             const uploadResponse = await startUpload([file])
-            console.log('Upload response received:', {
-                response: uploadResponse,
-                timestamp: new Date().toISOString(),
-            })
 
             if (!uploadResponse || uploadResponse.length === 0) {
                 throw new Error('Upload failed - no response from server')
             }
 
             const uploadResult = uploadResponse[0]
-            console.log('Processing upload result:', uploadResult)
 
             // First try to get URL from the response if available
             if (uploadResult.url) {
-                console.log('Using URL from response:', uploadResult.url)
+                toast.success(`${file.name} uploaded successfully`)
                 return uploadResult.url
             }
 
@@ -221,23 +211,12 @@ export function PhotoUploader({
                 throw new Error('Upload response missing both URL and file key')
             }
 
-            console.log('Constructing URL from file key:', fileKey)
             const finalUrl = `https://utfs.io/f/${fileKey}`
 
-            // Verify the URL is accessible
-            try {
-                const response = await fetch(finalUrl, { method: 'HEAD' })
-                if (!response.ok) {
-                    throw new Error(
-                        `URL verification failed: ${response.status}`
-                    )
-                }
-                console.log('URL verified successfully:', finalUrl)
-            } catch (error) {
-                console.warn('URL verification failed, but continuing:', error)
-                // Continue anyway as the file might still be processing
-            }
+            // Force a small delay to ensure the file is processed
+            await new Promise((resolve) => setTimeout(resolve, 2000))
 
+            toast.success(`${file.name} uploaded successfully`)
             return finalUrl
         } catch (error) {
             const errorMessage =

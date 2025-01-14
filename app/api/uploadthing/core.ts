@@ -23,36 +23,48 @@ export const uploadRouter = {
             }
         })
         .onUploadComplete(async ({ metadata, file }) => {
-            try {
-                // Enhanced logging
-                console.log('Upload complete event triggered:', {
-                    userId: metadata.userId,
-                    fileUrl: file.url,
-                    fileKey: file.key,
-                    timestamp: new Date().toISOString(),
-                })
+            const timestamp = new Date().toISOString()
+            const logContext = {
+                userId: metadata.userId,
+                fileKey: file.key,
+                fileUrl: file.url,
+                timestamp,
+            }
 
-                // Ensure we're returning a properly structured response
-                const response = { url: file.url }
-                console.log('Sending response:', response)
+            try {
+                // Log the start of upload completion
+                console.log(
+                    '[UploadThing] Starting upload completion:',
+                    logContext
+                )
+
+                // Construct the response with the file URL
+                const response = {
+                    url: file.url || `https://utfs.io/f/${file.key}`,
+                    key: file.key,
+                    timestamp,
+                }
+
+                // Log successful completion
+                console.log('[UploadThing] Upload completed successfully:', {
+                    ...logContext,
+                    response,
+                })
 
                 return response
             } catch (error) {
-                // Enhanced error logging
-                console.error('Error in onUploadComplete:', {
+                // Log error with full context
+                console.error('[UploadThing] Error in upload completion:', {
+                    ...logContext,
                     error:
                         error instanceof Error
-                            ? error.message
+                            ? {
+                                  message: error.message,
+                                  stack: error.stack,
+                              }
                             : 'Unknown error',
-                    stack: error instanceof Error ? error.stack : undefined,
-                    metadata,
-                    fileInfo: {
-                        key: file.key,
-                        url: file.url,
-                    },
                 })
 
-                // Re-throw the error to ensure proper error handling
                 throw error
             }
         }),
