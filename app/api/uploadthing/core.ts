@@ -39,45 +39,24 @@ export const uploadRouter = {
             }
         })
         .onUploadComplete(async ({ metadata, file }) => {
-            const timestamp = new Date().toISOString()
-            const uploadId = Math.random().toString(36).substring(7)
+            console.log('[UploadThing] Upload completed on server:', {
+                userId: metadata.userId,
+                fileKey: file.key,
+                fileName: file.name,
+                fileSize: file.size,
+                timestamp: new Date().toISOString(),
+            })
 
             try {
-                // Log upload details
-                console.log('[UploadThing] Processing upload:', {
-                    userId: metadata.userId,
-                    uploadId,
-                    fileKey: file.key,
-                    timestamp,
-                })
-
-                // Construct URL - at this point, the file has already been uploaded successfully
-                const fileUrl = file.url || `https://utfs.io/f/${file.key}`
-
-                // Construct and immediately return response
-                const response = {
-                    url: fileUrl,
+                // Construct and return minimal response
+                return {
+                    url: `https://utfs.io/f/${file.key}`,
                     key: file.key,
-                    timestamp,
-                    uploadId,
-                    size: file.size,
-                    name: file.name,
-                    type: file.type,
                 }
-
-                // Log success before returning
-                console.log('[UploadThing] Upload successful:', {
-                    userId: metadata.userId,
-                    uploadId,
-                    fileUrl,
-                    timestamp,
-                })
-
-                return response
             } catch (error) {
+                const timestamp = new Date().toISOString()
                 console.error('[UploadThing] Error in upload completion:', {
                     userId: metadata.userId,
-                    uploadId,
                     fileKey: file.key,
                     timestamp,
                     error:

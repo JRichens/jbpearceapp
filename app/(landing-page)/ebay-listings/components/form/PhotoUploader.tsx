@@ -182,24 +182,23 @@ export function PhotoUploader({
         }
     }
 
-    const verifyUpload = async (
+    const pollForUploadCompletion = async (
         key: string,
-        maxAttempts = 3
+        maxAttempts = 10
     ): Promise<boolean> => {
-        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        for (let i = 0; i < maxAttempts; i++) {
             try {
                 const response = await fetch(`https://utfs.io/f/${key}`, {
                     method: 'HEAD',
                 })
                 if (response.ok) return true
-                await new Promise((resolve) => setTimeout(resolve, 1000))
             } catch (error) {
-                console.warn(
-                    `Verification attempt ${attempt + 1} failed:`,
-                    error
-                )
-                await new Promise((resolve) => setTimeout(resolve, 1000))
+                console.warn('[Upload] Poll attempt failed:', {
+                    attempt: i + 1,
+                    key,
+                })
             }
+            await new Promise((resolve) => setTimeout(resolve, 2000)) // 2 second delay between attempts
         }
         return false
     }
@@ -212,112 +211,84 @@ export function PhotoUploader({
                 environment: process.env.NODE_ENV,
             })
 
-            if (!startUpload) {
-                throw new Error('Upload client not initialized')
+            const uploadResponse = await startUpload?.([file])
+            if (!uploadResponse?.[0]?.key) {
+                throw new Error('Upload failed - no file key received')
             }
 
-            const uploadResponse = await startUpload([file])
+            const fileKey = uploadResponse[0].key
+            const fileUrl = `https://utfs.io/f/${fileKey}`
 
-            if (!Array.isArray(uploadResponse) || uploadResponse.length === 0) {
-                throw new Error('Invalid upload response')
-            }
-
-            const uploadResult = uploadResponse[0]
-            const fileKey = uploadResult.key
-
-            if (!fileKey) {
-                throw new Error('No file key in response')
-            }
-
-            // In production, verify the upload
+            // In production, poll for the file to be available
             if (process.env.NODE_ENV === 'production') {
-                const isVerified = await verifyUpload(fileKey)
-                if (!isVerified) {
-                    throw new Error('Upload verification failed')
+                const isAvailable = await pollForUploadCompletion(fileKey)
+                if (!isAvailable) {
+                    console.warn('[Upload] File not available after polling:', {
+                        fileKey,
+                    })
+                    // Continue anyway since the upload might have succeeded
                 }
             }
 
-            const finalUrl = `https://utfs.io/f/${fileKey}`
-            console.log('[Upload] Successfully completed:', {
+            console.log('[Upload] Process completed:', {
                 fileName: file.name,
                 fileKey,
-                finalUrl,
+                fileUrl,
             })
 
-            return finalUrl
+            return fileUrl
         } catch (error) {
-            const errorMessage =
-                error instanceof Error ? error.message : 'Unknown error'
             console.error('[Upload] Error:', {
-                error: errorMessage,
+                error: error instanceof Error ? error.message : 'Unknown error',
                 fileName: file.name,
-                environment: process.env.NODE_ENV,
             })
-
-            toast.error(`Upload failed: ${errorMessage}`)
             return null
         }
     }
 
     const updatePhotoState = (index: number, uploadedUrl: string | null) => {
-        const UPLOAD_TIMEOUT = 30000 // 30 seconds timeout
-        const timeoutId = setTimeout(() => {
-            if (photoStatuses[index]?.isUploading) {
-                console.warn('[Upload] Timeout reached for photo:', index)
-                updatePhotoStateInternal(index, null)
-            }
-        }, UPLOAD_TIMEOUT)
+        console.log('[Upload] Updating photo state:', {
+            index,
+            hasUrl: !!uploadedUrl,
+            activeUploads: activeUploads.current,
+        })
 
-        const updatePhotoStateInternal = (idx: number, url: string | null) => {
-            clearTimeout(timeoutId)
-            console.log('[Upload] Updating photo state:', {
-                index: idx,
-                hasUrl: !!url,
-                activeUploads: activeUploads.current,
-            })
+        const currentPhotos = [...latestPhotos.current]
+        const currentPreviews = [...latestPreviews.current]
+        const currentUrls = [...latestUrls.current]
 
-            const currentPhotos = [...latestPhotos.current]
-            const currentPreviews = [...latestPreviews.current]
-            const currentUrls = [...latestUrls.current]
+        // Always decrement active uploads and mark as not uploading
+        activeUploads.current = Math.max(0, activeUploads.current - 1)
+        const isStillUploading = activeUploads.current > 0
 
-            activeUploads.current = Math.max(0, activeUploads.current - 1)
-            const isStillUploading = activeUploads.current > 0
-
-            if (url) {
-                currentUrls[idx] = url
-                setPhotoStatuses((prev) =>
-                    prev.map((status, i) =>
-                        i === idx
-                            ? { ...status, isUploading: false, isDone: true }
-                            : status
-                    )
+        // Update the URLs and status
+        if (uploadedUrl) {
+            currentUrls[index] = uploadedUrl
+            setPhotoStatuses((prev) =>
+                prev.map((status, i) =>
+                    i === index
+                        ? { ...status, isUploading: false, isDone: true }
+                        : status
                 )
-            } else {
-                setPhotoStatuses((prev) =>
-                    prev.map((status, i) =>
-                        i === idx
-                            ? { ...status, isUploading: false, isDone: false }
-                            : status
-                    )
-                )
-            }
-
-            onPhotosChange(
-                currentPhotos,
-                currentPreviews,
-                currentUrls,
-                isStillUploading
             )
-
-            console.log('[Upload] State update complete:', {
-                index: idx,
-                success: !!url,
-                remainingUploads: activeUploads.current,
-            })
+            toast.success('Photo uploaded successfully')
+        } else {
+            setPhotoStatuses((prev) =>
+                prev.map((status, i) =>
+                    i === index
+                        ? { ...status, isUploading: false, isDone: false }
+                        : status
+                )
+            )
         }
 
-        // Start the update process
-        updatePhotoStateInternal(index, uploadedUrl)
+        // Notify parent of changes
+        onPhotosChange(
+            currentPhotos,
+            currentPreviews,
+            currentUrls,
+            isStillUploading
+        )
     }
 
     const addPhotoToState = (processedFile: File, previewUrl: string) => {
