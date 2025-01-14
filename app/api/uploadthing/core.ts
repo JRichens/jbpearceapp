@@ -3,6 +3,30 @@ import { auth } from '@clerk/nextjs'
 
 const f = createUploadthing()
 
+// Verify required environment variables
+const requiredEnvVars = [
+    'UPLOADTHING_SECRET',
+    'UPLOADTHING_APP_ID',
+    'UPLOADTHING_CALLBACK_URL',
+]
+
+requiredEnvVars.forEach((envVar) => {
+    if (!process.env[envVar]) {
+        console.error(
+            `[UploadThing] Missing required environment variable: ${envVar}`
+        )
+    }
+})
+
+if (
+    process.env.NODE_ENV === 'production' &&
+    !process.env.UPLOADTHING_CALLBACK_URL
+) {
+    console.error(
+        '[UploadThing] UPLOADTHING_CALLBACK_URL is required in production for callbacks to work'
+    )
+}
+
 // FileRouter for your app, can contain multiple FileRoutes
 export const uploadRouter = {
     ebayPhotos: f({ image: { maxFileSize: '16MB', maxFileCount: 24 } })

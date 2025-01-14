@@ -9,6 +9,12 @@ export default authMiddleware({
         '/sign-in',
         '/sign-up',
     ],
+    afterAuth(auth, req) {
+        // Always allow UploadThing routes even with authentication
+        if (req.url.includes('/api/uploadthing')) {
+            return
+        }
+    },
     apiRoutes: [],
 })
 
