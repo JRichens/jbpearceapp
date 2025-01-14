@@ -22,9 +22,10 @@ export default authMiddleware({
 
         // Redirect to sign-in if not authenticated
         if (!auth.userId) {
-            // Get the base URL without query parameters
-            const baseUrl = new URL(req.url).pathname
-            return redirectToSignIn({ returnBackUrl: baseUrl })
+            // Get the full URL without query parameters
+            const url = new URL(req.url)
+            const returnUrl = `${url.protocol}//${url.host}${url.pathname}`
+            return redirectToSignIn({ returnBackUrl: returnUrl })
         }
 
         // If authenticated but still on sign-in/up pages, redirect to home
