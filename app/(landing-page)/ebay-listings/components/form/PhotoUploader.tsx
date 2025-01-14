@@ -183,21 +183,63 @@ export function PhotoUploader({
     }
 
     const uploadPhoto = async (file: File): Promise<string | null> => {
+        const logPrefix = '[Upload]'
         try {
-            console.log('[Upload] Starting upload process:', {
+            console.log(`${logPrefix} Starting upload process:`, {
                 fileName: file.name,
                 fileSize: file.size,
                 environment: process.env.NODE_ENV,
+                timestamp: new Date().toISOString(),
             })
 
             const uploadResponse = await startUpload?.([file])
+            console.log(`${logPrefix} Received upload response:`, {
+                hasResponse: !!uploadResponse,
+                responseLength: uploadResponse?.length,
+                timestamp: new Date().toISOString(),
+            })
+
             const uploadResult = uploadResponse?.[0]
+            console.log(`${logPrefix} Processing upload result:`, {
+                hasResult: !!uploadResult,
+                hasUrl: !!uploadResult?.url,
+                hasKey: !!uploadResult?.key,
+                timestamp: new Date().toISOString(),
+            })
 
             if (!uploadResult?.url) {
                 throw new Error('Upload failed - no URL received')
             }
 
-            console.log('[Upload] Process completed:', {
+            // Verify the file exists
+            try {
+                const fileCheck = await fetch(uploadResult.url, {
+                    method: 'HEAD',
+                })
+                console.log(`${logPrefix} File verification result:`, {
+                    status: fileCheck.status,
+                    ok: fileCheck.ok,
+                    timestamp: new Date().toISOString(),
+                })
+
+                if (!fileCheck.ok) {
+                    throw new Error(
+                        `File verification failed: ${fileCheck.status}`
+                    )
+                }
+            } catch (verifyError) {
+                console.error(`${logPrefix} File verification failed:`, {
+                    error:
+                        verifyError instanceof Error
+                            ? verifyError.message
+                            : 'Unknown error',
+                    url: uploadResult.url,
+                    timestamp: new Date().toISOString(),
+                })
+                throw verifyError
+            }
+
+            console.log(`${logPrefix} Process completed successfully:`, {
                 fileName: file.name,
                 fileKey: uploadResult.key,
                 fileUrl: uploadResult.url,

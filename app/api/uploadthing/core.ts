@@ -40,10 +40,45 @@ export const uploadRouter = {
         })
         .onUploadComplete(async ({ metadata, file }) => {
             const timestamp = new Date().toISOString()
+            const logPrefix = '[UploadThing]'
 
             try {
-                // Log detailed upload completion with request info
-                console.log('[UploadThing] Upload completed on server:', {
+                // Log start of completion handler
+                console.log(`${logPrefix} Starting onUploadComplete:`, {
+                    timestamp,
+                    env: process.env.NODE_ENV,
+                })
+
+                // Verify file exists
+                try {
+                    const fileUrl = `https://utfs.io/f/${file.key}`
+                    const fileCheck = await fetch(fileUrl, { method: 'HEAD' })
+
+                    if (!fileCheck.ok) {
+                        throw new Error(
+                            `File verification failed: ${fileCheck.status}`
+                        )
+                    }
+
+                    console.log(`${logPrefix} File verification successful:`, {
+                        fileKey: file.key,
+                        status: fileCheck.status,
+                        timestamp,
+                    })
+                } catch (verifyError) {
+                    console.error(`${logPrefix} File verification failed:`, {
+                        error:
+                            verifyError instanceof Error
+                                ? verifyError.message
+                                : 'Unknown error',
+                        fileKey: file.key,
+                        timestamp,
+                    })
+                    throw verifyError
+                }
+
+                // Log successful completion
+                console.log(`${logPrefix} Upload completed on server:`, {
                     userId: metadata.userId,
                     fileKey: file.key,
                     fileName: file.name,
@@ -54,14 +89,21 @@ export const uploadRouter = {
                     appId: process.env.UPLOADTHING_APP_ID,
                 })
 
-                // Return direct response without callback URL
-                return {
+                const response = {
                     url: `https://utfs.io/f/${file.key}`,
                     key: file.key,
                     name: file.name,
                     size: file.size,
                     timestamp,
                 }
+
+                // Log response being sent
+                console.log(`${logPrefix} Sending response:`, {
+                    ...response,
+                    timestamp,
+                })
+
+                return response
             } catch (error) {
                 const timestamp = new Date().toISOString()
                 console.error('[UploadThing] Error in upload completion:', {
