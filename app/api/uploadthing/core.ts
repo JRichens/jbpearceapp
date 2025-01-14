@@ -7,16 +7,33 @@ const f = createUploadthing()
 export const uploadRouter = {
     ebayPhotos: f({ image: { maxFileSize: '16MB', maxFileCount: 24 } })
         .middleware(async () => {
-            const { userId } = auth()
-            console.log('Middleware executing for user:', userId) // Add this log
-            if (!userId) throw new Error('Unauthorized')
-            return { userId }
+            try {
+                const { userId } = auth()
+                console.log('Middleware executing for user:', userId)
+
+                if (!userId) {
+                    console.error('No userId found in auth')
+                    throw new Error('Unauthorized: No user ID')
+                }
+
+                return { userId }
+            } catch (error) {
+                console.error('Error in uploadthing middleware:', error)
+                throw error
+            }
         })
         .onUploadComplete(async ({ metadata, file }) => {
-            console.log('Upload complete for userId:', metadata.userId)
-            console.log('File URL:', file.url)
+            try {
+                console.log('Upload complete for userId:', metadata.userId)
+                console.log('File URL:', file.url)
+
+                return { url: file.url }
+            } catch (error) {
+                console.error('Error in onUploadComplete:', error)
+                throw error
+            }
         }),
 } satisfies FileRouter
 
 export type OurFileRouter = typeof uploadRouter
-export default uploadRouter // Add this line
+export default uploadRouter
