@@ -134,7 +134,6 @@ export async function startCamera(
 
         // Check if browser supports getUserMedia
         if (!hasGetUserMedia()) {
-            console.error('getUserMedia is not supported')
             throw new Error(
                 'Camera access is not supported in this browser. Please ensure you are using a modern browser with HTTPS.'
             )
@@ -142,7 +141,6 @@ export async function startCamera(
 
         // Check if video element exists
         if (!videoRef.current) {
-            console.error('Video element not found')
             throw new Error('Video element initialization failed.')
         }
 
@@ -152,8 +150,6 @@ export async function startCamera(
                 'Camera API is not available in this browser. Please check your browser settings and permissions.'
             )
         }
-
-        console.log('Attempting to access camera...')
 
         // First try with environment-facing camera (rear camera on mobile)
         try {
@@ -205,8 +201,6 @@ export async function startCamera(
             return stream
         }
     } catch (error) {
-        console.error('Detailed camera error:', error)
-
         if (error instanceof DOMException) {
             switch (error.name) {
                 case 'NotAllowedError':
@@ -224,7 +218,6 @@ export async function startCamera(
                         'Could not find a camera matching the requirements.'
                     )
                 default:
-                    console.error('DOMException:', error.name, error.message)
                     throw new Error(`Camera error: ${error.message}`)
             }
         }
