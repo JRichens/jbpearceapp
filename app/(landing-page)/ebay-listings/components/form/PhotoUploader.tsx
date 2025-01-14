@@ -227,19 +227,27 @@ export function PhotoUploader({
             }
 
             const uploadResult = uploadResponse[0]
-            if (!uploadResult.url) {
-                throw new Error('Upload completed but URL is missing')
+
+            // Extract the file key from the presigned URL response
+            const fileKey = uploadResult.key
+            if (!fileKey) {
+                throw new Error('Upload response missing file key')
             }
+
+            // Construct the final URL using the file key
+            // This is the standard UploadThing URL format
+            const finalUrl = `https://utfs.io/f/${fileKey}`
 
             // Add a small delay to ensure server processing is complete
             await new Promise((resolve) => setTimeout(resolve, 1000))
 
             console.log('Upload completed successfully:', {
-                url: uploadResult.url,
+                fileKey,
+                finalUrl,
                 timestamp: new Date().toISOString(),
             })
 
-            return uploadResult.url
+            return finalUrl
         } catch (error) {
             const errorMessage =
                 error instanceof Error ? error.message : 'Unknown error'
