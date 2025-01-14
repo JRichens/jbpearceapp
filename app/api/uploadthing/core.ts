@@ -9,53 +9,78 @@ export const uploadRouter = {
         .middleware(async () => {
             try {
                 const { userId } = auth()
-                console.log('Middleware executing for user:', userId)
+                console.log('[UploadThing] Middleware executing:', {
+                    userId,
+                    appId: process.env.UPLOADTHING_APP_ID,
+                    timestamp: new Date().toISOString(),
+                })
 
                 if (!userId) {
-                    console.error('No userId found in auth')
+                    console.error('[UploadThing] Auth failed - no userId')
                     throw new Error('Unauthorized: No user ID')
                 }
 
                 return { userId }
             } catch (error) {
-                console.error('Error in uploadthing middleware:', error)
+                console.error('[UploadThing] Middleware error:', {
+                    error,
+                    timestamp: new Date().toISOString(),
+                })
                 throw error
             }
         })
         .onUploadComplete(async ({ metadata, file }) => {
             const timestamp = new Date().toISOString()
-            const logContext = {
-                userId: metadata.userId,
-                fileKey: file.key,
-                fileUrl: file.url,
-                timestamp,
-            }
+            const uploadId = Math.random().toString(36).substring(7)
 
             try {
-                // Log the start of upload completion
-                console.log(
-                    '[UploadThing] Starting upload completion:',
-                    logContext
-                )
+                // Enhanced logging with upload details
+                console.log('[UploadThing] Starting upload completion:', {
+                    userId: metadata.userId,
+                    appId: process.env.UPLOADTHING_APP_ID,
+                    uploadId,
+                    timestamp,
+                    fileDetails: {
+                        size: file.size,
+                        name: file.name,
+                        type: file.type,
+                        key: file.key,
+                    },
+                })
 
-                // Construct the response with the file URL
+                // Construct and validate the URL
+                const fileUrl = file.url || `https://utfs.io/f/${file.key}`
+
+                // Construct response with additional metadata
                 const response = {
-                    url: file.url || `https://utfs.io/f/${file.key}`,
+                    url: fileUrl,
                     key: file.key,
                     timestamp,
+                    uploadId,
+                    size: file.size,
+                    name: file.name,
+                    type: file.type,
                 }
+
+                // Add a small delay before sending response
+                await new Promise((resolve) => setTimeout(resolve, 1000))
 
                 // Log successful completion
                 console.log('[UploadThing] Upload completed successfully:', {
-                    ...logContext,
-                    response,
+                    userId: metadata.userId,
+                    uploadId,
+                    fileUrl,
+                    timestamp,
                 })
 
                 return response
             } catch (error) {
                 // Log error with full context
                 console.error('[UploadThing] Error in upload completion:', {
-                    ...logContext,
+                    userId: metadata.userId,
+                    uploadId,
+                    fileKey: file.key,
+                    timestamp,
                     error:
                         error instanceof Error
                             ? {

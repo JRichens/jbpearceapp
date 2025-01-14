@@ -184,34 +184,64 @@ export function PhotoUploader({
 
     const uploadPhoto = async (file: File): Promise<string | null> => {
         try {
+            // Environment check logging
+            console.log('[Upload] Environment check:', {
+                uploadthingAppId: process.env.NEXT_PUBLIC_UPLOADTHING_APP_ID,
+                timestamp: new Date().toISOString(),
+            })
+
             // Use toast for important status updates that should be visible in production
             toast.info(`Uploading ${file.name}...`)
 
             if (!startUpload) {
+                console.error('[Upload] Upload client not initialized')
                 throw new Error('Upload client not initialized')
             }
 
-            // Log the start of upload
+            // Log the start of upload with more details
             console.log('[Upload] Starting upload:', {
                 fileName: file.name,
                 fileSize: file.size,
                 fileType: file.type,
                 timestamp: new Date().toISOString(),
+                environment: process.env.NODE_ENV,
+                isProduction: process.env.NODE_ENV === 'production',
             })
 
-            // Enhanced error handling and logging for upload
-            console.log('[Upload] Starting upload with detailed logging')
+            // Wrap upload in error boundary with proper TypeScript handling
+            let uploadResponse
+            try {
+                console.log('[Upload] Attempting startUpload...')
+                const response = await startUpload([file])
 
-            const uploadResponse = await startUpload([file])
+                if (!response) {
+                    console.error('[Upload] No response from startUpload')
+                    throw new Error('No response from upload server')
+                }
 
-            // Detailed response logging
+                uploadResponse = response
+                console.log('[Upload] Upload response received:', {
+                    hasResponse: true,
+                    responseLength: response.length,
+                    timestamp: new Date().toISOString(),
+                })
+            } catch (uploadError) {
+                console.error('[Upload] Error during startUpload:', uploadError)
+                throw uploadError
+            }
+
+            // Detailed response logging with type checking
             console.log('[Upload] Raw response:', {
-                response: uploadResponse,
+                hasResponse: !!uploadResponse,
+                responseType: uploadResponse
+                    ? typeof uploadResponse
+                    : 'undefined',
+                isArray: Array.isArray(uploadResponse),
                 timestamp: new Date().toISOString(),
                 environment: process.env.NODE_ENV,
             })
 
-            if (!uploadResponse || uploadResponse.length === 0) {
+            if (!Array.isArray(uploadResponse) || uploadResponse.length === 0) {
                 console.error('[Upload] Empty response received')
                 throw new Error('Upload failed - no response from server')
             }
@@ -238,26 +268,75 @@ export function PhotoUploader({
                 throw new Error('Upload failed - no URL or key in response')
             }
 
-            // Progressive delay strategy based on environment
-            const baseDelay =
-                process.env.NODE_ENV === 'production' ? 5000 : 1000
-            console.log(`[Upload] Waiting ${baseDelay}ms for processing...`)
-            await new Promise((resolve) => setTimeout(resolve, baseDelay))
+            // Progressive delay strategy with enhanced logging
+            const baseDelay = 3000 // Fixed delay since we can't reliably detect environment
+            console.log('[Upload] Starting delay:', {
+                baseDelay,
+                isProduction: process.env.NODE_ENV === 'production',
+                timestamp: new Date().toISOString(),
+            })
 
-            // Verify URL is accessible
             try {
-                const urlCheck = await fetch(finalUrl, { method: 'HEAD' })
-                if (!urlCheck.ok) {
-                    console.error(
-                        '[Upload] URL verification failed:',
-                        urlCheck.status
+                await new Promise((resolve) => {
+                    console.log('[Upload] Delay started')
+                    setTimeout(() => {
+                        console.log('[Upload] Delay completed')
+                        resolve(true)
+                    }, baseDelay)
+                })
+            } catch (delayError) {
+                console.error('[Upload] Error during delay:', delayError)
+            }
+
+            // Verify URL is accessible with retries (always use multiple retries)
+            const maxRetries = 3
+            let retryCount = 0
+            let urlVerified = false
+
+            while (retryCount < maxRetries && !urlVerified) {
+                try {
+                    console.log(
+                        `[Upload] Attempting URL verification (attempt ${
+                            retryCount + 1
+                        }/${maxRetries})`
                     )
-                    throw new Error('Upload URL verification failed')
+                    const urlCheck = await fetch(finalUrl, { method: 'HEAD' })
+
+                    if (urlCheck.ok) {
+                        console.log('[Upload] URL verification successful')
+                        urlVerified = true
+                        break
+                    } else {
+                        console.log('[Upload] URL verification failed:', {
+                            status: urlCheck.status,
+                            attempt: retryCount + 1,
+                            maxRetries,
+                        })
+
+                        if (retryCount < maxRetries - 1) {
+                            const retryDelay = (retryCount + 1) * 2000 // Exponential backoff
+                            console.log(
+                                `[Upload] Waiting ${retryDelay}ms before retry...`
+                            )
+                            await new Promise((resolve) =>
+                                setTimeout(resolve, retryDelay)
+                            )
+                        }
+                    }
+                } catch (error) {
+                    console.error('[Upload] URL verification error:', {
+                        error,
+                        attempt: retryCount + 1,
+                        maxRetries,
+                    })
                 }
-                console.log('[Upload] URL verification successful')
-            } catch (error) {
-                console.error('[Upload] URL verification error:', error)
-                // Continue anyway as the URL might just need more time to propagate
+                retryCount++
+            }
+
+            if (!urlVerified) {
+                console.log(
+                    '[Upload] URL verification ultimately failed, but continuing...'
+                )
             }
 
             // Log success and return the URL
