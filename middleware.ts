@@ -24,7 +24,17 @@ export default authMiddleware({
         if (!auth.userId) {
             // Get the full URL without query parameters
             const url = new URL(req.url)
-            const returnUrl = `${url.protocol}//${url.host}${url.pathname}`
+            const baseUrl = `${url.protocol}//${url.host}`
+
+            // If this is a sign-out redirect (check for redirect_url parameter)
+            const redirectParam = url.searchParams.get('redirect_url')
+            if (redirectParam && redirectParam.includes('localhost')) {
+                // Redirect to sign-in with the correct production URL
+                return Response.redirect(`${baseUrl}/sign-in`)
+            }
+
+            // Normal sign-in redirect with return URL
+            const returnUrl = `${baseUrl}${url.pathname}`
             return redirectToSignIn({ returnBackUrl: returnUrl })
         }
 
