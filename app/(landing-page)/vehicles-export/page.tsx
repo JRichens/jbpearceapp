@@ -36,8 +36,7 @@ import { ThreeCircles } from 'react-loader-spinner'
 import { Label } from '@/components/ui/label'
 import CountUp from 'react-countup'
 
-import { UploadButton } from '@/utils/uploadthing'
-import '@uploadthing/react/styles.css'
+import { PhotoUploader } from './_componentes/PhotoUploader'
 
 import Photos from './_componentes/photos'
 
@@ -416,95 +415,29 @@ const BreakingVehicles = () => {
                                                         >
                                                             <BadgePoundSterling className="text-xl" />
                                                         </Button>
-                                                        {/* Upload photo button */}
+                                                        {/* Photo upload button */}
                                                         {vehicle.photos.length <
                                                             2 && (
-                                                            <UploadButton
-                                                                content={{
-                                                                    button({
-                                                                        ready,
-                                                                    }) {
-                                                                        if (
-                                                                            ready
-                                                                        ) {
-                                                                            return (
-                                                                                <ImagePlus />
-                                                                            )
-                                                                        }
-                                                                        return (
-                                                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                                                        )
-                                                                    },
-                                                                }}
-                                                                appearance={{
-                                                                    button: 'h-8 w-8 text-white ut-ready:bg-green-500 ut-uploading:cursor-not-allowed rounded-r-none  bg-none after:bg-green-500',
-                                                                    container:
-                                                                        'w-max flex-row rounded-md border-cyan-300 bg-slate-800',
-                                                                    allowedContent:
-                                                                        'hidden',
-                                                                }}
-                                                                key={vehicle.id}
-                                                                endpoint="ebayPhotos"
-                                                                onBeforeUploadBegin={async (
-                                                                    files
+                                                            <PhotoUploader
+                                                                onPhotoCapture={async (
+                                                                    url
                                                                 ) => {
-                                                                    try {
-                                                                        const resizedFiles =
-                                                                            await Promise.all(
-                                                                                files.map(
-                                                                                    async (
-                                                                                        file
-                                                                                    ) => {
-                                                                                        const resizedBlob =
-                                                                                            await resizeImage(
-                                                                                                file,
-                                                                                                0.25
-                                                                                            ) // Resize to 20% of original size
-                                                                                        return new File(
-                                                                                            [
-                                                                                                resizedBlob,
-                                                                                            ],
-                                                                                            file.name,
-                                                                                            {
-                                                                                                type: file.type,
-                                                                                            }
-                                                                                        )
-                                                                                    }
-                                                                                )
-                                                                            )
-                                                                        return resizedFiles
-                                                                    } catch (error) {
-                                                                        console.error(
-                                                                            'Error resizing images:',
-                                                                            error
-                                                                        )
-                                                                        return files // Return original files if resizing fails
-                                                                    }
-                                                                }}
-                                                                onClientUploadComplete={async (
-                                                                    res
-                                                                ) => {
-                                                                    // Add the image path to the array of photos in the vehicle
                                                                     const updatedVehicle =
                                                                         {
                                                                             id: vehicle.id,
                                                                             carReg: vehicle.carReg,
                                                                             photos: [
                                                                                 ...vehicle.photos,
-                                                                                res[0]
-                                                                                    .url,
+                                                                                url,
                                                                             ],
                                                                         }
-                                                                    // Then update the vehicle in the database
                                                                     await UpdateExportVehicle(
                                                                         updatedVehicle
                                                                     )
                                                                 }}
-                                                                onUploadError={(
-                                                                    error: Error
-                                                                ) => {
-                                                                    // Do something with the error.
-                                                                }}
+                                                                disabled={
+                                                                    isLoading
+                                                                }
                                                             />
                                                         )}
 

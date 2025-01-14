@@ -10,9 +10,19 @@ export default authMiddleware({
         '/sign-up',
     ],
     afterAuth(auth, req) {
-        // Always allow UploadThing routes even with authentication
+        // Handle UploadThing routes
         if (req.url.includes('/api/uploadthing')) {
             return
+        }
+
+        // Check if the current route is already the sign-in page to prevent redirect loops
+        if (req.url.includes('/sign-in')) {
+            return
+        }
+
+        // Redirect to sign-in if not authenticated
+        if (!auth.userId) {
+            return redirectToSignIn({ returnBackUrl: `${req.url}` })
         }
     },
     apiRoutes: [],
