@@ -155,26 +155,6 @@ export function PhotoUploader({
         })
     }, [photos.length])
 
-    useEffect(() => {
-        if (isLoading) {
-            setPhotoStatuses((prevStatuses) =>
-                prevStatuses.map((status) => ({
-                    ...status,
-                    isUploading: true,
-                    isDone: false,
-                }))
-            )
-        } else {
-            setPhotoStatuses((prevStatuses) =>
-                prevStatuses.map((status) => ({
-                    ...status,
-                    isUploading: false,
-                    isDone: true,
-                }))
-            )
-        }
-    }, [isLoading])
-
     const processPhoto = async (file: File): Promise<File | null> => {
         const MAX_FILE_SIZE = 20 * 1024 * 1024
         if (file.size > MAX_FILE_SIZE) {
@@ -227,25 +207,36 @@ export function PhotoUploader({
             }
 
             const uploadResult = uploadResponse[0]
+            console.log('Processing upload result:', uploadResult)
 
-            // Extract the file key from the presigned URL response
-            const fileKey = uploadResult.key
-            if (!fileKey) {
-                throw new Error('Upload response missing file key')
+            // First try to get URL from the response if available
+            if (uploadResult.url) {
+                console.log('Using URL from response:', uploadResult.url)
+                return uploadResult.url
             }
 
-            // Construct the final URL using the file key
-            // This is the standard UploadThing URL format
+            // Fallback to constructing URL from key
+            const fileKey = uploadResult.key
+            if (!fileKey) {
+                throw new Error('Upload response missing both URL and file key')
+            }
+
+            console.log('Constructing URL from file key:', fileKey)
             const finalUrl = `https://utfs.io/f/${fileKey}`
 
-            // Add a small delay to ensure server processing is complete
-            await new Promise((resolve) => setTimeout(resolve, 1000))
-
-            console.log('Upload completed successfully:', {
-                fileKey,
-                finalUrl,
-                timestamp: new Date().toISOString(),
-            })
+            // Verify the URL is accessible
+            try {
+                const response = await fetch(finalUrl, { method: 'HEAD' })
+                if (!response.ok) {
+                    throw new Error(
+                        `URL verification failed: ${response.status}`
+                    )
+                }
+                console.log('URL verified successfully:', finalUrl)
+            } catch (error) {
+                console.warn('URL verification failed, but continuing:', error)
+                // Continue anyway as the file might still be processing
+            }
 
             return finalUrl
         } catch (error) {
@@ -272,22 +263,29 @@ export function PhotoUploader({
     }
 
     const updatePhotoState = (index: number, uploadedUrl: string | null) => {
+        console.log('Updating photo state:', {
+            index,
+            uploadedUrl,
+            activeUploads: activeUploads.current,
+        })
+
         const currentPhotos = [...latestPhotos.current]
         const currentPreviews = [...latestPreviews.current]
         const currentUrls = [...latestUrls.current]
 
+        // Decrement active uploads first
+        activeUploads.current = Math.max(0, activeUploads.current - 1)
+        const isStillUploading = activeUploads.current > 0
+
+        console.log('Upload status:', {
+            remainingUploads: activeUploads.current,
+            isStillUploading,
+        })
+
         if (uploadedUrl) {
             currentUrls[index] = uploadedUrl
-            activeUploads.current -= 1
-            const isStillUploading = activeUploads.current > 0
 
-            onPhotosChange(
-                currentPhotos,
-                currentPreviews,
-                currentUrls,
-                isStillUploading
-            )
-
+            // Update photo status first
             setPhotoStatuses((prev) =>
                 prev.map((status, idx) =>
                     idx === index
@@ -295,9 +293,8 @@ export function PhotoUploader({
                         : status
                 )
             )
-        } else {
-            activeUploads.current -= 1
-            const isStillUploading = activeUploads.current > 0
+
+            // Then notify parent of changes
             onPhotosChange(
                 currentPhotos,
                 currentPreviews,
@@ -305,6 +302,13 @@ export function PhotoUploader({
                 isStillUploading
             )
 
+            console.log('Photo upload completed:', {
+                index,
+                url: uploadedUrl,
+                totalUrls: currentUrls.length,
+            })
+        } else {
+            // Update status to show failure
             setPhotoStatuses((prev) =>
                 prev.map((status, idx) =>
                     idx === index
@@ -312,6 +316,16 @@ export function PhotoUploader({
                         : status
                 )
             )
+
+            // Notify parent of changes
+            onPhotosChange(
+                currentPhotos,
+                currentPreviews,
+                currentUrls,
+                isStillUploading
+            )
+
+            console.log('Photo upload failed:', { index })
         }
     }
 
