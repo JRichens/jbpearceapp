@@ -191,30 +191,51 @@ export function PhotoUploader({
                 throw new Error('Upload client not initialized')
             }
 
+            // Log the start of upload
+            console.log('[Upload] Starting upload:', {
+                fileName: file.name,
+                fileSize: file.size,
+                fileType: file.type,
+                timestamp: new Date().toISOString(),
+            })
+
             const uploadResponse = await startUpload([file])
+
+            // Log the raw upload response
+            console.log('[Upload] Raw response:', {
+                response: uploadResponse,
+                timestamp: new Date().toISOString(),
+            })
 
             if (!uploadResponse || uploadResponse.length === 0) {
                 throw new Error('Upload failed - no response from server')
             }
 
             const uploadResult = uploadResponse[0]
+            console.log('[Upload] Processing result:', uploadResult)
 
-            // First try to get URL from the response if available
+            // Try to get the URL from either the direct response or construct it from the key
+            let finalUrl: string
             if (uploadResult.url) {
-                toast.success(`${file.name} uploaded successfully`)
-                return uploadResult.url
+                console.log('[Upload] Using direct URL:', uploadResult.url)
+                finalUrl = uploadResult.url
+            } else if (uploadResult.key) {
+                finalUrl = `https://utfs.io/f/${uploadResult.key}`
+                console.log('[Upload] Constructed URL from key:', finalUrl)
+            } else {
+                throw new Error('Upload failed - no URL or key in response')
             }
 
-            // Fallback to constructing URL from key
-            const fileKey = uploadResult.key
-            if (!fileKey) {
-                throw new Error('Upload response missing both URL and file key')
-            }
+            // Add a longer delay in production to ensure processing completes
+            const delay = process.env.NODE_ENV === 'production' ? 3000 : 1000
+            await new Promise((resolve) => setTimeout(resolve, delay))
 
-            const finalUrl = `https://utfs.io/f/${fileKey}`
-
-            // Force a small delay to ensure the file is processed
-            await new Promise((resolve) => setTimeout(resolve, 2000))
+            // Log success and return the URL
+            console.log('[Upload] Successfully completed:', {
+                fileName: file.name,
+                finalUrl,
+                timestamp: new Date().toISOString(),
+            })
 
             toast.success(`${file.name} uploaded successfully`)
             return finalUrl
