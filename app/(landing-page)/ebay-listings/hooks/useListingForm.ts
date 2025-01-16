@@ -4,13 +4,14 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { useToast } from '@/components/ui/use-toast'
 import { Car } from '@prisma/client'
-import { FormState, initialFormState } from '../types/listingTypes'
+import { FormState, initialFormState, Category } from '../types/listingTypes'
 import { fetchCategoriesApi, submitListing } from '../services/api'
 import {
     TITLE_PARAMETERS,
     formatNomCC,
 } from '../components/form/TitleParameters'
 import { askClaudeProductionYear } from '@/actions/claude-ai/askClaudeProductionYear'
+import { WHEEL_TYRE_CATEGORIES } from '../constants/categories'
 
 interface ProductionYearInfo {
     from: string
@@ -38,6 +39,7 @@ export function useListingForm() {
                 vehicle,
                 brand: vehicle.dvlaMake || '',
                 make: vehicle.dvlaMake || '',
+                wheelBrand: vehicle.dvlaMake || '',
             }))
 
             // If we have both vehicle and part description, fetch categories only on initial vehicle set
@@ -220,9 +222,18 @@ export function useListingForm() {
     }
 
     const handleCategoryChange = (categoryId: string) => {
-        const category = formState.categories.find(
-            (cat) => cat.id === categoryId
+        // First check in regular categories
+        let category = formState.categories.find(
+            (cat: Category) => cat.id === categoryId
         )
+
+        // If not found, check in wheel/tyre categories
+        if (!category) {
+            category = WHEEL_TYRE_CATEGORIES.find(
+                (cat: Category) => cat.id === categoryId
+            )
+        }
+
         setFormState((prev) => ({
             ...prev,
             selectedCategory: category || null,
@@ -362,6 +373,38 @@ export function useListingForm() {
                 formData.append('paintCode', formState.paintCode)
             if (formState.placement)
                 formData.append('placement', formState.placement)
+
+            // Add wheel and tyre specifics if applicable
+            if (formState.wheelDiameter)
+                formData.append('wheelDiameter', formState.wheelDiameter)
+            if (formState.tyreWidth)
+                formData.append('tyreWidth', formState.tyreWidth)
+            if (formState.aspectRatio)
+                formData.append('aspectRatio', formState.aspectRatio)
+            if (formState.numberOfStuds)
+                formData.append('numberOfStuds', formState.numberOfStuds)
+            if (formState.centreBore)
+                formData.append('centreBore', formState.centreBore)
+            if (formState.packageQuantity)
+                formData.append('packageQuantity', formState.packageQuantity)
+            if (formState.wheelMaterial)
+                formData.append('wheelMaterial', formState.wheelMaterial)
+            if (formState.wheelBrand)
+                formData.append('wheelBrand', formState.wheelBrand)
+            if (formState.pcd) formData.append('pcd', formState.pcd)
+
+            // Add tyre-specific fields if applicable
+            if (formState.tyreModel)
+                formData.append('tyreModel', formState.tyreModel)
+            if (formState.treadDepth)
+                formData.append('treadDepth', formState.treadDepth)
+            if (formState.dotDateCode)
+                formData.append('dotDateCode', formState.dotDateCode)
+            if (formState.runFlat) formData.append('runFlat', formState.runFlat)
+            if (formState.unitQty) formData.append('unitQty', formState.unitQty)
+
+            // Add showCarInfo flag
+            formData.append('showCarInfo', formState.showCarInfo.toString())
 
             // Use pre-uploaded photo URLs instead of uploading again
             formData.append(

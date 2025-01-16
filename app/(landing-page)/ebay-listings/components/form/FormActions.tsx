@@ -21,10 +21,68 @@ export function FormActions({
 }: FormActionsProps) {
     // Detailed requirement checks with status messages
     const requirements = {
-        partNumber: {
-            isMissing: !formState.partNumbers.some((num) => num.trim() !== ''),
-            message: 'At least one part number is required',
-        },
+        ...(formState.selectedCategory?.id === '179681'
+            ? {
+                  wheelDiameter: {
+                      isMissing: !formState.wheelDiameter,
+                      message: 'Wheel Diameter is required',
+                  },
+                  tyreWidth: {
+                      isMissing: !formState.tyreWidth,
+                      message: 'Tyre Width is required',
+                  },
+                  aspectRatio: {
+                      isMissing: !formState.aspectRatio,
+                      message: 'Aspect Ratio is required',
+                  },
+              }
+            : formState.selectedCategory?.id === '179680'
+            ? {
+                  brand: {
+                      isMissing: !formState.brand,
+                      message: 'Brand is required',
+                  },
+                  tyreModel: {
+                      isMissing: !formState.tyreModel,
+                      message: 'Model is required',
+                  },
+                  treadDepth: {
+                      isMissing: !formState.treadDepth,
+                      message: 'Tread Depth is required',
+                  },
+                  dotDateCode: {
+                      isMissing: !formState.dotDateCode,
+                      message: 'DOT Date Code is required',
+                  },
+                  runFlat: {
+                      isMissing: !formState.runFlat,
+                      message: 'Run Flat selection is required',
+                  },
+                  wheelDiameter: {
+                      isMissing: !formState.wheelDiameter,
+                      message: 'Rim Diameter is required',
+                  },
+                  tyreWidth: {
+                      isMissing: !formState.tyreWidth,
+                      message: 'Tyre Width is required',
+                  },
+                  aspectRatio: {
+                      isMissing: !formState.aspectRatio,
+                      message: 'Aspect Ratio is required',
+                  },
+                  unitQty: {
+                      isMissing: !formState.unitQty,
+                      message: 'Unit Quantity is required',
+                  },
+              }
+            : {
+                  partNumber: {
+                      isMissing: !formState.partNumbers.some(
+                          (num) => num.trim() !== ''
+                      ),
+                      message: 'At least one part number is required',
+                  },
+              }),
         partDescription: {
             isMissing: !formState.partDescription,
             message: 'Part description is required',

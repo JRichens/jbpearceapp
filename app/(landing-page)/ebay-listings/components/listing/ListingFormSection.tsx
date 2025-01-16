@@ -10,6 +10,8 @@ import { TitleSection } from '../form/TitleSection'
 import { DetailsSection } from '../form/DetailsSection'
 import { CategorySelect } from '../form/CategorySelect'
 import { ConditionSelect } from '../form/ConditionSelect'
+import { WheelTyreInfo } from '../form/WheelTyreInfo'
+import { TyreInfo } from '../form/TyreInfo'
 import { PriceQuantityInputs } from '../form/PriceQuantityInputs'
 import { PhotoUploader } from '../form/PhotoUploader'
 import { ShippingProfileSelect } from '../form/ShippingProfileSelect'
@@ -253,6 +255,21 @@ export function ListingFormSection({
                                 selectedPlacements={selectedPlacements}
                                 onPlacementChange={handlePlacementChange}
                             />
+
+                            {formState.selectedCategory?.id === '179681' && (
+                                <WheelTyreInfo
+                                    formState={formState}
+                                    onFormChange={handleFormChange}
+                                    setFormState={setFormState}
+                                />
+                            )}
+                            {formState.selectedCategory?.id === '179680' && (
+                                <TyreInfo
+                                    formState={formState}
+                                    onFormChange={handleFormChange}
+                                    setFormState={setFormState}
+                                />
+                            )}
 
                             <PriceQuantityInputs
                                 formState={formState}

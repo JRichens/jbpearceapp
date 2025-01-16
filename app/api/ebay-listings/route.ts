@@ -185,6 +185,28 @@ export async function POST(req: Request) {
                       euroStatus: vehicle.euroStatus,
                   }
                 : undefined,
+            // Show car info flag
+            showCarInfo: formData.get('showCarInfo') === 'true',
+            // Wheel and tyre specific fields
+            wheelDiameter:
+                (formData.get('wheelDiameter') as string) || undefined,
+            tyreWidth: (formData.get('tyreWidth') as string) || undefined,
+            aspectRatio: (formData.get('aspectRatio') as string) || undefined,
+            numberOfStuds:
+                (formData.get('numberOfStuds') as string) || undefined,
+            centreBore: (formData.get('centreBore') as string) || undefined,
+            packageQuantity:
+                (formData.get('packageQuantity') as string) || undefined,
+            wheelMaterial:
+                (formData.get('wheelMaterial') as string) || undefined,
+            wheelBrand: (formData.get('wheelBrand') as string) || undefined,
+            pcd: (formData.get('pcd') as string) || undefined,
+            // Tyre-specific fields
+            tyreModel: (formData.get('tyreModel') as string) || undefined,
+            treadDepth: (formData.get('treadDepth') as string) || undefined,
+            dotDateCode: (formData.get('dotDateCode') as string) || undefined,
+            runFlat: (formData.get('runFlat') as string) || undefined,
+            unitQty: (formData.get('unitQty') as string) || undefined,
         }
 
         if (isVerification) {

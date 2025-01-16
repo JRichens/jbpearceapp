@@ -61,6 +61,22 @@ export interface FormState {
     placement: string
     price: string
     quantity: string
+    wheelDiameter: string
+    tyreWidth: string
+    aspectRatio: string
+    numberOfStuds: string
+    centreBore: string
+    packageQuantity: string
+    wheelMaterial: string
+    wheelBrand: string
+    pcd: string
+    // Tyre-only fields
+    tyreModel: string
+    treadDepth: string
+    dotDateCode: string
+    runFlat: string
+    unitQty: string
+    showCarInfo: boolean
     showMinimumOffer: boolean
     verificationResult: VerificationResult | null
     isVerified: boolean
@@ -105,6 +121,23 @@ export const initialFormState: FormState = {
     placement: '',
     price: '0',
     quantity: '1',
+    // Wheel & Tyre fields
+    wheelDiameter: '',
+    tyreWidth: '',
+    aspectRatio: '',
+    numberOfStuds: '',
+    centreBore: '',
+    packageQuantity: '',
+    wheelMaterial: '',
+    wheelBrand: '',
+    pcd: '',
+    // Tyre-only fields
+    tyreModel: '',
+    treadDepth: '',
+    dotDateCode: '',
+    runFlat: 'No',
+    unitQty: '1',
+    showCarInfo: false,
     showMinimumOffer: false,
     verificationResult: null,
     isVerified: false,

@@ -36,6 +36,23 @@ export interface CreateListingParams {
     shippingProfileId?: string
     allowOffers?: boolean
     minimumOfferPrice?: number
+    // Wheel & Tyre fields
+    wheelDiameter?: string
+    tyreWidth?: string
+    aspectRatio?: string
+    numberOfStuds?: string
+    centreBore?: string
+    packageQuantity?: string
+    wheelMaterial?: string
+    wheelBrand?: string
+    pcd?: string
+    // Tyre-only fields
+    tyreModel?: string
+    treadDepth?: string
+    dotDateCode?: string
+    runFlat?: string
+    unitQty?: string
+    showCarInfo?: boolean
 }
 
 export interface ShippingProfile {

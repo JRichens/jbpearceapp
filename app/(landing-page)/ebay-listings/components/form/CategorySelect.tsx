@@ -6,6 +6,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
+import { WHEEL_TYRE_CATEGORIES } from '../../constants/categories'
 
 interface CategorySelectProps {
     categories: Category[]
@@ -30,15 +31,21 @@ export function CategorySelect({
 }: CategorySelectProps) {
     const [isCategoryOpen, setIsCategoryOpen] = useState(false)
 
+    // Ensure wheel and tyre categories are always available
+    const allCategories = [...categories]
+    WHEEL_TYRE_CATEGORIES.forEach((wheelTyreCat) => {
+        if (!allCategories.some((cat) => cat.id === wheelTyreCat.id)) {
+            allCategories.push(wheelTyreCat)
+        }
+    })
+
     const getCategoryPlaceholder = () => {
         if (isCategoriesLoading) return 'Loading categories...'
-        if (categories.length > 0)
-            return selectedCategory
-                ? selectedCategory.finalName
-                : 'Select a category'
         if (!vehicle) return 'Enter vehicle registration first'
         if (!partDescription) return 'Enter part description first'
-        return 'No matching categories found'
+        return selectedCategory
+            ? selectedCategory.finalName
+            : 'Select a category'
     }
 
     const renderCategoryOption = (category: Category) => {
@@ -69,7 +76,7 @@ export function CategorySelect({
                     aria-expanded={isCategoryOpen}
                     className="w-full justify-between text-xl bg-white h-auto min-h-[40px] py-2"
                     onClick={() => setIsCategoryOpen(true)}
-                    disabled={isCategoriesLoading || categories.length === 0}
+                    disabled={isCategoriesLoading}
                 >
                     <span className="truncate">{getCategoryPlaceholder()}</span>
                     <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -78,7 +85,7 @@ export function CategorySelect({
                 <Dialog open={isCategoryOpen} onOpenChange={setIsCategoryOpen}>
                     <DialogContent className="p-0 w-[90%] max-w-[600px] [&>button]:hidden">
                         <div className="py-1 max-h-[400px] overflow-y-auto">
-                            {categories.map((category) => (
+                            {allCategories.map((category) => (
                                 <button
                                     key={category.id}
                                     type="button"
@@ -107,7 +114,7 @@ export function CategorySelect({
                     className="sr-only"
                 >
                     <option value="">Select a category</option>
-                    {categories.map((category) => (
+                    {allCategories.map((category) => (
                         <option key={category.id} value={category.id}>
                             {category.finalName}
                         </option>

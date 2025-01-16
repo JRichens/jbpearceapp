@@ -11,6 +11,12 @@ interface VerificationResult {
     }
 }
 
+interface Spec {
+    name: string
+    value: string | undefined
+    condition: () => boolean
+}
+
 export async function verifyEbayListing(
     params: CreateListingParams
 ): Promise<VerificationResult> {
@@ -36,6 +42,22 @@ export async function verifyEbayListing(
             shippingProfileId,
             allowOffers = false,
             minimumOfferPrice,
+            // Wheel and tyre fields
+            wheelDiameter,
+            tyreWidth,
+            aspectRatio,
+            numberOfStuds,
+            centreBore,
+            packageQuantity,
+            wheelMaterial,
+            wheelBrand,
+            pcd,
+            // Tyre-only fields
+            tyreModel,
+            treadDepth,
+            dotDateCode,
+            runFlat,
+            unitQty,
         } = params
 
         // Helper function to escape XML special characters
@@ -96,6 +118,8 @@ export async function verifyEbayListing(
             driveType: vehicle?.driveType || '',
             euroStatus: vehicle?.euroStatus || '',
             partNumber: partNumber || '',
+            vin: vehicle?.vinOriginalDvla || '',
+            paintCode: paintCode || vehicle?.paintCode || '',
         }
 
         // Replace all placeholders in the template
@@ -106,21 +130,44 @@ export async function verifyEbayListing(
             )
         })
 
-        // Validate category
-        if (!category) {
-            throw new Error('Category ID is required')
-        }
+        // Handle compatibility section visibility
+        const compatibilitySection = `
+    <section class="section">
+        <div class="section-header">
+            <h2>
+                <img
+                    src="https://uxwing.com/wp-content/themes/uxwing/download/business-professional-services/services-plumber-icon.png"
+                    alt="Compatibility"
+                />
+                Compatibility Guide
+            </h2>
+        </div>
+        <div class="specs-grid">
+            <div class="spec-item" style="display: block">
+                <p style="line-height: 1.6">${escapeXml(
+                    compatibility || ''
+                )}</p>
+                <p style="margin-top: 1rem; font-weight: italic">
+                    *This is a guide only and is not a guarantee of
+                    compatibility
+                </p>
+            </div>
+        </div>
+    </section>`
 
-        if (!/^\d+$/.test(category)) {
-            throw new Error(
-                `Invalid category ID format: ${category}. Must be a numeric value.`
-            )
-        }
+        // Only show compatibility section for non-wheel/tyre categories
+        template = template.replace(
+            '<div id="compatibility-section-placeholder"></div>',
+            category !== '179681' && category !== '179680'
+                ? compatibilitySection
+                : ''
+        )
 
         // Prepare ItemSpecifics section
         const itemSpecifics = []
 
-        if (make) {
+        // Only include Make for non-tyre categories
+        if (make && category !== '179680') {
             itemSpecifics.push(`
                 <NameValueList>
                     <Name>Brand</Name>
@@ -155,7 +202,8 @@ export async function verifyEbayListing(
                 </NameValueList>`)
         }
 
-        if (paintCode) {
+        // Only include Paint Code for non-tyre categories
+        if (paintCode && category !== '179680') {
             itemSpecifics.push(`
                 <NameValueList>
                     <Name>Paint Code</Name>
@@ -163,38 +211,466 @@ export async function verifyEbayListing(
                 </NameValueList>`)
         }
 
-        if (vehicle) {
-            if (vehicle.vinOriginalDvla) {
+        // Include Number of Items for wheel/tyre categories
+        if (
+            (category === '179680' && unitQty) ||
+            (category === '179681' && packageQuantity)
+        ) {
+            itemSpecifics.push(`
+                <NameValueList>
+                    <Name>Number of Items</Name>
+                    <Value>${escapeXml(
+                        (category === '179680' ? unitQty : packageQuantity) ||
+                            ''
+                    )}</Value>
+                </NameValueList>`)
+        }
+
+        // Add wheel and tyre specifics if category is wheels/tyres
+        if (category === '179681' || category === '179680') {
+            if (wheelDiameter && parseFloat(wheelDiameter) > 0) {
                 itemSpecifics.push(`
                     <NameValueList>
-                        <Name>Vehicle Identification Number (VIN)</Name>
-                        <Value>${escapeXml(vehicle.vinOriginalDvla)}</Value>
+                        <Name>Wheel Diameter</Name>
+                        <Value>${escapeXml(wheelDiameter)}</Value>
                     </NameValueList>`)
             }
-            if (vehicle.dvlaYearOfManufacture) {
+            if (tyreWidth && parseFloat(tyreWidth) > 0) {
                 itemSpecifics.push(`
                     <NameValueList>
-                        <Name>Year</Name>
-                        <Value>${escapeXml(
-                            vehicle.dvlaYearOfManufacture
-                        )}</Value>
+                        <Name>Tyre Width</Name>
+                        <Value>${escapeXml(tyreWidth)}</Value>
                     </NameValueList>`)
             }
-            if (vehicle.dvlaModel) {
+            if (aspectRatio && parseFloat(aspectRatio) > 0) {
                 itemSpecifics.push(`
                     <NameValueList>
-                        <Name>Model</Name>
-                        <Value>${escapeXml(vehicle.dvlaModel)}</Value>
+                        <Name>Aspect Ratio</Name>
+                        <Value>${escapeXml(aspectRatio)}</Value>
                     </NameValueList>`)
             }
-            if (vehicle.colourCurrent) {
-                itemSpecifics.push(`
-                    <NameValueList>
-                        <Name>Colour</Name>
-                        <Value>${escapeXml(vehicle.colourCurrent)}</Value>
-                    </NameValueList>`)
+            // Add tyre-specific fields for category 179680
+            if (category === '179680') {
+                const tyreSpecs: Spec[] = [
+                    {
+                        name: 'Brand',
+                        value: brand,
+                        condition: () => Boolean(brand && brand.trim() !== ''),
+                    },
+                    {
+                        name: 'Model',
+                        value: tyreModel,
+                        condition: () =>
+                            Boolean(tyreModel && tyreModel.trim() !== ''),
+                    },
+                    {
+                        name: 'Tread Depth',
+                        value: treadDepth ? `${treadDepth} mm` : '',
+                        condition: () =>
+                            Boolean(treadDepth && treadDepth.trim() !== ''),
+                    },
+                    {
+                        name: 'DOT Date Code',
+                        value: dotDateCode,
+                        condition: () =>
+                            Boolean(dotDateCode && dotDateCode.trim() !== ''),
+                    },
+                    {
+                        name: 'Run Flat',
+                        value: runFlat,
+                        condition: () =>
+                            Boolean(runFlat && runFlat.trim() !== ''),
+                    },
+                    {
+                        name: 'Unit Quantity',
+                        value: unitQty,
+                        condition: () =>
+                            Boolean(unitQty && unitQty.trim() !== ''),
+                    },
+                ]
+
+                tyreSpecs.forEach((spec) => {
+                    if (spec.condition()) {
+                        itemSpecifics.push(`
+                            <NameValueList>
+                                <Name>${spec.name}</Name>
+                                <Value>${escapeXml(spec.value || '')}</Value>
+                            </NameValueList>`)
+                    }
+                })
+            }
+
+            // Optional wheel/tyre specifics for category 179681
+            if (category === '179681') {
+                const optionalSpecs: Spec[] = [
+                    {
+                        name: 'Number of Studs',
+                        value: numberOfStuds,
+                        condition: () =>
+                            Boolean(
+                                numberOfStuds && parseFloat(numberOfStuds) > 0
+                            ),
+                    },
+                    {
+                        name: 'Centre Bore',
+                        value: centreBore,
+                        condition: () =>
+                            Boolean(centreBore && centreBore.trim() !== ''),
+                    },
+                    {
+                        name: 'Wheel Material',
+                        value: wheelMaterial,
+                        condition: () =>
+                            Boolean(
+                                wheelMaterial && wheelMaterial.trim() !== ''
+                            ),
+                    },
+                    {
+                        name: 'PCD',
+                        value: pcd,
+                        condition: () => Boolean(pcd && pcd.trim() !== ''),
+                    },
+                ]
+
+                optionalSpecs.forEach((spec) => {
+                    if (spec.condition()) {
+                        itemSpecifics.push(`
+                            <NameValueList>
+                                <Name>${spec.name}</Name>
+                                <Value>${escapeXml(spec.value || '')}</Value>
+                            </NameValueList>`)
+                    }
+                })
             }
         }
+
+        // Determine if this is a wheel/tyre category
+        const isWheelTyreCategory =
+            category === '179681' || category === '179680'
+
+        // Include vehicle details if:
+        // 1. For wheel/tyre categories: only when showCarInfo is true
+        // 2. For other categories: always include when vehicle data exists
+        const shouldIncludeVehicleDetails = isWheelTyreCategory
+            ? vehicle && params.showCarInfo
+            : Boolean(vehicle)
+
+        if (shouldIncludeVehicleDetails && vehicle) {
+            // Add vehicle-specific item specifics
+            const vehicleSpecs = [
+                {
+                    name: 'Vehicle Identification Number (VIN)',
+                    value: vehicle.vinOriginalDvla,
+                },
+                {
+                    name: 'Year',
+                    value: vehicle.dvlaYearOfManufacture,
+                },
+                {
+                    name: 'Model',
+                    value: vehicle.dvlaModel,
+                },
+                {
+                    name: 'Colour',
+                    value: vehicle.colourCurrent,
+                },
+            ]
+
+            vehicleSpecs.forEach((spec) => {
+                if (spec.value) {
+                    itemSpecifics.push(`
+                    <NameValueList>
+                        <Name>${spec.name}</Name>
+                        <Value>${escapeXml(spec.value)}</Value>
+                    </NameValueList>`)
+                }
+            })
+        }
+
+        // Define wheel/tyre details section for category 179681
+        const wheelTyreSection =
+            category === '179681'
+                ? `
+    <section class="section wheel-tyre-details">
+        <div class="section-header">
+            <h2>
+                <img
+                    src="https://uxwing.com/wp-content/themes/uxwing/download/transportation-automotive/wheel-icon.png"
+                    alt="Wheel"
+                />
+                Wheel & Tyre Details
+            </h2>
+        </div>
+        <div class="specs-grid">
+            <div class="spec-item">
+                <span class="spec-label">Wheel Diameter</span>
+                <span class="spec-value">${escapeXml(
+                    wheelDiameter || ''
+                )}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Tyre Width</span>
+                <span class="spec-value">${escapeXml(tyreWidth || '')}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Aspect Ratio</span>
+                <span class="spec-value">${escapeXml(aspectRatio || '')}</span>
+            </div>
+            ${
+                numberOfStuds
+                    ? `
+            <div class="spec-item">
+                <span class="spec-label">Number of Studs</span>
+                <span class="spec-value">${escapeXml(numberOfStuds)}</span>
+            </div>`
+                    : ''
+            }
+            ${
+                centreBore
+                    ? `
+            <div class="spec-item">
+                <span class="spec-label">Centre Bore</span>
+                <span class="spec-value">${escapeXml(centreBore)}</span>
+            </div>`
+                    : ''
+            }
+            <div class="spec-item">
+                <span class="spec-label">Number of Items</span>
+                <span class="spec-value">${escapeXml(
+                    packageQuantity || ''
+                )}</span>
+            </div>
+            ${
+                wheelMaterial
+                    ? `
+            <div class="spec-item">
+                <span class="spec-label">Wheel Material</span>
+                <span class="spec-value">${escapeXml(wheelMaterial)}</span>
+            </div>`
+                    : ''
+            }
+            ${
+                wheelBrand
+                    ? `
+            <div class="spec-item">
+                <span class="spec-label">Wheel Brand</span>
+                <span class="spec-value">${escapeXml(wheelBrand)}</span>
+            </div>`
+                    : ''
+            }
+            ${
+                pcd
+                    ? `
+            <div class="spec-item">
+                <span class="spec-label">PCD</span>
+                <span class="spec-value">${escapeXml(pcd)}</span>
+            </div>`
+                    : ''
+            }
+        </div>
+    </section>`
+                : ''
+
+        // Define tyre-only details section for category 179680
+        const tyreSection =
+            category === '179680'
+                ? `
+    <section class="section tyre-details">
+        <div class="section-header">
+            <h2>
+                <img
+                    src="https://uxwing.com/wp-content/themes/uxwing/download/transportation-automotive/wheel-icon.png"
+                    alt="Tyre"
+                />
+                Tyre Details
+            </h2>
+        </div>
+        <div class="specs-grid">
+            <div class="spec-item">
+                <span class="spec-label">Brand</span>
+                <span class="spec-value">${escapeXml(brand || '')}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Model</span>
+                <span class="spec-value">${escapeXml(tyreModel || '')}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Tread Depth</span>
+                <span class="spec-value">${escapeXml(
+                    treadDepth || ''
+                )} mm</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">DOT Date Code</span>
+                <span class="spec-value">${escapeXml(dotDateCode || '')}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Run Flat</span>
+                <span class="spec-value">${escapeXml(runFlat || '')}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Rim Diameter</span>
+                <span class="spec-value">${escapeXml(
+                    wheelDiameter || ''
+                )}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Tyre Width</span>
+                <span class="spec-value">${escapeXml(tyreWidth || '')}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Aspect Ratio</span>
+                <span class="spec-value">${escapeXml(aspectRatio || '')}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Number of Items</span>
+                <span class="spec-value">${escapeXml(unitQty || '')}</span>
+            </div>
+        </div>
+    </section>`
+                : ''
+
+        // Handle vehicle details section visibility
+        const vehicleDetailsSection = `
+    <section class="section vehicle-details">
+        <div class="section-header">
+            <h2>
+                <img
+                    src="https://uxwing.com/wp-content/themes/uxwing/download/transportation-automotive/car-icon.png"
+                    alt="Vehicle"
+                />
+                Vehicle Details
+            </h2>
+        </div>
+        <div class="specs-grid">
+            <div class="spec-item">
+                <span class="spec-label">Make</span>
+                <span class="spec-value">${escapeXml(
+                    vehicle?.dvlaMake || make || ''
+                )}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Model</span>
+                <span class="spec-value">${escapeXml(
+                    vehicle?.dvlaModel || ''
+                )}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Year</span>
+                <span class="spec-value">${escapeXml(
+                    vehicle?.dvlaYearOfManufacture || ''
+                )}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Series</span>
+                <span class="spec-value">${escapeXml(
+                    vehicle?.modelSeries || ''
+                )}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Variant</span>
+                <span class="spec-value">${escapeXml(
+                    vehicle?.modelVariant || ''
+                )}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Color</span>
+                <span class="spec-value">${escapeXml(
+                    vehicle?.colourCurrent || ''
+                )}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Engine Code</span>
+                <span class="spec-value">${escapeXml(
+                    vehicle?.engineCode || ''
+                )}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Engine Size</span>
+                <span class="spec-value">${escapeXml(
+                    vehicle?.engineCapacity || ''
+                )}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Fuel Type</span>
+                <span class="spec-value">${escapeXml(
+                    vehicle?.fuelType || ''
+                )}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Transmission</span>
+                <span class="spec-value">${escapeXml(
+                    vehicle?.transmission || ''
+                )}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Drive Type</span>
+                <span class="spec-value">${escapeXml(
+                    vehicle?.driveType || ''
+                )}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Euro Status</span>
+                <span class="spec-value">${escapeXml(
+                    vehicle?.euroStatus || ''
+                )}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">VIN</span>
+                <span class="spec-value">${escapeXml(
+                    vehicle?.vinOriginalDvla || ''
+                )}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">Paint Code</span>
+                <span class="spec-value">${escapeXml(
+                    paintCode || vehicle?.paintCode || ''
+                )}</span>
+            </div>
+        </div>
+    </section>`
+
+        // For wheel/tyre categories, we'll move the vehicle details section after the respective details
+        if (isWheelTyreCategory) {
+            // First remove the original placeholder
+            template = template.replace(
+                '<div id="vehicle-details-placeholder"></div>',
+                ''
+            )
+
+            // Then append vehicle details after wheel/tyre details if needed
+            if (category === '179681') {
+                template = template.replace(
+                    '<div id="wheel-tyre-details-placeholder"></div>',
+                    `${wheelDiameter ? wheelTyreSection : ''}${
+                        shouldIncludeVehicleDetails ? vehicleDetailsSection : ''
+                    }`
+                )
+            } else {
+                template = template.replace(
+                    '<div id="tyre-details-placeholder"></div>',
+                    `${tyreSection}${
+                        shouldIncludeVehicleDetails ? vehicleDetailsSection : ''
+                    }`
+                )
+            }
+        } else {
+            // For normal categories, use the original placeholder
+            template = template.replace(
+                '<div id="vehicle-details-placeholder"></div>',
+                shouldIncludeVehicleDetails ? vehicleDetailsSection : ''
+            )
+        }
+
+        // Replace any remaining placeholders
+        template = template.replace(
+            '<div id="wheel-tyre-details-placeholder"></div>',
+            category === '179681' && wheelDiameter ? wheelTyreSection : ''
+        )
+        template = template.replace(
+            '<div id="tyre-details-placeholder"></div>',
+            category === '179680' ? tyreSection : ''
+        )
 
         itemSpecifics.push(`
             <NameValueList>
@@ -225,55 +701,6 @@ export async function verifyEbayListing(
                 <BestOfferAutoAcceptPrice>${minimumOfferPrice}</BestOfferAutoAcceptPrice>
                </ListingDetails>`
                 : ''
-
-        // Create a simplified version of the Item details for logging
-        const itemDetailsForLogging = {
-            Title: title,
-            PrimaryCategory: { CategoryID: category.trim() },
-            StartPrice: price,
-            ConditionID: getConditionId(condition),
-            ConditionDescription: conditionDescription,
-            ItemSpecifics: itemSpecifics.join(''),
-            Country: 'GB',
-            Currency: currency,
-            DispatchTimeMax: 3,
-            ListingDuration: 'GTC',
-            ListingType: 'FixedPriceItem',
-            Location: location,
-            PaymentMethods: 'PayPal',
-            PayPalEmailAddress: process.env.PAYPAL_EMAIL,
-            PictureDetails: imageUrls
-                .filter((url) => url && url.trim() !== '')
-                .map((url) => ({ PictureURL: url })),
-            Quantity: quantity,
-            BestOfferDetails: allowOffers
-                ? { BestOfferEnabled: true }
-                : undefined,
-            ListingDetails:
-                allowOffers && minimumOfferPrice
-                    ? {
-                          MinimumBestOfferPrice: minimumOfferPrice,
-                          BestOfferAutoAcceptPrice: minimumOfferPrice,
-                      }
-                    : undefined,
-            SellerProfiles: {
-                SellerPaymentProfile: {
-                    PaymentProfileID: '239472522017',
-                    PaymentProfileName: 'eBay Managed Payments (239472522017)',
-                },
-                SellerReturnProfile: {
-                    ReturnProfileID: '239472521017',
-                    ReturnProfileName: '14 days (239472521017)',
-                },
-                SellerShippingProfile: {
-                    ShippingProfileID: shippingProfileId || '240049979017',
-                    ShippingProfileName: shippingProfileName,
-                },
-            },
-        }
-
-        // console.log('Verifying eBay listing with the following details:')
-        // console.log(JSON.stringify(itemDetailsForLogging, null, 2))
 
         const requestXml = `<?xml version="1.0" encoding="utf-8"?>
                 <VerifyAddFixedPriceItemRequest xmlns="urn:ebay:apis:eBLBaseComponents">
@@ -375,7 +802,6 @@ export async function verifyEbayListing(
             if (severityCode === 'Error') {
                 const errorCode = getElementText(error, 'ErrorCode')
                 const errorMessage = getElementText(error, 'LongMessage')
-                console.error('eBay API Error:', { errorCode, errorMessage })
                 throw new Error(errorMessage || 'Verification failed')
             }
         }
