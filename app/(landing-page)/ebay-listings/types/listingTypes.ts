@@ -70,6 +70,9 @@ export interface FormState {
     wheelMaterial: string
     wheelBrand: string
     pcd: string
+    studDiameter: string
+    offset: string
+    wheelWidth: string
     // Tyre-only fields
     tyreModel: string
     treadDepth: string
@@ -131,6 +134,9 @@ export const initialFormState: FormState = {
     wheelMaterial: '',
     wheelBrand: '',
     pcd: '',
+    studDiameter: '',
+    offset: '',
+    wheelWidth: '',
     // Tyre-only fields
     tyreModel: '',
     treadDepth: '',

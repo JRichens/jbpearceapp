@@ -233,14 +233,17 @@ export function ListingFormSection({
 
             {formState.selectedCategory && (
                 <>
-                    <TitleSection
-                        formState={formState}
-                        setFormState={setFormState}
-                        onFormChange={handleFormChange}
-                        vehicle={vehicle}
-                        productionYearInfo={productionYearInfo}
-                        onTitleParamChange={handleTitleParamChange}
-                    />
+                    {/* Only show TitleSection for non-wheel/tyre listings */}
+                    {vehicle?.uniqueId !== 'wheels-tyres' && (
+                        <TitleSection
+                            formState={formState}
+                            setFormState={setFormState}
+                            onFormChange={handleFormChange}
+                            vehicle={vehicle}
+                            productionYearInfo={productionYearInfo}
+                            onTitleParamChange={handleTitleParamChange}
+                        />
+                    )}
 
                     <form
                         ref={formRef}

@@ -31,16 +31,25 @@ export function CategorySelect({
 }: CategorySelectProps) {
     const [isCategoryOpen, setIsCategoryOpen] = useState(false)
 
-    // Ensure wheel and tyre categories are always available
-    const allCategories = [...categories]
-    WHEEL_TYRE_CATEGORIES.forEach((wheelTyreCat) => {
-        if (!allCategories.some((cat) => cat.id === wheelTyreCat.id)) {
-            allCategories.push(wheelTyreCat)
-        }
-    })
+    // If we're in wheels/tyres mode (using default vehicle), only show wheel/tyre categories
+    const allCategories =
+        vehicle?.uniqueId === 'wheels-tyres'
+            ? WHEEL_TYRE_CATEGORIES
+            : [
+                  ...categories,
+                  ...WHEEL_TYRE_CATEGORIES.filter(
+                      (wheelTyreCat) =>
+                          !categories.some((cat) => cat.id === wheelTyreCat.id)
+                  ),
+              ]
 
     const getCategoryPlaceholder = () => {
         if (isCategoriesLoading) return 'Loading categories...'
+        if (vehicle?.uniqueId === 'wheels-tyres') {
+            return selectedCategory
+                ? selectedCategory.finalName
+                : 'Select Wheels/Tyres Category'
+        }
         if (!vehicle) return 'Enter vehicle registration first'
         if (!partDescription) return 'Enter part description first'
         return selectedCategory

@@ -46,6 +46,9 @@ export interface CreateListingParams {
     wheelMaterial?: string
     wheelBrand?: string
     pcd?: string
+    studDiameter?: string
+    offset?: string
+    wheelWidth?: string
     // Tyre-only fields
     tyreModel?: string
     treadDepth?: string

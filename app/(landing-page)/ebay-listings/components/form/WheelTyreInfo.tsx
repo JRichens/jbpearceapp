@@ -33,6 +33,19 @@ export function WheelTyreInfo({
             verificationResult: null,
         }))
     }
+
+    const handleStudsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        onFormChange(e)
+        // Auto-generate PCD when both studDiameter and numberOfStuds are available
+        if (e.target.value && formState.studDiameter) {
+            const pcdValue = `${e.target.value}x${formState.studDiameter}`
+            setFormState((prev) => ({
+                ...prev,
+                pcd: pcdValue,
+            }))
+        }
+    }
+
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -49,22 +62,6 @@ export function WheelTyreInfo({
                 </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="wheelDiameter">Wheel Diameter</Label>
-                    <Input
-                        id="wheelDiameter"
-                        name="wheelDiameter"
-                        type="number"
-                        min="14"
-                        max="22"
-                        value={formState.wheelDiameter || ''}
-                        onChange={onFormChange}
-                        placeholder="e.g., 17"
-                        required
-                    />
-                    <p className="text-xs text-muted-foreground">Required</p>
-                </div>
-
                 <div className="space-y-2">
                     <Label htmlFor="tyreWidth">Tyre Width</Label>
                     <Input
@@ -98,6 +95,52 @@ export function WheelTyreInfo({
                 </div>
 
                 <div className="space-y-2">
+                    <Label htmlFor="wheelDiameter">Wheel Diameter</Label>
+                    <Input
+                        id="wheelDiameter"
+                        name="wheelDiameter"
+                        type="number"
+                        min="14"
+                        max="22"
+                        value={formState.wheelDiameter || ''}
+                        onChange={onFormChange}
+                        placeholder="e.g., 17"
+                        required
+                    />
+                    <p className="text-xs text-muted-foreground">Required</p>
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="offset">Offset (ET)</Label>
+                    <Input
+                        id="offset"
+                        name="offset"
+                        type="number"
+                        min="-50"
+                        max="50"
+                        value={formState.offset || ''}
+                        onChange={onFormChange}
+                        placeholder="e.g., 35"
+                    />
+                    <p className="text-xs text-muted-foreground">Optional</p>
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="wheelWidth">Wheel Width</Label>
+                    <Input
+                        id="wheelWidth"
+                        name="wheelWidth"
+                        type="number"
+                        min="5"
+                        max="12"
+                        value={formState.wheelWidth || ''}
+                        onChange={onFormChange}
+                        placeholder="e.g., 8"
+                    />
+                    <p className="text-xs text-muted-foreground">Optional</p>
+                </div>
+
+                <div className="space-y-2">
                     <Label htmlFor="numberOfStuds">Number of Studs</Label>
                     <Input
                         id="numberOfStuds"
@@ -106,8 +149,33 @@ export function WheelTyreInfo({
                         min="2"
                         max="8"
                         value={formState.numberOfStuds || ''}
-                        onChange={onFormChange}
+                        onChange={handleStudsChange}
                         placeholder="e.g., 5"
+                    />
+                    <p className="text-xs text-muted-foreground">Optional</p>
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="studDiameter">Stud Diameter</Label>
+                    <Input
+                        id="studDiameter"
+                        name="studDiameter"
+                        type="number"
+                        min="80"
+                        max="200"
+                        value={formState.studDiameter || ''}
+                        onChange={(e) => {
+                            onFormChange(e)
+                            // Auto-generate PCD when both studDiameter and numberOfStuds are available
+                            if (e.target.value && formState.numberOfStuds) {
+                                const pcdValue = `${formState.numberOfStuds}x${e.target.value}`
+                                setFormState((prev) => ({
+                                    ...prev,
+                                    pcd: pcdValue,
+                                }))
+                            }
+                        }}
+                        placeholder="e.g., 130"
                     />
                     <p className="text-xs text-muted-foreground">Optional</p>
                 </div>
@@ -117,7 +185,10 @@ export function WheelTyreInfo({
                     <Input
                         id="centreBore"
                         name="centreBore"
-                        type="text"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="100"
                         value={formState.centreBore || ''}
                         onChange={onFormChange}
                         placeholder="e.g., 66.5"
@@ -126,7 +197,7 @@ export function WheelTyreInfo({
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="packageQuantity">Number of Items</Label>
+                    <Label htmlFor="packageQuantity">Package Quantity</Label>
                     <Input
                         id="packageQuantity"
                         name="packageQuantity"
@@ -144,7 +215,6 @@ export function WheelTyreInfo({
                 <div className="space-y-2">
                     <Label htmlFor="wheelMaterial">Wheel Material</Label>
                     <Select
-                        name="wheelMaterial"
                         value={formState.wheelMaterial || ''}
                         onValueChange={(value) => {
                             const event = {
@@ -174,24 +244,23 @@ export function WheelTyreInfo({
                         name="wheelBrand"
                         type="text"
                         value={formState.wheelBrand || ''}
-                        onChange={onFormChange}
+                        onChange={(e) => {
+                            const newEvent = {
+                                ...e,
+                                target: {
+                                    ...e.target,
+                                    value: e.target.value.toUpperCase(),
+                                },
+                            } as React.ChangeEvent<HTMLInputElement>
+                            onFormChange(newEvent)
+                        }}
                         placeholder="e.g., BMW"
                     />
                     <p className="text-xs text-muted-foreground">Optional</p>
                 </div>
 
-                <div className="space-y-2">
-                    <Label htmlFor="pcd">PCD (Pitch Circle Diameter)</Label>
-                    <Input
-                        id="pcd"
-                        name="pcd"
-                        type="text"
-                        value={formState.pcd || ''}
-                        onChange={onFormChange}
-                        placeholder="e.g., 5x114.3"
-                    />
-                    <p className="text-xs text-muted-foreground">Optional</p>
-                </div>
+                {/* Hidden PCD field that gets auto-populated */}
+                <input type="hidden" name="pcd" value={formState.pcd || ''} />
             </div>
         </div>
     )

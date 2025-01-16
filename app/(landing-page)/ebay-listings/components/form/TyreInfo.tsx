@@ -37,7 +37,16 @@ export function TyreInfo({
                         name="brand"
                         type="text"
                         value={formState.brand}
-                        onChange={onFormChange}
+                        onChange={(e) => {
+                            const newEvent = {
+                                ...e,
+                                target: {
+                                    ...e.target,
+                                    value: e.target.value.toUpperCase(),
+                                },
+                            } as React.ChangeEvent<HTMLInputElement>
+                            onFormChange(newEvent)
+                        }}
                         placeholder="e.g., Michelin"
                         required
                     />
@@ -51,7 +60,16 @@ export function TyreInfo({
                         name="tyreModel"
                         type="text"
                         value={formState.tyreModel}
-                        onChange={onFormChange}
+                        onChange={(e) => {
+                            const newEvent = {
+                                ...e,
+                                target: {
+                                    ...e.target,
+                                    value: e.target.value.toUpperCase(),
+                                },
+                            } as React.ChangeEvent<HTMLInputElement>
+                            onFormChange(newEvent)
+                        }}
                         placeholder="e.g., Pilot Sport 4"
                         required
                     />
@@ -170,7 +188,7 @@ export function TyreInfo({
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="unitQty">Number of Items</Label>
+                    <Label htmlFor="unitQty">Package Quantity</Label>
                     <Input
                         id="unitQty"
                         name="unitQty"

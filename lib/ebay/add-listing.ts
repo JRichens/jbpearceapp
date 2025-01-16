@@ -78,6 +78,9 @@ export async function addEbayListing(
             wheelMaterial,
             wheelBrand,
             pcd,
+            studDiameter,
+            offset,
+            wheelWidth,
             // Tyre-only fields
             tyreModel,
             treadDepth,
@@ -212,7 +215,7 @@ export async function addEbayListing(
         ) {
             itemSpecifics.push(`
                 <NameValueList>
-                    <Name>Number of Items</Name>
+                    <Name>Package Quantity</Name>
                     <Value>${escapeXml(
                         (category === '179680' ? unitQty : packageQuantity) ||
                             ''
@@ -221,28 +224,36 @@ export async function addEbayListing(
         }
 
         // Add wheel and tyre specifics if category is wheels/tyres
-        if (isWheelTyreCategory) {
-            if (wheelDiameter && parseFloat(wheelDiameter) > 0) {
-                itemSpecifics.push(`
-                    <NameValueList>
-                        <Name>Wheel Diameter</Name>
-                        <Value>${escapeXml(wheelDiameter)}</Value>
-                    </NameValueList>`)
-            }
-            if (tyreWidth && parseFloat(tyreWidth) > 0) {
-                itemSpecifics.push(`
-                    <NameValueList>
-                        <Name>Tyre Width</Name>
-                        <Value>${escapeXml(tyreWidth)}</Value>
-                    </NameValueList>`)
-            }
-            if (aspectRatio && parseFloat(aspectRatio) > 0) {
-                itemSpecifics.push(`
-                    <NameValueList>
-                        <Name>Aspect Ratio</Name>
-                        <Value>${escapeXml(aspectRatio)}</Value>
-                    </NameValueList>`)
-            }
+        if (category === '179681' || category === '179680') {
+            // Add specs in the same order as the input form
+            const specs = [
+                {
+                    name: 'Tyre Width',
+                    value: tyreWidth,
+                    condition: () => tyreWidth && parseFloat(tyreWidth) > 0,
+                },
+                {
+                    name: 'Aspect Ratio',
+                    value: aspectRatio,
+                    condition: () => aspectRatio && parseFloat(aspectRatio) > 0,
+                },
+                {
+                    name: 'Wheel Diameter',
+                    value: wheelDiameter,
+                    condition: () =>
+                        wheelDiameter && parseFloat(wheelDiameter) > 0,
+                },
+            ]
+
+            specs.forEach((spec) => {
+                if (spec.condition()) {
+                    itemSpecifics.push(`
+                        <NameValueList>
+                            <Name>${spec.name}</Name>
+                            <Value>${escapeXml(spec.value || '')}</Value>
+                        </NameValueList>`)
+                }
+            })
             // Add tyre-specific fields for category 179680
             if (category === '179680') {
                 const tyreSpecs: Spec[] = [
@@ -296,7 +307,20 @@ export async function addEbayListing(
 
             // Optional wheel/tyre specifics for category 179681
             if (category === '179681') {
+                // Add specs in the same order as the input form
                 const optionalSpecs: Spec[] = [
+                    {
+                        name: 'Offset',
+                        value: offset,
+                        condition: () =>
+                            Boolean(offset && !isNaN(parseFloat(offset))),
+                    },
+                    {
+                        name: 'Wheel Width',
+                        value: wheelWidth,
+                        condition: () =>
+                            Boolean(wheelWidth && parseFloat(wheelWidth) > 0),
+                    },
                     {
                         name: 'Number of Studs',
                         value: numberOfStuds,
@@ -306,10 +330,20 @@ export async function addEbayListing(
                             ),
                     },
                     {
+                        name: 'Stud Diameter',
+                        value: studDiameter ? `${studDiameter} mm` : '',
+                        condition: () =>
+                            Boolean(
+                                studDiameter && parseFloat(studDiameter) > 0
+                            ),
+                    },
+                    {
                         name: 'Centre Bore',
                         value: centreBore,
                         condition: () =>
-                            Boolean(centreBore && centreBore.trim() !== ''),
+                            Boolean(
+                                centreBore && !isNaN(parseFloat(centreBore))
+                            ),
                     },
                     {
                         name: 'Wheel Material',
@@ -493,12 +527,6 @@ export async function addEbayListing(
         </div>
         <div class="specs-grid">
             <div class="spec-item">
-                <span class="spec-label">Wheel Diameter</span>
-                <span class="spec-value">${escapeXml(
-                    wheelDiameter || ''
-                )}</span>
-            </div>
-            <div class="spec-item">
                 <span class="spec-label">Tyre Width</span>
                 <span class="spec-value">${escapeXml(tyreWidth || '')}</span>
             </div>
@@ -506,12 +534,45 @@ export async function addEbayListing(
                 <span class="spec-label">Aspect Ratio</span>
                 <span class="spec-value">${escapeXml(aspectRatio || '')}</span>
             </div>
+            <div class="spec-item">
+                <span class="spec-label">Wheel Diameter</span>
+                <span class="spec-value">${escapeXml(
+                    wheelDiameter || ''
+                )}</span>
+            </div>
+            ${
+                offset
+                    ? `
+            <div class="spec-item">
+                <span class="spec-label">Offset (ET)</span>
+                <span class="spec-value">${escapeXml(offset)}</span>
+            </div>`
+                    : ''
+            }
+            ${
+                wheelWidth
+                    ? `
+            <div class="spec-item">
+                <span class="spec-label">Wheel Width</span>
+                <span class="spec-value">${escapeXml(wheelWidth)}</span>
+            </div>`
+                    : ''
+            }
             ${
                 numberOfStuds
                     ? `
             <div class="spec-item">
                 <span class="spec-label">Number of Studs</span>
                 <span class="spec-value">${escapeXml(numberOfStuds)}</span>
+            </div>`
+                    : ''
+            }
+            ${
+                studDiameter
+                    ? `
+            <div class="spec-item">
+                <span class="spec-label">Stud Diameter</span>
+                <span class="spec-value">${escapeXml(studDiameter)} mm</span>
             </div>`
                     : ''
             }
@@ -525,7 +586,7 @@ export async function addEbayListing(
                     : ''
             }
             <div class="spec-item">
-                <span class="spec-label">Number of Items</span>
+                <span class="spec-label">Package Quantity</span>
                 <span class="spec-value">${escapeXml(
                     packageQuantity || ''
                 )}</span>

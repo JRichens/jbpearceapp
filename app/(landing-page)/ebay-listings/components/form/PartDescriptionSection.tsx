@@ -187,13 +187,54 @@ export const PartDescriptionSection = forwardRef<
                     searchByPartNumber: true,
                     activePartNumber: partNumber.trim(),
                 }))
-                setPageNumber(2)
+                // Only trigger compatibility search if not in wheels/tyres mode
+                if (!vehicle?.uniqueId?.startsWith('wheels-tyres')) {
+                    setPageNumber(2)
+                }
             }
         }
 
+        const createDefaultVehicle = (): Car => ({
+            uniqueId: 'wheels-tyres',
+            reg: 'N/A',
+            vinOriginalDvla: 'N/A',
+            dvlaMake: 'N/A',
+            dvlaModel: 'N/A',
+            dvlaYearOfManufacture: 'N/A',
+            modelSeries: 'N/A',
+            modelVariant: 'N/A',
+            nomCC: 'N/A',
+            colourCurrent: 'N/A',
+            originCountry: 'N/A',
+            weight: 'N/A',
+            euroStatus: 'N/A',
+            engineCode: 'N/A',
+            engineCapacity: 'N/A',
+            noCylinders: 'N/A',
+            fuelType: 'N/A',
+            transmission: 'N/A',
+            aspiration: 'N/A',
+            maxBHP: 'N/A',
+            maxTorque: 'N/A',
+            driveType: 'N/A',
+            gears: 'N/A',
+            vehicleCategory: 'N/A',
+            imageUrl: null,
+            exportVehicle: false,
+            addedToExport: null,
+            breakingVehicle: false,
+            addedToBreaking: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            enginePrice: 0,
+            paintCode: 'N/A',
+        })
+
+        // Only show RegForm if we have part description and number, and we're not in wheels/tyres mode
         const showRegForm =
             formState.partDescription.trim() !== '' &&
-            formState.partNumber.trim() !== ''
+            formState.partNumber.trim() !== '' &&
+            !vehicle?.uniqueId?.startsWith('wheels-tyres')
 
         return (
             <div className="space-y-3">
@@ -280,23 +321,52 @@ export const PartDescriptionSection = forwardRef<
                     )}
                 </div>
 
-                {showRegForm ? (
-                    <RegForm
-                        setVehicle={(value: SetStateAction<Car | null>) => {
-                            if (typeof value === 'function') {
-                                setVehicle(value)
-                                setHasSearchedVehicle(true)
-                            } else {
-                                handleVehicleChange(value)
-                            }
-                        }}
-                        autoFocus={false}
-                    />
-                ) : (
-                    <p className="ml-2 text-sm text-muted-foreground">
-                        Enter part description and part number
-                    </p>
-                )}
+                <div className="space-y-4">
+                    {/* Show Wheels/Tyres button if part description is entered and no vehicle is selected */}
+                    {formState.partDescription.trim() !== '' && !vehicle && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="lg"
+                            onClick={() => {
+                                handleVehicleChange(createDefaultVehicle())
+                                setFormState((prev) => ({
+                                    ...prev,
+                                    showCarInfo: false, // Ensure car info is hidden by default
+                                    partNumbers: ['NA'], // Set part number to NA
+                                    partNumber: 'NA',
+                                }))
+                            }}
+                            className="w-full"
+                        >
+                            Wheels / Tyres
+                        </Button>
+                    )}
+
+                    {showRegForm && (
+                        <div>
+                            <RegForm
+                                setVehicle={(
+                                    value: SetStateAction<Car | null>
+                                ) => {
+                                    if (typeof value === 'function') {
+                                        setVehicle(value)
+                                        setHasSearchedVehicle(true)
+                                    } else {
+                                        handleVehicleChange(value)
+                                    }
+                                }}
+                                autoFocus={false}
+                            />
+                        </div>
+                    )}
+
+                    {!showRegForm && !vehicle && (
+                        <p className="ml-2 text-sm text-muted-foreground">
+                            Enter part description and part number
+                        </p>
+                    )}
+                </div>
 
                 {vehicle && (
                     <ProductionYearInfo

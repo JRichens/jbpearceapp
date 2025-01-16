@@ -43,9 +43,16 @@ export function useListingForm() {
             }))
 
             // If we have both vehicle and part description, fetch categories only on initial vehicle set
+            // Skip compatibility search for wheels/tyres mode
             if (formState.partDescription && !hasInitializedCategories) {
-                const searchTerm = `${vehicle.dvlaMake} ${formState.partDescription}`
-                fetchCategories(searchTerm)
+                if (!vehicle.uniqueId?.startsWith('wheels-tyres')) {
+                    const searchTerm = `${vehicle.dvlaMake} ${formState.partDescription}`
+                    fetchCategories(searchTerm)
+                } else {
+                    // For wheels/tyres, directly set the category without searching
+                    const wheelTyreCategory = WHEEL_TYRE_CATEGORIES[0] // Default to first category (Wheels with Tyres)
+                    handleCategoryChange(wheelTyreCategory.id)
+                }
                 setHasInitializedCategories(true)
             }
         }
@@ -53,7 +60,12 @@ export function useListingForm() {
 
     // Separate effect for production year - only fetch on initial vehicle set
     useEffect(() => {
-        if (vehicle && formState.partDescription && !hasInitializedCategories) {
+        if (
+            vehicle &&
+            formState.partDescription &&
+            !hasInitializedCategories &&
+            !vehicle.uniqueId?.startsWith('wheels-tyres')
+        ) {
             fetchProductionYear()
         }
     }, [vehicle, hasInitializedCategories])
