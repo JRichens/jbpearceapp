@@ -75,16 +75,22 @@ export const PartDescriptionSection = forwardRef<
         }))
 
         const handleVehicleChange = (newVehicle: Car | null) => {
-            // Only set brand and make if it's not a wheels/tyres vehicle
-            if (
-                newVehicle?.dvlaMake &&
-                !newVehicle.uniqueId?.startsWith('wheels-tyres')
-            ) {
-                setFormState((prevForm: FormState) => ({
-                    ...prevForm,
-                    brand: newVehicle.dvlaMake || '',
-                    make: newVehicle.dvlaMake || '',
-                }))
+            if (newVehicle) {
+                // Only set brand and make if it's not a wheels/tyres vehicle
+                if (!newVehicle.uniqueId?.startsWith('wheels-tyres')) {
+                    setFormState((prevForm: FormState) => ({
+                        ...prevForm,
+                        brand: newVehicle.dvlaMake || '',
+                        make: newVehicle.dvlaMake || '',
+                    }))
+                } else {
+                    // For wheels/tyres, don't set any brand
+                    setFormState((prevForm: FormState) => ({
+                        ...prevForm,
+                        brand: '',
+                        make: '',
+                    }))
+                }
             }
             setVehicle(newVehicle)
             setHasSearchedVehicle(true)

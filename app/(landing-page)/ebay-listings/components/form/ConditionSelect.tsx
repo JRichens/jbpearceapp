@@ -23,22 +23,31 @@ const CONDITION_DESCRIPTIONS = [
     {
         id: '2',
         description:
-            '☑️ Reasonable condition for age. Some marks. Please see photos.',
+            '✅ Good condition, pressure tested, no repairs / side wall damage',
     },
     {
         id: '3',
-        description:
-            '☑️ Reasonable condition for age. Some minor scratches. Please see photos.',
+        description: '☑️ Reasonable condition for age',
     },
     {
         id: '4',
         description:
+            '☑️ Reasonable condition for age. Some marks. Please see photos.',
+    },
+    {
+        id: '5',
+        description:
+            '☑️ Reasonable condition for age. Some minor scratches. Please see photos.',
+    },
+    {
+        id: '6',
+        description:
             '☑️ Reasonable condition for age. Some minor scratches and dents. Please see photos.',
     },
-    { id: '5', description: '⚠️ Some scratches and dents. Please see photos' },
-    { id: '6', description: '⚠️ Damaged. Please see photos' },
+    { id: '7', description: '⚠️ Some scratches and dents. Please see photos' },
+    { id: '8', description: '⚠️ Damaged. Please see photos' },
     {
-        id: '7',
+        id: '9',
         description: '⚠️ Damaged, but still working. Please see photos',
     },
 ]
