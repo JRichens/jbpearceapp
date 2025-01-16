@@ -11,6 +11,7 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 import { FormState } from '../../types/listingTypes'
+import { toast } from 'sonner'
 
 interface WheelTyreInfoProps {
     formState: FormState
@@ -26,6 +27,11 @@ export function WheelTyreInfo({
     setFormState,
 }: WheelTyreInfoProps) {
     const handleShowCarInfoChange = (checked: boolean) => {
+        if (checked && !formState.vehicle) {
+            toast.error('Please enter a vehicle registration first')
+            return
+        }
+
         setFormState((prev) => ({
             ...prev,
             showCarInfo: checked,
@@ -116,8 +122,8 @@ export function WheelTyreInfo({
                         id="offset"
                         name="offset"
                         type="number"
-                        min="-50"
-                        max="50"
+                        min="-80"
+                        max="80"
                         value={formState.offset || ''}
                         onChange={onFormChange}
                         placeholder="e.g., 35"

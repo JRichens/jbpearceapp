@@ -75,7 +75,11 @@ export const PartDescriptionSection = forwardRef<
         }))
 
         const handleVehicleChange = (newVehicle: Car | null) => {
-            if (newVehicle?.dvlaMake) {
+            // Only set brand and make if it's not a wheels/tyres vehicle
+            if (
+                newVehicle?.dvlaMake &&
+                !newVehicle.uniqueId?.startsWith('wheels-tyres')
+            ) {
                 setFormState((prevForm: FormState) => ({
                     ...prevForm,
                     brand: newVehicle.dvlaMake || '',
@@ -335,6 +339,9 @@ export const PartDescriptionSection = forwardRef<
                                     showCarInfo: false, // Ensure car info is hidden by default
                                     partNumbers: ['NA'], // Set part number to NA
                                     partNumber: 'NA',
+                                    tyreModel: '', // Initialize tyreModel as empty string
+                                    brand: '', // Initialize brand as empty string
+                                    dotDateCode: '', // Initialize dotDateCode as empty string
                                 }))
                             }}
                             className="w-full"

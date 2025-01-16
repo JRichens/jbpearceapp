@@ -34,13 +34,21 @@ export function useListingForm() {
     // Effect to update form state when vehicle changes
     useEffect(() => {
         if (vehicle) {
-            setFormState((prev) => ({
-                ...prev,
-                vehicle,
-                brand: vehicle.dvlaMake || '',
-                make: vehicle.dvlaMake || '',
-                wheelBrand: vehicle.dvlaMake || '',
-            }))
+            // Only set brand/make from vehicle if not in wheels/tyres mode
+            if (!vehicle.uniqueId?.startsWith('wheels-tyres')) {
+                setFormState((prev) => ({
+                    ...prev,
+                    vehicle,
+                    brand: vehicle.dvlaMake || '',
+                    make: vehicle.dvlaMake || '',
+                    wheelBrand: vehicle.dvlaMake || '',
+                }))
+            } else {
+                setFormState((prev) => ({
+                    ...prev,
+                    vehicle,
+                }))
+            }
 
             // If we have both vehicle and part description, fetch categories only on initial vehicle set
             // Skip compatibility search for wheels/tyres mode

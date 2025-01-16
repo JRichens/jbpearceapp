@@ -38,14 +38,13 @@ export function TyreInfo({
                         type="text"
                         value={formState.brand}
                         onChange={(e) => {
-                            const newEvent = {
-                                ...e,
+                            const event = {
                                 target: {
-                                    ...e.target,
+                                    name: e.target.name,
                                     value: e.target.value.toUpperCase(),
                                 },
                             } as React.ChangeEvent<HTMLInputElement>
-                            onFormChange(newEvent)
+                            onFormChange(event)
                         }}
                         placeholder="e.g., Michelin"
                         required
@@ -61,14 +60,13 @@ export function TyreInfo({
                         type="text"
                         value={formState.tyreModel}
                         onChange={(e) => {
-                            const newEvent = {
-                                ...e,
+                            const event = {
                                 target: {
-                                    ...e.target,
+                                    name: e.target.name,
                                     value: e.target.value.toUpperCase(),
                                 },
                             } as React.ChangeEvent<HTMLInputElement>
-                            onFormChange(newEvent)
+                            onFormChange(event)
                         }}
                         placeholder="e.g., Pilot Sport 4"
                         required
