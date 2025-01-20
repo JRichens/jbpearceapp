@@ -68,7 +68,11 @@ export default function Page() {
 
     const renderDetailPanel = ({ row }: { row: any }) => {
         const detailColumns = [
-            { header: 'Part Description', accessorKey: 'partDescription' },
+            {
+                header: 'Part Description',
+                accessorKey: 'partDescription',
+                size: 350,
+            },
             {
                 header: 'Listed By',
                 accessorKey: 'user.name',
@@ -77,27 +81,35 @@ export default function Page() {
             {
                 header: 'Price Listed',
                 accessorKey: 'priceListed',
-                size: 80,
+                size: 50,
                 Cell: ({ cell }: { cell: any }) =>
                     `£${cell.getValue().toFixed(2)}`,
             },
             {
-                header: 'Time Listed',
-                accessorKey: 'dateListed',
-                Cell: ({ cell }: { cell: any }) =>
-                    moment(cell.getValue()).fromNow(),
-            },
-            {
                 header: 'Price Sold',
                 accessorKey: 'priceSold',
+                size: 50,
                 Cell: ({ cell }: { cell: any }) =>
                     cell.getValue()
                         ? `£${cell.getValue().toFixed(2)}`
                         : 'Not sold',
             },
             {
+                header: 'Time Listed',
+                accessorKey: 'dateListed',
+                size: 50,
+                Cell: ({ row }: { row: any }) => {
+                    const dateListed = moment(row.original.dateListed)
+                    const endDate = row.original.dateSold
+                        ? moment(row.original.dateSold)
+                        : moment()
+                    return moment.duration(endDate.diff(dateListed)).humanize()
+                },
+            },
+            {
                 header: 'Date Sold',
                 accessorKey: 'dateSold',
+                size: 100,
                 Cell: ({ cell }: { cell: any }) =>
                     cell.getValue()
                         ? moment(cell.getValue()).format('DD/MM/YYYY HH:mm')
@@ -105,6 +117,7 @@ export default function Page() {
             },
             {
                 header: 'Actions',
+                size: 50,
                 Cell: ({ row }: { row: any }) => (
                     <Button
                         onClick={() =>
