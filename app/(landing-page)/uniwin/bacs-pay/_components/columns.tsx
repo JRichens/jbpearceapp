@@ -2,10 +2,15 @@
 
 import { ColumnDef } from '@tanstack/react-table'
 import { UnPaidTickets } from '@/types/uniwindata'
+import { Checkbox } from '@/components/ui/checkbox'
 
 import PaidCell from './paid-cell'
 
-export const columns: ColumnDef<UnPaidTickets>[] = [
+export const createColumns = (
+    onBulkPaidChange: (checked: boolean) => void,
+    bulkChecked: boolean,
+    isBulkUpdating: boolean
+): ColumnDef<UnPaidTickets>[] => [
     {
         accessorKey: 'number17',
         header: 'Date',
@@ -111,7 +116,21 @@ export const columns: ColumnDef<UnPaidTickets>[] = [
     },
     {
         accessorKey: 'logical22',
-        header: 'Paid',
-        cell: ({ cell }) => <PaidCell cell={cell} />,
+        header: ({ table }) => (
+            <div className="flex items-center justify-center mr-2">
+                <Checkbox
+                    checked={bulkChecked}
+                    onCheckedChange={onBulkPaidChange}
+                    disabled={isBulkUpdating}
+                />
+            </div>
+        ),
+        cell: ({ cell }) => (
+            <PaidCell
+                cell={cell}
+                bulkChecked={bulkChecked}
+                isBulkUpdating={isBulkUpdating}
+            />
+        ),
     },
 ]

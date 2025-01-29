@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/card'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { UnPaidTickets } from '@/types/uniwindata'
-import { columns } from './_components/columns'
+import { createColumns } from './_components/columns'
 import { DataTable } from './_components/data-table'
 import { NavMenu } from '../nav-menu'
 import { Separator } from '@/components/ui/separator'
@@ -55,7 +55,14 @@ const ReconcileBank = () => {
                         </div>
                     </div>
 
-                    <DataTablePrint columns={columns} data={unPaidTickets} />
+                    <DataTablePrint
+                        columns={createColumns(() => {}, false, false).filter(
+                            (col) =>
+                                (col as { accessorKey?: string })
+                                    .accessorKey !== 'logical22'
+                        )}
+                        data={unPaidTickets}
+                    />
                 </div>
             )
         }
@@ -66,6 +73,8 @@ const ReconcileBank = () => {
     const [isPending, startTransition] = useTransition()
     const [initials, setInitials] = useState('')
     const [initialsDialog, setInitialsDialog] = useState(false)
+    const [bulkChecked, setBulkChecked] = useState(false)
+    const [isBulkUpdating, setIsBulkUpdating] = useState(false)
 
     const [date, setDate] = React.useState<DateRange | undefined>({
         from: addDays(new Date(), -7),
@@ -221,6 +230,52 @@ const ReconcileBank = () => {
 
     const componentRef = React.useRef<ComponentToPrint | null>(null)
 
+    const handleBulkPaidChange = async (checked: boolean) => {
+        setIsBulkUpdating(true)
+        setBulkChecked(checked)
+
+        // Convert current date to Excel date format
+        const today = Math.floor(
+            (new Date().getTime() - new Date(1899, 11, 30).getTime()) / 86400000
+        ).toString()
+
+        const user = await GetUser()
+
+        try {
+            // Update all visible tickets
+            const updatePromises = unPaidTickets.map((ticket) =>
+                fetch(
+                    `https://genuine-calf-newly.ngrok-free.app/unPaidTickets?ticketNo=${
+                        ticket.ticket2
+                    }&paid=${checked ? 1 : 0}&initials=${
+                        user?.initials
+                    }&date=${today}&bank=BACS`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'ngrok-skip-browser-warning': '69420',
+                            'Content-Type': 'application/json',
+                        },
+                    }
+                )
+            )
+
+            await Promise.all(updatePromises)
+            console.log('Bulk update completed successfully')
+        } catch (error) {
+            console.error('Failed to complete bulk update:', error)
+            setBulkChecked(false)
+        } finally {
+            setIsBulkUpdating(false)
+        }
+    }
+
+    const columns = createColumns(
+        handleBulkPaidChange,
+        bulkChecked,
+        isBulkUpdating
+    )
+
     return (
         <>
             <Card className="max-w-5xl w-[92vw] mx-[4vw] mb-4">
@@ -335,6 +390,9 @@ const ReconcileBank = () => {
                             <div className="absolute bg-white text-sm -top-[10px] left-2">
                                 Initials
                             </div>
+                        </div>
+                        <div className="w-[200px] flex flex-row items-center justify-end">
+                            <p className="pt-4">Tick All</p>
                         </div>
                     </div>
 
