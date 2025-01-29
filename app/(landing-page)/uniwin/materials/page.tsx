@@ -15,7 +15,7 @@ import { Separator } from '@/components/ui/separator'
 import { format } from 'date-fns'
 import ReactToPrint from 'react-to-print'
 import { Button } from '@/components/ui/button'
-import { PrinterIcon } from 'lucide-react'
+import { PrinterIcon, ArrowUpDown } from 'lucide-react'
 import { Materials } from '@/types/uniwindata'
 import MaterialsComponent from './table'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -106,7 +106,11 @@ const getMaterialCategory = (code: string): string => {
 }
 
 // Sorting function
-const sortMaterials = (a: Materials, b: Materials): number => {
+const sortMaterials = (
+    a: Materials,
+    b: Materials,
+    useAlphaSort: boolean
+): number => {
     const aCategory = getMaterialCategory(a.code)
     const bCategory = getMaterialCategory(b.code)
 
@@ -127,6 +131,11 @@ const sortMaterials = (a: Materials, b: Materials): number => {
         if (aCategory === 'other') return -1
         if (bCategory === 'other') return 1
         return 0
+    }
+
+    // If alpha sort is enabled and categories are the same, sort by description
+    if (useAlphaSort) {
+        return a.string24.localeCompare(b.string24)
     }
 
     const aMatchingCode = getMatchingCode(a.code)
@@ -195,6 +204,16 @@ const fetcher = (url: string) =>
     }).then((res) => res.json())
 
 const MaterialsPage = () => {
+    const [isAlphaSort, setIsAlphaSort] = React.useState(false)
+
+    // Load sort preference from localStorage on mount
+    React.useEffect(() => {
+        const savedSort = localStorage.getItem('materialsAlphaSort')
+        if (savedSort !== null) {
+            setIsAlphaSort(JSON.parse(savedSort))
+        }
+    }, [])
+
     const { data, isLoading, error } = useSWR<Materials[]>(
         'https://genuine-calf-newly.ngrok-free.app/materials',
         fetcher
@@ -202,13 +221,22 @@ const MaterialsPage = () => {
 
     const [tableData, setTableData] = React.useState<Materials[]>([])
 
+    // Toggle alpha sort and save to localStorage
+    const toggleAlphaSort = () => {
+        const newValue = !isAlphaSort
+        setIsAlphaSort(newValue)
+        localStorage.setItem('materialsAlphaSort', JSON.stringify(newValue))
+    }
+
     useEffect(() => {
         if (data) {
             // Sort the data before setting it to state
-            const sortedData = [...data].sort(sortMaterials)
+            const sortedData = [...data].sort((a, b) =>
+                sortMaterials(a, b, isAlphaSort)
+            )
             setTableData(sortedData)
         }
-    }, [data])
+    }, [data, isAlphaSort])
 
     const ComponentToPrint = React.forwardRef<HTMLDivElement>((_, ref) => (
         <div ref={ref}>
@@ -232,7 +260,7 @@ const MaterialsPage = () => {
                     Adjust selling prices here to automatically calculate paying
                     value
                 </CardDescription>
-                <div>
+                <div className="flex gap-2">
                     <ReactToPrint
                         trigger={() => (
                             <Button variant="outline">
@@ -243,6 +271,14 @@ const MaterialsPage = () => {
                         content={() => componentRef.current}
                         pageStyle={`@page {size: 210mm 297mm; margin: 30;}`}
                     />
+                    <Button
+                        variant="outline"
+                        onClick={toggleAlphaSort}
+                        className={isAlphaSort ? 'bg-slate-200' : ''}
+                    >
+                        <ArrowUpDown className="w-4 h-4 mr-2" />
+                        A-Z Sort
+                    </Button>
                     <div style={{ display: 'none' }}>
                         <ComponentToPrint ref={componentRef} />
                     </div>
