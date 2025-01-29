@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getElementText, getElementNumber } from '@/lib/ebay/utils'
 
+export const dynamic = 'force-dynamic'
+
 async function getItemDetails(itemId: string) {
     try {
         const response = await fetch('https://api.ebay.com/ws/api.dll', {

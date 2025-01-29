@@ -391,7 +391,7 @@ const ReconcileBank = () => {
                                 Initials
                             </div>
                         </div>
-                        <div className="w-[200px] flex flex-row items-center justify-end">
+                        <div className="w-[190px] flex flex-row items-center justify-end">
                             <p className="pt-4">Tick All</p>
                         </div>
                     </div>
