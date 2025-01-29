@@ -493,9 +493,7 @@ const NewAccount = () => {
                                             variant="outlined"
                                             fullWidth
                                             value={formValues.fullName}
-                                            onChange={handleInputChange(
-                                                'fullName'
-                                            )}
+                                            disabled={true}
                                             placeholder="Full Name"
                                         />
                                         <TextField
