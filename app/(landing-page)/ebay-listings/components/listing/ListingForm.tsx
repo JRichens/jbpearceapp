@@ -88,7 +88,7 @@ export function ListingForm() {
             )}
 
             {/* Sticky Switch Page Button - Only shown when category is selected */}
-            {formState.selectedCategory && (
+            {false && (
                 <motion.div
                     initial={{ opacity: 0, y: 40, scale: 0.3 }}
                     animate={{

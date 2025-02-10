@@ -1,27 +1,17 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-
 import { Car } from '@prisma/client'
-
 import {
     WebScrape,
     WebScrapeCountListings,
     WebScrapeAnalyseItems,
-    WebScrapeIndividualItems,
 } from '@/actions/webscrape'
-
 import { askClaude } from '@/actions/claude-ai/askClaude'
-
 import Typewriter from 'typewriter-effect'
-
-import { format, parseISO } from 'date-fns'
-
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
     Table,
     TableBody,
-    TableCaption,
     TableCell,
     TableHead,
     TableHeader,
@@ -32,85 +22,10 @@ import { Form } from '../_components/reg-form'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Progress } from '@/components/ui/progress'
-import { AlertTriangle, Bot, Brain, Lightbulb, Loader2 } from 'lucide-react'
+import { AlertTriangle, Bot, Lightbulb, Loader2 } from 'lucide-react'
 import { ThreeCircles } from 'react-loader-spinner'
 import { cn } from '@/lib/utils'
 
-function calculatePercentile(arr: number[], percentile: number): number {
-    const sorted = arr.slice().sort((a, b) => a - b)
-    const index = (percentile / 100) * (sorted.length - 1)
-    const lower = Math.floor(index)
-    const upper = Math.ceil(index)
-    const weight = index % 1
-
-    if (upper === lower) return sorted[index]
-    return sorted[lower] * (1 - weight) + sorted[upper] * weight
-}
-
-function roundToNearest5(value: number): number {
-    return Math.round(value / 5) * 5
-}
-
-// Helper function to calculate months difference
-function calculateMonthsDifference(dateFrom: Date, dateTo: Date): number {
-    const yearsDifference = dateTo.getFullYear() - dateFrom.getFullYear()
-    const monthsDifference = dateTo.getMonth() - dateFrom.getMonth()
-    return yearsDifference * 12 + monthsDifference + 1 // Add 1 to include both start and end months
-}
-
-function processData(input: InputItem[]): OutputItem[] {
-    return input
-        .filter((item) => item.data.length > 0)
-        .map((item) => {
-            const dates = item.data.map((d) => new Date(d.soldDate))
-            const prices = item.data.map((d) =>
-                parseFloat(d.soldPrice.replace(/[£,]/g, ''))
-            )
-
-            const dateFrom = new Date(
-                Math.min(...dates.map((d) => d.getTime()))
-            )
-            const dateTo = new Date(Math.max(...dates.map((d) => d.getTime())))
-
-            // Calculate average sales per month
-            const monthsDifference = calculateMonthsDifference(dateFrom, dateTo)
-            const averageSalesPerMonth =
-                monthsDifference > 0
-                    ? item.data.length / monthsDifference
-                    : item.data.length // If less than a month, return total sales
-
-            return {
-                itemName: item.itemName,
-                itemCategory: item.category,
-                dateFrom: dateFrom.toISOString().split('T')[0],
-                dateTo: dateTo.toISOString().split('T')[0],
-                priceFrom: roundToNearest5(calculatePercentile(prices, 20)),
-                priceTo: roundToNearest5(calculatePercentile(prices, 80)),
-                count: item.data.length,
-                monthly: Math.round(averageSalesPerMonth),
-            }
-        })
-}
-
-interface InputItem {
-    itemName: string
-    category: string
-    data: {
-        title: string
-        soldPrice: string
-        soldDate: string
-    }[]
-}
-interface OutputItem {
-    itemName: string
-    itemCategory: string
-    dateFrom: string
-    dateTo: string
-    priceFrom: number
-    priceTo: number
-    count: number
-    monthly: number
-}
 type AIeBayItem = {
     item: string
     avg_price: string
@@ -136,12 +51,6 @@ const EbayVehicleSearch = () => {
     const [carScrappedObject, setcarScrappedObject] =
         useState<AIeBayResponse | null>(null)
     const [numberOfListings, setNumberOfListings] = useState('')
-    const [deepScraping, setDeepScraping] = useState(false)
-    const [deepScrappedObject, setdeepScrappedObject] = useState<OutputItem[]>(
-        []
-    )
-    const [totalDeepScraped, setTotalDeepScraped] = useState(0)
-    const [currentTab, setCurrentTab] = useState('aiscrape')
     const [progressDescription, setProgressDescription] = useState('')
     const [progressValue, setProgressValue] = useState(0)
     const [colorClass, setColorClass] = useState('')
@@ -153,7 +62,6 @@ const EbayVehicleSearch = () => {
                 setcarScrappedObject(parsedData)
                 setCarScrappeAccumulation('') // Clear the accumulator
                 setCarTableBuilding(false)
-                setCurrentTab('aiscrape')
             } catch (error) {
                 // If parsing fails, it means we don't have the complete JSON yet
                 console.log('Accumulating JSON data...')
@@ -231,7 +139,6 @@ const EbayVehicleSearch = () => {
     }, [numberOfListings])
 
     const openEbayUrl = () => {
-        //https://www.ebay.co.uk/sch/131090/i.html?_from=R40&_nkw=FORD%20KUGA%20MK1%202009&_fsrp=1&LH_Complete=1&LH_Sold=1&LH_ItemCondition=4&_ipg=240&rt=nc&_udlo=40
         const url = `https://www.ebay.co.uk/sch/131090/i.html?_from=R40&_nkw=${searchInput}&_fsrp=1&LH_Complete=1&LH_Sold=1&LH_ItemCondition=4&_ipg=240&rt=nc&_udlo=40`
         window.open(url, '_blank')
     }
@@ -266,76 +173,14 @@ const EbayVehicleSearch = () => {
                 scrapedData.length.toString()
             )
 
-            // const response = await fetch('/api/anthropic-stream', {
-            //     method: 'POST',
-            //     headers: {
-            //         'Content-Type': 'application/json',
-            //     },
-            //     body: JSON.stringify({
-            //         content: scrapedData,
-            //         vehicleSearchTerm: searchInput,
-            //         totalItems: scrapedData.length,
-            //     }),
-            // })
-
-            // if (!response.ok) {
-            //     throw new Error(`HTTP error! status: ${response.status}`)
-            // }
-
-            // const reader = response.body?.getReader()
-            // if (!reader) {
-            //     throw new Error('Response body is not readable')
-            // }
-
-            // const decoder = new TextDecoder()
-            // let done = false
-
             setCarScraping(false)
             setCarTableBuilding(true)
             setCarScrappeAccumulation(response)
-
-            // while (!done) {
-            //     const { value, done: readerDone } = await reader.read()
-            //     done = readerDone
-            //     if (value) {
-            //         const newData = decoder.decode(value)
-            //         setCarScrappeAccumulation((prev) => prev + newData)
-            //     }
-            // }
         } catch (error) {
             console.error('Error in carAnalysis:', error)
             setCarScraping(false)
             setCarTableBuilding(false)
         }
-    }
-
-    const deepAnalysis = async (e: React.MouseEvent<HTMLButtonElement>) => {
-        e.preventDefault()
-        setDeepScraping(true)
-        console.log(
-            '### Deep Scraping Started ###',
-            new Date().toLocaleString()
-        )
-        const deepScrapedData = await WebScrapeIndividualItems(searchInput)
-        console.log(
-            '### Deep Scraping Complete ###',
-            new Date().toLocaleString()
-        )
-
-        const totalItems = deepScrapedData.reduce(
-            (sum, item) => sum + item.data.length,
-            0
-        )
-
-        setTotalDeepScraped(totalItems)
-
-        console.log('Total deep items:', totalItems)
-
-        // Create an object with the data
-        const processedData = processData(deepScrapedData)
-        setdeepScrappedObject(processedData)
-        setCurrentTab('deepscrape')
-        setDeepScraping(false)
     }
 
     const handleClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -414,7 +259,7 @@ const EbayVehicleSearch = () => {
                         <Input
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
-                            className="w-[375px]"
+                            className="w-full md:max-w-[375px]"
                         />
 
                         <div className="flex flex-row gap-4 mt-2 items-center">
@@ -435,152 +280,47 @@ const EbayVehicleSearch = () => {
                                     </>
                                 )}
                             </Button>
-                            <Button
-                                disabled={listCounting}
-                                onClick={deepAnalysis}
-                                className="w-36"
-                            >
-                                {deepScraping ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                    <>
-                                        <Brain className="mr-2 h-5 w-5" />
-                                        Deep Scrape
-                                    </>
-                                )}
-                            </Button>
-                            <div className="flex flex-row gap-2 items-center">
-                                <AlertTriangle className="h-10 w-10" /> Takes up
-                                to 2 mins!
-                            </div>
                         </div>
                     </div>
                 )}
                 <div className="pt-3"></div>
-                {/* Render the HTML passed from the server action */}
+                {/* Render the AI analysis table */}
                 {vehicle && (
-                    <Tabs
-                        defaultValue="aiscrape"
-                        className="w-full"
-                        onValueChange={setCurrentTab}
-                        value={currentTab}
-                    >
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="aiscrape">
-                                AI Scrape
-                            </TabsTrigger>
-                            <TabsTrigger value="deepscrape">
-                                {`Deep Scrape ${
-                                    totalDeepScraped > 0
-                                        ? `(${totalDeepScraped})`
-                                        : ''
-                                }`}
-                            </TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="aiscrape">
-                            {carTableBuilding && (
-                                <div className="w-full flex flex-col items-center pt-4">
-                                    <Typewriter
-                                        onInit={(typewriter) => {
-                                            typewriter
-                                                .typeString(
-                                                    `Building table of analysis..`
-                                                )
-                                                .pauseFor(3000)
-                                                .deleteAll()
-                                                .typeString(`Please wait..`)
-                                                .pauseFor(30000)
-                                                .start()
-                                        }}
-                                    />
-                                    <div className="w-full flex flex-col items-center pt-3">
-                                        <ThreeCircles color="#d3c22a" />
-                                    </div>
+                    <>
+                        {carTableBuilding && (
+                            <div className="w-full flex flex-col items-center pt-4">
+                                <Typewriter
+                                    onInit={(typewriter) => {
+                                        typewriter
+                                            .typeString(
+                                                `Building table of analysis..`
+                                            )
+                                            .pauseFor(3000)
+                                            .deleteAll()
+                                            .typeString(`Please wait..`)
+                                            .pauseFor(30000)
+                                            .start()
+                                    }}
+                                />
+                                <div className="w-full flex flex-col items-center pt-3">
+                                    <ThreeCircles color="#d3c22a" />
                                 </div>
-                            )}
-                            {carScrappedObject && (
-                                <div className="overflow-x-auto">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Item</TableHead>
-                                                <TableHead>
-                                                    Average Price
-                                                </TableHead>
-                                                <TableHead>Frequency</TableHead>
-                                                <TableHead>Count</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {carScrappedObject.items
-                                                .sort(
-                                                    (a, b) => b.count - a.count
-                                                )
-                                                .map((item, index) => (
-                                                    <TableRow
-                                                        key={index}
-                                                        className=""
-                                                    >
-                                                        <TableCell className="font-medium py-0">
-                                                            <Button
-                                                                variant={
-                                                                    'secondary'
-                                                                }
-                                                                className="m-w"
-                                                                onClick={() => {
-                                                                    // Open another browser window linking to the item
-                                                                    // https://www.ebay.co.uk/sch/131090/i.html?_from=R40&_nkw=${searchInput} ${item.item}&_fsrp=1&LH_Complete=1&LH_Sold=1&LH_ItemCondition=4&_ipg=240&rt=nc&_udlo=40
-                                                                    window.open(
-                                                                        `https://www.ebay.co.uk/sch/131090/i.html?_from=R40&_nkw=${searchInput} ${item.item}&_fsrp=1&LH_Complete=1&LH_Sold=1&LH_ItemCondition=4&_ipg=240&rt=nc&_udlo=40`,
-                                                                        '_blank'
-                                                                    )
-                                                                }}
-                                                            >
-                                                                {item.item}
-                                                            </Button>
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            {item.avg_price}
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            {item.frequency}
-                                                        </TableCell>
-                                                        <TableCell
-                                                            className={
-                                                                item.frequency ===
-                                                                'Very High'
-                                                                    ? 'font-semibold'
-                                                                    : ''
-                                                            }
-                                                        >
-                                                            {item.count}
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                            )}
-                        </TabsContent>
-                        <TabsContent value="deepscrape">
+                            </div>
+                        )}
+                        {carScrappedObject && (
                             <div className="overflow-x-auto">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>Item</TableHead>
-                                            <TableHead className="w-48">
-                                                Dates
-                                            </TableHead>
-                                            <TableHead>Price Range</TableHead>
+                                            <TableHead>Average Price</TableHead>
+                                            <TableHead>Frequency</TableHead>
                                             <TableHead>Count</TableHead>
-                                            <TableHead>Monthly</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {deepScrappedObject
-                                            .sort(
-                                                (a, b) => b.monthly - a.monthly
-                                            )
+                                        {carScrappedObject.items
+                                            .sort((a, b) => b.count - a.count)
                                             .map((item, index) => (
                                                 <TableRow
                                                     key={index}
@@ -593,50 +333,38 @@ const EbayVehicleSearch = () => {
                                                             }
                                                             className="m-w"
                                                             onClick={() => {
-                                                                // Open another browser window linking to the item
-                                                                // https://www.ebay.co.uk/sch/131090/i.html?_from=R40&_nkw=${searchInput} ${item.item}&_fsrp=1&LH_Complete=1&LH_Sold=1&LH_ItemCondition=4&_ipg=240&rt=nc&_udlo=40
                                                                 window.open(
-                                                                    `https://www.ebay.co.uk/sch/${item.itemCategory}/i.html?_from=R0&_nkw=${searchInput} ${item.itemName}&_fsrp=1&LH_Complete=1&LH_Sold=1&LH_ItemCondition=4&_ipg=240&rt=nc`,
+                                                                    `https://www.ebay.co.uk/sch/131090/i.html?_from=R40&_nkw=${searchInput} ${item.item}&_fsrp=1&LH_Complete=1&LH_Sold=1&LH_ItemCondition=4&_ipg=240&rt=nc&_udlo=40`,
                                                                     '_blank'
                                                                 )
                                                             }}
                                                         >
-                                                            {item.itemName}
+                                                            {item.item}
                                                         </Button>
                                                     </TableCell>
                                                     <TableCell>
-                                                        {format(
-                                                            parseISO(
-                                                                item.dateFrom
-                                                            ),
-                                                            'd MMM yy'
-                                                        )}
-                                                        {' - '}
-                                                        {format(
-                                                            parseISO(
-                                                                item.dateTo
-                                                            ),
-                                                            'd MMM yy'
-                                                        )}
+                                                        {item.avg_price}
                                                     </TableCell>
                                                     <TableCell>
-                                                        £{item.priceFrom}
-                                                        {' - '}
-                                                        {item.priceTo}
+                                                        {item.frequency}
                                                     </TableCell>
-                                                    <TableCell>
+                                                    <TableCell
+                                                        className={
+                                                            item.frequency ===
+                                                            'Very High'
+                                                                ? 'font-semibold'
+                                                                : ''
+                                                        }
+                                                    >
                                                         {item.count}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {item.monthly}
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
                                     </TableBody>
                                 </Table>
                             </div>
-                        </TabsContent>
-                    </Tabs>
+                        )}
+                    </>
                 )}
             </div>
             {carScraping && (
@@ -689,4 +417,5 @@ const EbayVehicleSearch = () => {
         </>
     )
 }
+
 export default EbayVehicleSearch

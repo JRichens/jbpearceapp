@@ -1,11 +1,5 @@
 'use server'
 
-import Anthropic from '@anthropic-ai/sdk'
-
-const anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY,
-})
-
 type ProductionYearResponse = {
     from: string
     to: string
@@ -13,60 +7,134 @@ type ProductionYearResponse = {
     description: string
 }
 
+// Type for Perplexity API response
+type PerplexityResponse = {
+    choices: Array<{
+        message: {
+            content: string
+            role: string
+        }
+    }>
+}
+
 export async function askClaudeProductionYear(
     vehicle: string,
     part: string
 ): Promise<ProductionYearResponse | string> {
     if (!vehicle || !part) {
+        console.log('Missing Input:', { vehicle, part })
         return 'Error: Missing required vehicle or part information'
     }
 
     try {
-        const response = await anthropic.messages.create({
-            model: 'claude-3-5-sonnet-20241022',
-            max_tokens: 8192,
-            temperature: 0,
-            system: `You have a vast understanding of car manufacturing dates and can advise which years a particular make and model and year of car's manufacturing date spans from and to with the additional information of if the car had a facelift or update. This information is crucial and will be used on second hand car parts ebay listings to inform customers if they part is likely similar to their production year.
+        // Log input data
+        console.log('Perplexity API Input:', {
+            vehicle,
+            part,
+        })
 
-Initial task: Give information on the manufacturing date span of the vehicle provided. We need to know the date this specific make and model of vehicle started being manufactured, the date it ended manufacturing and a date if there was a facelift or life cycle impulse.
-
-Secondary task: Look at the part and advise if that part will fit on the manufacturing span of vehicle, particularly if there is a facelift or lci. Include this advise in the description.
-
-How to provide a response: You must provide the response strictly as a JSON only with 4 properties, "from", "to", "facelift", "description". The 'from' property must have just the year of the beginning of the vehicle's manufacturing date, such as just "2008". The 'to' property must have just the year of the end manufacturing date, such as just "2014". The 'facelift' property must have just the year of the facelift or life cycle impulse, such as just "2010". The 'description' property must contain a concise write-up explaining the production date spans and any facelifts or changes that may have occurred along with if the part should be compatible within those years.`,
-            messages: [
-                {
-                    role: 'user',
-                    content: [
+        const response = await fetch(
+            'https://api.perplexity.ai/chat/completions',
+            {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+                },
+                body: JSON.stringify({
+                    model: 'sonar-pro',
+                    messages: [
                         {
-                            type: 'text',
-                            text: `The vehicle provided is ${vehicle}.
-                            The part provided is a ${part}`,
+                            role: 'system',
+                            content: `You are an automotive expert with access to current internet sources for vehicle manufacturing information. Your task is to provide accurate production year spans and part compatibility information.
+
+Initial task: Search and provide information on the manufacturing date span of the vehicle provided. We need to know when this specific make and model started production, ended production, and if there was a facelift or life cycle impulse (LCI).
+
+Secondary task: Considering the year spans provided, particularly if within a facelift period, research the specified part and determine if it will fit across the manufacturing span, particularly noting any compatibility changes due to facelifts or LCI updates.
+
+Response format: You must provide the response strictly as a JSON with 4 properties:
+- "from": just the year production started (e.g., "2008")
+- "to": just the year production ended (e.g., "2014")
+- "facelift": just the year of any facelift/LCI (e.g., "2010")
+- "description": concise explanation of production spans, changes, and part compatibility
+
+Base your response on current internet sources to ensure accuracy.
+
+Do not include citation brackets in your response.
+
+If the part provided is similar to a head unit or stereo or sat nav, add a sentence that says A code may be required to activate this unit.
+
+The final sentence of the description should mention that if still unsure of compatibility then send us your vehicle registration and we can check for you. 
+.`,
+                        },
+                        {
+                            role: 'user',
+                            content: `The vehicle provided is ${vehicle}.\nThe part provided is a ${part}`,
                         },
                     ],
+                }),
+            }
+        )
+
+        // Log request payload
+        console.log('Perplexity API Request:', {
+            model: 'sonar-pro',
+            messages: [
+                {
+                    role: 'system',
+                    content: '(system prompt omitted for brevity)',
+                },
+                {
+                    role: 'user',
+                    content: `The vehicle provided is ${vehicle}.\nThe part provided is a ${part}`,
                 },
             ],
         })
 
-        if ('text' in response.content[0]) {
+        if (!response.ok) {
+            const errorDetails = {
+                status: response.status,
+                statusText: response.statusText,
+            }
+            console.error('Perplexity API Response Error:', errorDetails)
+            throw new Error(`API request failed with status ${response.status}`)
+        }
+
+        const data = (await response.json()) as PerplexityResponse
+        console.log('Perplexity API Raw Response:', data)
+
+        if (data.choices && data.choices[0]?.message?.content) {
             try {
                 const parsedResponse = JSON.parse(
-                    response.content[0].text
+                    data.choices[0].message.content
                 ) as ProductionYearResponse
+                console.log('Perplexity API Parsed Response:', parsedResponse)
                 return parsedResponse
             } catch (parseError) {
-                console.error('Error parsing JSON response:', parseError)
+                console.error('Perplexity API Parse Error:', {
+                    error: parseError,
+                    rawContent: data.choices[0]?.message?.content,
+                })
                 return 'Error: Unable to parse the response data'
             }
         } else {
-            console.error('Unexpected response structure:', response)
+            console.error('Perplexity API Unexpected Response:', {
+                received: data,
+                expectedStructure: 'choices[0].message.content',
+            })
             return 'Sorry, there was an error processing your request.'
         }
     } catch (apiError) {
-        console.error('API call error:', apiError)
-        if (apiError instanceof Error) {
-            console.error('Error message:', apiError.message)
-            console.error('Error stack:', apiError.stack)
-        }
+        console.error('Perplexity API Call Error:', {
+            error:
+                apiError instanceof Error
+                    ? {
+                          message: apiError.message,
+                          stack: apiError.stack,
+                      }
+                    : apiError,
+        })
         return 'Sorry, there was an error calling the AI service.'
     }
 }
