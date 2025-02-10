@@ -24,6 +24,7 @@ const PrintableVehicleTable = ({ data }: PrintableVehicleTableProps) => {
                         <th className="border p-2">Registration</th>
                         <th className="border p-2">Description</th>
                         <th className="border p-2">Company</th>
+                        <th className="border p-2">Type</th>
                         <th className="border p-2">MOT Status</th>
                         <th className="border p-2">MOT Date</th>
                         <th className="border p-2">MOT Days</th>
@@ -42,6 +43,9 @@ const PrintableVehicleTable = ({ data }: PrintableVehicleTableProps) => {
                                 {vehicle.description}
                             </td>
                             <td className="border p-2">{vehicle.company}</td>
+                            <td className="border p-2">
+                                {vehicle.vehicleType}
+                            </td>
                             <td className="border p-2">{vehicle.MOTstatus}</td>
                             <td className="border p-2">{vehicle.MOTdate}</td>
                             <td className="border p-2">{vehicle.MOTdays}</td>

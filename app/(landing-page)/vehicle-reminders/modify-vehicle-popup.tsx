@@ -12,7 +12,12 @@ import {
     FormControl,
     InputLabel,
 } from '@mui/material'
-import { CompanyVehicles, MOTStatus, TAXStatus } from '@prisma/client'
+import {
+    CompanyVehicles,
+    MOTStatus,
+    TAXStatus,
+    VehicleType,
+} from '@prisma/client'
 import { useEffect, useState } from 'react'
 import {
     DeleteCompanyVehicle,
@@ -27,12 +32,14 @@ interface ModifyVehiclePopupProps {
     open: boolean
     setOpen: (open: boolean) => void
     vehicleData: CompanyVehicles | null
+    onUpdate?: () => void
 }
 
 const ModifyVehiclePopup = ({
     open,
     setOpen,
     vehicleData,
+    onUpdate,
 }: ModifyVehiclePopupProps) => {
     const [isSaving, setIsSaving] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -44,10 +51,12 @@ const ModifyVehiclePopup = ({
         MOTdate: '',
         TAXstatus: '' as TAXStatus,
         TAXdate: '',
+        vehicleType: 'Cars' as VehicleType,
     })
 
     const motStatusOptions = Object.values(MOTStatus)
     const taxStatusOptions = Object.values(TAXStatus)
+    const vehicleTypeOptions = Object.values(VehicleType)
 
     const { toast } = useToast()
 
@@ -55,12 +64,13 @@ const ModifyVehiclePopup = ({
         if (vehicleData) {
             setFormData({
                 registration: vehicleData.registration || '',
-                company: (vehicleData.company || '') as CompanyType | '', // Type assertion here
+                company: (vehicleData.company || '') as CompanyType | '',
                 description: vehicleData.description || '',
                 MOTstatus: vehicleData.MOTstatus,
                 MOTdate: vehicleData.MOTdate || '',
                 TAXstatus: vehicleData.TAXstatus,
                 TAXdate: vehicleData.TAXdate || '',
+                vehicleType: vehicleData.vehicleType,
             })
         }
     }, [vehicleData])
@@ -98,6 +108,7 @@ const ModifyVehiclePopup = ({
                 MOTdate: formData.MOTdate,
                 TAXstatus: formData.TAXstatus,
                 TAXdate: formData.TAXdate,
+                vehicleType: formData.vehicleType,
             })
 
             if (result) {
@@ -107,6 +118,7 @@ const ModifyVehiclePopup = ({
                     variant: 'default',
                     className: 'bg-green-500 text-white border-none',
                 })
+                onUpdate?.() // Call onUpdate if provided
             }
         } catch (error: unknown) {
             if (error instanceof Error) {
@@ -158,6 +170,7 @@ const ModifyVehiclePopup = ({
         } finally {
             setIsDeleting(false)
             setOpen(false)
+            onUpdate?.() // Call onUpdate if provided
         }
     }
 
@@ -199,14 +212,35 @@ const ModifyVehiclePopup = ({
                             </Select>
                         </FormControl>
                     </div>
-                    <TextField
-                        id="description"
-                        label="Description"
-                        variant="outlined"
-                        value={formData.description}
-                        onChange={handleChange('description')}
-                        fullWidth
-                    />
+                    <div className="flex flex-row gap-4">
+                        <TextField
+                            id="description"
+                            label="Description"
+                            variant="outlined"
+                            value={formData.description}
+                            onChange={handleChange('description')}
+                            fullWidth
+                        />
+                        <FormControl fullWidth>
+                            <InputLabel id="vehicle-type-label">
+                                Vehicle Type
+                            </InputLabel>
+                            <Select
+                                labelId="vehicle-type-label"
+                                id="vehicleType"
+                                value={formData.vehicleType}
+                                label="Vehicle Type"
+                                onChange={handleSelectChange('vehicleType')}
+                                fullWidth
+                            >
+                                {vehicleTypeOptions.map((type) => (
+                                    <MenuItem key={type} value={type}>
+                                        {type}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </div>
                     <div className="flex flex-row gap-4">
                         <FormControl className="w-1/3">
                             <InputLabel id="mot-status-label">

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useRef } from 'react'
 import { useReactToPrint } from 'react-to-print'
 import { GetAllCompanyVehicles } from '@/actions/companyVehicles/company-vehicle'
-import { CompanyVehicles } from '@prisma/client'
+import { CompanyVehicles, VehicleType } from '@prisma/client'
 
 import {
     MaterialReactTable,
@@ -15,10 +15,53 @@ import { Separator } from '@/components/ui/separator'
 
 import { BellPlus, Pencil, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select'
 import AddVehiclePopup from './add-vehicle-popup'
 import ModifyVehiclePopup from './modify-vehicle-popup'
 import AddReminderPopup from './add-reminder-popup'
 import PrintableVehicleTable from './print-table'
+import PrintLorryCalendar from './print-lorry-calendar'
+
+// Utility function to get effective MOT days considering special statuses
+const getEffectiveMOTDays = (vehicle: CompanyVehicles): number => {
+    // Ignore MOT days for both 'Agri' and 'NA' statuses
+    if (vehicle.MOTstatus === 'Agri' || vehicle.MOTstatus === 'NA') {
+        return Infinity
+    }
+    return typeof vehicle.MOTdays === 'number' ? vehicle.MOTdays : Infinity
+}
+
+// Utility function to get minimum days between MOT and TAX
+const getMinDays = (vehicle: CompanyVehicles): number => {
+    const motDays = getEffectiveMOTDays(vehicle)
+    const taxDays =
+        typeof vehicle.TAXdays === 'number' ? vehicle.TAXdays : Infinity
+    return Math.min(motDays, taxDays)
+}
+
+// Utility function to sort vehicles by MOT/TAX days and SORN status
+const sortVehicles = (a: CompanyVehicles, b: CompanyVehicles): number => {
+    // If either vehicle is SORN, move it to the bottom
+    if (a.TAXstatus === 'SORN' && b.TAXstatus === 'SORN') return 0
+    if (a.TAXstatus === 'SORN') return 1
+    if (b.TAXstatus === 'SORN') return -1
+
+    const aMinDays = getMinDays(a)
+    const bMinDays = getMinDays(b)
+
+    // Handle edge cases where values might be Infinity
+    if (aMinDays === Infinity && bMinDays === Infinity) return 0
+    if (aMinDays === Infinity) return 1
+    if (bMinDays === Infinity) return -1
+
+    return aMinDays - bMinDays
+}
 
 const VehicleReminders = () => {
     const [isLoading, setIsLoading] = useState(false)
@@ -26,8 +69,12 @@ const VehicleReminders = () => {
     const [open, setOpen] = useState(false)
     const [modifyOpen, setModifyOpen] = useState(false)
     const [remindersOpen, setRemindersOpen] = useState(false)
+    const [selectedVehicleType, setSelectedVehicleType] = useState<
+        VehicleType | 'All Vehicles'
+    >('All Vehicles')
     const [selectedVehicle, setSelectedVehicle] =
         useState<CompanyVehicles | null>(null)
+    const [lastUpdate, setLastUpdate] = useState<number>(Date.now())
 
     // Get data
     useEffect(() => {
@@ -46,47 +93,19 @@ const VehicleReminders = () => {
         fetchData()
     }, [open, modifyOpen, remindersOpen])
 
-    // Sort the data
-    const sortedData = useMemo(() => {
-        return [...data].sort((a, b) => {
-            // If either vehicle is SORN, move it to the bottom
-            if (a.TAXstatus === 'SORN' && b.TAXstatus === 'SORN') return 0
-            if (a.TAXstatus === 'SORN') return 1
-            if (b.TAXstatus === 'SORN') return -1
+    // Filter and sort the data
+    const filteredAndSortedData = useMemo(() => {
+        // First filter by vehicle type
+        const filteredData =
+            selectedVehicleType === 'All Vehicles'
+                ? data
+                : data.filter(
+                      (vehicle) => vehicle.vehicleType === selectedVehicleType
+                  )
 
-            const getEffectiveMOTDays = (vehicle: CompanyVehicles): number => {
-                // Ignore MOT days for both 'Agri' and 'NA' statuses
-                if (
-                    vehicle.MOTstatus === 'Agri' ||
-                    vehicle.MOTstatus === 'NA'
-                ) {
-                    return Infinity
-                }
-                return typeof vehicle.MOTdays === 'number'
-                    ? vehicle.MOTdays
-                    : Infinity
-            }
-
-            const getMinDays = (vehicle: CompanyVehicles): number => {
-                const motDays = getEffectiveMOTDays(vehicle)
-                const taxDays =
-                    typeof vehicle.TAXdays === 'number'
-                        ? vehicle.TAXdays
-                        : Infinity
-                return Math.min(motDays, taxDays)
-            }
-
-            const aMinDays = getMinDays(a)
-            const bMinDays = getMinDays(b)
-
-            // Handle edge cases where values might be Infinity
-            if (aMinDays === Infinity && bMinDays === Infinity) return 0
-            if (aMinDays === Infinity) return 1
-            if (bMinDays === Infinity) return -1
-
-            return aMinDays - bMinDays
-        })
-    }, [data])
+        // Then sort the filtered data
+        return [...filteredData].sort(sortVehicles)
+    }, [data, selectedVehicleType, lastUpdate]) // Added lastUpdate to ensure re-sorting after modifications
 
     const componentRef = useRef(null)
 
@@ -95,7 +114,19 @@ const VehicleReminders = () => {
         pageStyle: `
             @page {
                 size: landscape;
-                margin: 20mm;
+                margin: ${selectedVehicleType === 'Lorries' ? '5mm' : '20mm'};
+            }
+            @media print {
+                body {
+                    margin: 0;
+                    padding: 0;
+                }
+                * {
+                    box-sizing: border-box;
+                }
+                .grid {
+                    page-break-inside: avoid;
+                }
             }
         `,
         removeAfterPrint: true,
@@ -114,6 +145,10 @@ const VehicleReminders = () => {
         } catch (error) {
             return 'No date'
         }
+    }
+
+    const handleVehicleUpdate = () => {
+        setLastUpdate(Date.now()) // Force re-sort when a vehicle is modified
     }
 
     const columns = useMemo<MRT_ColumnDef<CompanyVehicles>[]>(
@@ -178,6 +213,11 @@ const VehicleReminders = () => {
                 size: 40,
             },
             {
+                accessorKey: 'vehicleType',
+                header: 'Type',
+                size: 40,
+            },
+            {
                 accessorKey: 'MOTstatus',
                 header: 'MOT Status',
                 size: 40,
@@ -213,6 +253,10 @@ const VehicleReminders = () => {
         []
     )
 
+    const handleVehicleTypeChange = (value: string) => {
+        setSelectedVehicleType(value as VehicleType | 'All Vehicles')
+    }
+
     return (
         <>
             <div className="mb-6 px-4 md:px-8 py-4 mx-4 md:mx-8 shadow-md rounded-md bg-white border">
@@ -225,7 +269,7 @@ const VehicleReminders = () => {
                 <Separator className="my-2" />
                 <div className="flex flex-col gap-2">
                     {' '}
-                    <div className="flex flex-row gap-2">
+                    <div className="flex flex-row gap-2 items-center">
                         <AddVehiclePopup open={open} setOpen={setOpen} />
                         <Button
                             variant="outline"
@@ -235,10 +279,32 @@ const VehicleReminders = () => {
                             <Printer className="h-4 w-4" />
                             Print List
                         </Button>
+                        <Select
+                            value={selectedVehicleType}
+                            onValueChange={handleVehicleTypeChange}
+                        >
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="All Vehicles" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="All Vehicles">
+                                    All Vehicles
+                                </SelectItem>
+                                <SelectItem value={VehicleType.Cars}>
+                                    Cars
+                                </SelectItem>
+                                <SelectItem value={VehicleType.Lorries}>
+                                    Lorries
+                                </SelectItem>
+                                <SelectItem value={VehicleType.Agri}>
+                                    Agri
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                     <MaterialReactTable
                         columns={columns}
-                        data={sortedData}
+                        data={filteredAndSortedData}
                         renderEmptyRowsFallback={() => (
                             <div className="flex items-center justify-center h-[400px]">
                                 {isLoading ? (
@@ -301,6 +367,7 @@ const VehicleReminders = () => {
                         open={modifyOpen}
                         setOpen={setModifyOpen}
                         vehicleData={selectedVehicle}
+                        onUpdate={handleVehicleUpdate}
                     />
                     <AddReminderPopup
                         open={remindersOpen}
@@ -312,7 +379,11 @@ const VehicleReminders = () => {
             {/* Hide the printable component */}
             <div style={{ display: 'none' }}>
                 <div ref={componentRef}>
-                    <PrintableVehicleTable data={data} />
+                    {selectedVehicleType === 'Lorries' ? (
+                        <PrintLorryCalendar data={filteredAndSortedData} />
+                    ) : (
+                        <PrintableVehicleTable data={filteredAndSortedData} />
+                    )}
                 </div>
             </div>
         </>

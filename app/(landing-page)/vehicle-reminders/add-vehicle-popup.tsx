@@ -3,6 +3,7 @@
 import { useState } from 'react'
 
 import { AddCompanyVehicle } from '@/actions/companyVehicles/company-vehicle'
+import { CompanyVehicles, VehicleType } from '@prisma/client'
 
 import { useToast } from '@/components/ui/use-toast'
 
@@ -36,6 +37,9 @@ const AddVehiclePopup = ({ open, setOpen }: Props) => {
     const [reg, setReg] = useState('')
     const [desc, setDesc] = useState('')
     const [company, setCompany] = useState('')
+    const [vehicleType, setVehicleType] = useState<VehicleType>(
+        VehicleType.Cars
+    )
 
     const { toast } = useToast()
 
@@ -43,7 +47,7 @@ const AddVehiclePopup = ({ open, setOpen }: Props) => {
         try {
             setSaving(true)
             if (reg && desc && company) {
-                await AddCompanyVehicle(reg, desc, company)
+                await AddCompanyVehicle(reg, desc, company, vehicleType)
                 setReg('')
                 setDesc('')
                 setCompany('')
@@ -128,13 +132,35 @@ const AddVehiclePopup = ({ open, setOpen }: Props) => {
                         </div>
                     </div>
                     {/* Row 2 */}
-                    <div className="w-[100%]">
-                        <Label>Vehicle Description</Label>
-                        <Input
-                            value={desc}
-                            onChange={(e) => setDesc(e.target.value)}
-                            className="mb-2"
-                        />
+                    <div className="flex flex-row gap-4">
+                        <div className="w-[50%]">
+                            <Label>Vehicle Type</Label>
+                            <Select
+                                value={vehicleType}
+                                onValueChange={(value) =>
+                                    setVehicleType(value as VehicleType)
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Cars">Cars</SelectItem>
+                                    <SelectItem value="Lorries">
+                                        Lorries
+                                    </SelectItem>
+                                    <SelectItem value="Agri">Agri</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="w-[50%]">
+                            <Label>Vehicle Description</Label>
+                            <Input
+                                value={desc}
+                                onChange={(e) => setDesc(e.target.value)}
+                                className="mb-2"
+                            />
+                        </div>
                     </div>
                     {/* Row 3 */}
                     <div className="flex flex-row justify-end gap-2 w-full">

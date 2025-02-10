@@ -10,6 +10,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
 model Car {
   uniqueId                 String        @default(cuid())
   reg                      String        @id
@@ -259,6 +260,12 @@ model PageViewDay {
   users       User[]
 }
 
+enum VehicleType {
+  Cars
+  Lorries
+  Agri
+}
+
 enum MOTStatus {
   Valid
   Expired
@@ -288,6 +295,7 @@ model CompanyVehicles {
   TAXdate       String @default("")
   TAXstatus     TAXStatus @default(Taxed)
   TAXdays       Int @default(0)
+  vehicleType   VehicleType @default(Cars)
 }
 
 model WeighbridgeTicket {

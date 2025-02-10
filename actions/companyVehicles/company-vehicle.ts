@@ -2,13 +2,19 @@
 
 import { db } from '@/lib/db'
 import { auth } from '@clerk/nextjs'
-import { CompanyVehicles, MOTStatus, TAXStatus } from '@prisma/client'
+import {
+    CompanyVehicles,
+    MOTStatus,
+    TAXStatus,
+    VehicleType,
+} from '@prisma/client'
 import { isValid, parse, isBefore } from 'date-fns'
 
 export async function AddCompanyVehicle(
     reg: string,
     desc: string,
-    company: string
+    company: string,
+    vehicleType: VehicleType
 ) {
     // Validate that a userId is present.
     const { userId }: { userId: string | null } = auth()
@@ -29,6 +35,7 @@ export async function AddCompanyVehicle(
                 TAXstatus: 'Taxed',
                 TAXdate: 'No date',
                 TAXdays: 0,
+                vehicleType,
             },
         })
         return companyVehicle
@@ -354,6 +361,7 @@ export async function UpdateCompanyVehicle({
     MOTdate,
     TAXstatus,
     TAXdate,
+    vehicleType,
 }: {
     registration: string
     company: CompanyType | ''
@@ -362,6 +370,7 @@ export async function UpdateCompanyVehicle({
     MOTdate: string
     TAXstatus: TAXStatus
     TAXdate: string
+    vehicleType: VehicleType
 }) {
     // Validate that a userId is present.
     const { userId }: { userId: string | null } = auth()
@@ -407,6 +416,7 @@ export async function UpdateCompanyVehicle({
         TAXstatus,
         MOTdays,
         TAXdays,
+        vehicleType,
     }
 
     // Only include valid dates in the update
