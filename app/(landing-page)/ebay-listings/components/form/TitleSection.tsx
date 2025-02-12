@@ -54,14 +54,21 @@ export function TitleSection({
                         productionYearInfo
                     ) {
                         titleParts.push(
-                            `${productionYearInfo.from} to ${productionYearInfo.to}`
+                            `${productionYearInfo.from}-${productionYearInfo.to}`
                         )
                     } else if (
-                        param.key === 'productionYearsFL' &&
+                        param.key === 'productionYearsPreFL' &&
                         productionYearInfo?.facelift
                     ) {
                         titleParts.push(
-                            `${productionYearInfo.from} to ${productionYearInfo.facelift}`
+                            `${productionYearInfo.from}-${productionYearInfo.facelift}`
+                        )
+                    } else if (
+                        param.key === 'productionYearsPostFL' &&
+                        productionYearInfo?.facelift
+                    ) {
+                        titleParts.push(
+                            `${productionYearInfo.facelift}-${productionYearInfo.to}`
                         )
                     }
                 } else {
