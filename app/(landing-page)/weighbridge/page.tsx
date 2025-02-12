@@ -46,13 +46,13 @@ const WeighbridgeDisplay = () => {
                 const user = await GetUser()
                 if (!user) return
                 setCurrentUser(user)
-                setNewWeighing({ ...newWeighing, driver: user.name })
+                setNewWeighing((prev) => ({ ...prev, driver: user.name }))
             } catch (error) {
                 console.error('Failed to fetch user', error)
             }
         }
         fetchUser()
-    }, [])
+    }, []) // We use functional update for setNewWeighing, so no dependencies needed
 
     // Fetch our weight every 0.75 seconds
     useEffect(() => {

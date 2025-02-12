@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import { getEbayCategories } from '@/lib/ebay/get-categories'
 import { auth } from '@clerk/nextjs'
 
+// Runtime and dynamic configuration
+export const runtime = 'nodejs' // Enable Node.js runtime
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: Request) {
     try {
         const { userId } = auth()
@@ -39,15 +43,13 @@ export async function GET(request: Request) {
         const limitedCategories = categories.slice(0, MAX_CATEGORIES)
         console.log('API: Returning categories:', limitedCategories.length)
 
-        // Set appropriate headers
-        const headers = new Headers({
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-store, max-age=0',
-        })
-
-        return new NextResponse(JSON.stringify(limitedCategories), {
+        return NextResponse.json(limitedCategories, {
             status: 200,
-            headers,
+            headers: {
+                'Cache-Control': 'private, no-cache, no-store, must-revalidate',
+                Pragma: 'no-cache',
+                Expires: '0',
+            },
         })
     } catch (error: any) {
         console.error('Error in eBay categories API route:', error)

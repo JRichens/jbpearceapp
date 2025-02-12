@@ -47,7 +47,7 @@ export function PriceQuantityInputs({
             const minPrice = calculateMinimumOfferPrice(formState.price)
             onMinimumOfferPriceChange(minPrice)
         }
-    }, [formState.price, formState.showMinimumOffer])
+    }, [formState.price, formState.showMinimumOffer, onMinimumOfferPriceChange])
 
     const handleAllowOffersChange = (checked: boolean) => {
         setFormState((prev) => ({

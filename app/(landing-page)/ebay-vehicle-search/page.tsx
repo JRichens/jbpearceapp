@@ -18,6 +18,8 @@ import {
     TableRow,
 } from '@/components/ui/table'
 import { Separator } from '@/components/ui/separator'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { Form } from '../_components/reg-form'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -35,6 +37,22 @@ type AIeBayItem = {
 type AIeBayResponse = {
     date_span: string
     items: AIeBayItem[]
+}
+
+// Helper function to get badge variant based on frequency
+const getFrequencyBadgeStyle = (frequency: string) => {
+    switch (frequency.toLowerCase()) {
+        case 'very high':
+            return 'bg-green-600 hover:bg-green-600/90 text-white'
+        case 'high':
+            return 'bg-green-400 hover:bg-green-400/90 text-white'
+        case 'medium':
+            return 'bg-yellow-400 hover:bg-yellow-400/90 text-black'
+        case 'low':
+            return 'bg-orange-400 hover:bg-orange-400/90 text-white'
+        default:
+            return 'bg-gray-400 hover:bg-gray-400/90 text-white'
+    }
 }
 
 const EbayVehicleSearch = () => {
@@ -308,30 +326,95 @@ const EbayVehicleSearch = () => {
                             </div>
                         )}
                         {carScrappedObject && (
-                            <div className="overflow-x-auto">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Item</TableHead>
-                                            <TableHead>Average Price</TableHead>
-                                            <TableHead>Frequency</TableHead>
-                                            <TableHead>Count</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {carScrappedObject.items
-                                            .sort((a, b) => b.count - a.count)
-                                            .map((item, index) => (
-                                                <TableRow
-                                                    key={index}
-                                                    className=""
-                                                >
-                                                    <TableCell className="font-medium py-0">
+                            <>
+                                {/* Desktop Table */}
+                                <div className="hidden md:block overflow-x-auto">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Item</TableHead>
+                                                <TableHead>
+                                                    Average Price
+                                                </TableHead>
+                                                <TableHead className="text-center">
+                                                    Status
+                                                </TableHead>
+                                                <TableHead>Count</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {carScrappedObject.items
+                                                .sort(
+                                                    (a, b) => b.count - a.count
+                                                )
+                                                .map((item, index) => (
+                                                    <TableRow
+                                                        key={index}
+                                                        className=""
+                                                    >
+                                                        <TableCell className="font-medium py-0">
+                                                            <Button
+                                                                variant={
+                                                                    'secondary'
+                                                                }
+                                                                className="m-w"
+                                                                onClick={() => {
+                                                                    window.open(
+                                                                        `https://www.ebay.co.uk/sch/131090/i.html?_from=R40&_nkw=${searchInput} ${item.item}&_fsrp=1&LH_Complete=1&LH_Sold=1&LH_ItemCondition=4&_ipg=240&rt=nc&_udlo=40`,
+                                                                        '_blank'
+                                                                    )
+                                                                }}
+                                                            >
+                                                                {item.item}
+                                                            </Button>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {item.avg_price}
+                                                        </TableCell>
+                                                        <TableCell className="text-center">
+                                                            <Badge
+                                                                className={cn(
+                                                                    'transition-colors',
+                                                                    getFrequencyBadgeStyle(
+                                                                        item.frequency
+                                                                    )
+                                                                )}
+                                                            >
+                                                                {item.frequency}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell
+                                                            className={
+                                                                item.frequency ===
+                                                                'Very High'
+                                                                    ? 'font-semibold'
+                                                                    : ''
+                                                            }
+                                                        >
+                                                            {item.count}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+
+                                {/* Mobile Cards */}
+                                <div className="block md:hidden space-y-4">
+                                    {carScrappedObject.items
+                                        .sort((a, b) => b.count - a.count)
+                                        .map((item, index) => (
+                                            <Card
+                                                key={index}
+                                                className="w-full"
+                                            >
+                                                <CardHeader className="pb-1 pt-2">
+                                                    <CardTitle>
                                                         <Button
                                                             variant={
                                                                 'secondary'
                                                             }
-                                                            className="m-w"
+                                                            className="w-full text-left h-auto whitespace-normal py-2"
                                                             onClick={() => {
                                                                 window.open(
                                                                     `https://www.ebay.co.uk/sch/131090/i.html?_from=R40&_nkw=${searchInput} ${item.item}&_fsrp=1&LH_Complete=1&LH_Sold=1&LH_ItemCondition=4&_ipg=240&rt=nc&_udlo=40`,
@@ -341,28 +424,55 @@ const EbayVehicleSearch = () => {
                                                         >
                                                             {item.item}
                                                         </Button>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {item.avg_price}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {item.frequency}
-                                                    </TableCell>
-                                                    <TableCell
-                                                        className={
-                                                            item.frequency ===
-                                                            'Very High'
-                                                                ? 'font-semibold'
-                                                                : ''
-                                                        }
-                                                    >
-                                                        {item.count}
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
+                                                    </CardTitle>
+                                                </CardHeader>
+                                                <CardContent className="pb-3">
+                                                    <div className="grid grid-cols-2 gap-2 text-sm">
+                                                        <div>
+                                                            <p className="text-muted-foreground">
+                                                                Price
+                                                            </p>
+                                                            <p className="font-medium mt-[6px]">
+                                                                {item.avg_price}
+                                                            </p>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="text-muted-foreground">
+                                                                Sold
+                                                            </p>
+                                                            <div className="flex items-center justify-end gap-2">
+                                                                <span
+                                                                    className={cn(
+                                                                        'font-medium',
+                                                                        {
+                                                                            'font-semibold':
+                                                                                item.frequency ===
+                                                                                'Very High',
+                                                                        }
+                                                                    )}
+                                                                >
+                                                                    {item.count}
+                                                                </span>
+                                                                <Badge
+                                                                    className={cn(
+                                                                        'transition-colors',
+                                                                        getFrequencyBadgeStyle(
+                                                                            item.frequency
+                                                                        )
+                                                                    )}
+                                                                >
+                                                                    {
+                                                                        item.frequency
+                                                                    }
+                                                                </Badge>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        ))}
+                                </div>
+                            </>
                         )}
                     </>
                 )}

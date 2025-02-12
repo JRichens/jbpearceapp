@@ -105,7 +105,7 @@ const VehicleReminders = () => {
 
         // Then sort the filtered data
         return [...filteredData].sort(sortVehicles)
-    }, [data, selectedVehicleType, lastUpdate]) // Added lastUpdate to ensure re-sorting after modifications
+    }, [data, selectedVehicleType]) // data will update when vehicles are modified
 
     const componentRef = useRef(null)
 

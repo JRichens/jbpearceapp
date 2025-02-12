@@ -71,7 +71,7 @@ const Events = () => {
                 ),
             },
         ],
-        [eventsData]
+        [] // Remove eventsData as it's not used in the memoized value
     )
 
     return (

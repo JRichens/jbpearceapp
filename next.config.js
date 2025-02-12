@@ -2,6 +2,7 @@
 const nextConfig = {
     experimental: {
         serverActionsBodySizeLimit: '10mb',
+        webpackBuildWorker: true, // Enable webpack build worker
     },
     images: {
         formats: ['image/webp'],

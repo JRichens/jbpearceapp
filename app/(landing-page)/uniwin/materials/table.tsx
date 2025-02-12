@@ -1,7 +1,12 @@
 'use client'
 
 import React from 'react'
-import { MaterialReactTable, type MRT_ColumnDef } from 'material-react-table'
+import {
+    MaterialReactTable,
+    type MRT_ColumnDef,
+    type MRT_Cell,
+    type MRT_Row,
+} from 'material-react-table'
 import SellingInput from './sellingInput'
 import MarginInput from './marginInput'
 
@@ -20,60 +25,58 @@ type Props = {
 
 const MaterialsComponent = ({ tableData, setTableData }: Props) => {
     // Define code replacements with exact codes
-    const codeReplacements: { [key: string]: string } = {
-        // Ferrous replacements
-        BDISC: 'Brake Discs',
-        HIRON: 'O/A - Plate & Girder',
-        'OS`': 'O/A - Plate & Girder',
-        SHEARING: 'No 1&2',
-        MM: 'MM',
-        'LIGHT MIX': 'Light Iron',
-        LI: 'Light Iron',
-        SC: 'ELVS',
-        // Copper replacements
-        'C BRIGHT': 'Dry Bright Cu Wire',
-        BUZZBAR: 'Clean Flat Electro Cu',
-        CT: 'New Cu Tube Candy',
-        HARDDRAWN: 'Harddrawn Cu Wire',
-        GB: 'Greasy bright',
-        '98%': 'Heavy Cu 98%',
-        'NO 2 WIRE': 'No2 CU Wire',
-        CTANK: 'Cu Cylinders',
-        BZC: 'Braziery Cu',
-        'L WASH': 'Lead Washed Rads',
-        // copComponents replacements
-        PYRO: 'Clean Pyro',
-        ELEMENTS: 'Elements',
-        MOT: 'Electric Motors',
-        // brassComponents replacements
-        BM: 'Mixed Brass/Honey',
-        BCR: 'Brass/Cu Rads/Ocean',
-        GM: 'Gunmetal',
-        // cableComponets replacements
-        'LOW GRADE': 'Low Grade Cable',
-        PVC: 'Household Cable',
-        'PVC DATA CABLE': 'Data Cable',
-        AC: 'Armoured Cable',
-        // aliComponents replacements
-        ALIW: 'Clean Ali Wheels',
-        'ALLY CAST': 'Cast Ali',
-        ALI: 'Mxd Ali',
-        ALT: 'Comm Ali Swarf',
-        ACR: 'Ali/Cu Rads',
-        'AL RADS': 'Ali Rads',
-        IALI: 'Irony Ali',
-        'IALI CAR': 'Irony Ali',
-        // otherComponents replacements
-        STST: 'Stainless Steel',
-        ZINC: 'Zinc',
-        LEAD: 'Lead',
-        BAT: 'Batteries',
-    }
-
-    // Function to get display name for a code
-    const getDisplayName = (code: string): string => {
-        return codeReplacements[code] || code
-    }
+    const codeReplacements = React.useMemo<{ [key: string]: string }>(
+        () => ({
+            // Ferrous replacements
+            BDISC: 'Brake Discs',
+            HIRON: 'O/A - Plate & Girder',
+            'OS`': 'O/A - Plate & Girder',
+            SHEARING: 'No 1&2',
+            MM: 'MM',
+            'LIGHT MIX': 'Light Iron',
+            LI: 'Light Iron',
+            SC: 'ELVS',
+            // Copper replacements
+            'C BRIGHT': 'Dry Bright Cu Wire',
+            BUZZBAR: 'Clean Flat Electro Cu',
+            CT: 'New Cu Tube Candy',
+            HARDDRAWN: 'Harddrawn Cu Wire',
+            GB: 'Greasy bright',
+            '98%': 'Heavy Cu 98%',
+            'NO 2 WIRE': 'No2 CU Wire',
+            CTANK: 'Cu Cylinders',
+            BZC: 'Braziery Cu',
+            'L WASH': 'Lead Washed Rads',
+            // copComponents replacements
+            PYRO: 'Clean Pyro',
+            ELEMENTS: 'Elements',
+            MOT: 'Electric Motors',
+            // brassComponents replacements
+            BM: 'Mixed Brass/Honey',
+            BCR: 'Brass/Cu Rads/Ocean',
+            GM: 'Gunmetal',
+            // cableComponets replacements
+            'LOW GRADE': 'Low Grade Cable',
+            PVC: 'Household Cable',
+            'PVC DATA CABLE': 'Data Cable',
+            AC: 'Armoured Cable',
+            // aliComponents replacements
+            ALIW: 'Clean Ali Wheels',
+            'ALLY CAST': 'Cast Ali',
+            ALI: 'Mxd Ali',
+            ALT: 'Comm Ali Swarf',
+            ACR: 'Ali/Cu Rads',
+            'AL RADS': 'Ali Rads',
+            IALI: 'Irony Ali',
+            'IALI CAR': 'Irony Ali',
+            // otherComponents replacements
+            STST: 'Stainless Steel',
+            ZINC: 'Zinc',
+            LEAD: 'Lead',
+            BAT: 'Batteries',
+        }),
+        [] // Empty dependency array since this object never needs to change
+    )
 
     // Function to determine material category
     const getMaterialCategory = (code: string): string => {
@@ -142,7 +145,12 @@ const MaterialsComponent = ({ tableData, setTableData }: Props) => {
                 header: 'Seller Code',
                 accessorKey: 'code',
                 size: 30,
-                Cell: ({ cell }) => getDisplayName(cell.getValue() as string),
+                Cell: ({ cell }: { cell: MRT_Cell<Materials> }) => {
+                    const getDisplayName = (code: string): string => {
+                        return codeReplacements[code] || code
+                    }
+                    return getDisplayName(cell.getValue<string>())
+                },
             },
             {
                 header: 'UniWin Description',
@@ -152,7 +160,13 @@ const MaterialsComponent = ({ tableData, setTableData }: Props) => {
                 header: 'Selling',
                 accessorKey: 'number5',
                 size: 30,
-                Cell: ({ cell, row }) => (
+                Cell: ({
+                    cell,
+                    row,
+                }: {
+                    cell: MRT_Cell<Materials>
+                    row: MRT_Row<Materials>
+                }) => (
                     <div className="flex gap-2">
                         <SellingInput
                             cell={cell}
@@ -167,7 +181,13 @@ const MaterialsComponent = ({ tableData, setTableData }: Props) => {
                 header: 'Margin',
                 accessorKey: 'number3',
                 size: 30,
-                Cell: ({ cell, row }) => (
+                Cell: ({
+                    cell,
+                    row,
+                }: {
+                    cell: MRT_Cell<Materials>
+                    row: MRT_Row<Materials>
+                }) => (
                     <MarginInput
                         cell={cell}
                         row={row}
@@ -180,14 +200,14 @@ const MaterialsComponent = ({ tableData, setTableData }: Props) => {
                 header: 'Buying',
                 accessorKey: 'number4',
                 size: 30,
-                Cell: ({ cell }) => (
+                Cell: ({ cell }: { cell: MRT_Cell<Materials> }) => (
                     <div className="w-20 textRight">
-                        {cell.getValue<number>().toLocaleString()}
+                        {cell.getValue<number>()?.toLocaleString() ?? '0'}
                     </div>
                 ),
             },
         ],
-        [tableData]
+        [tableData, setTableData, codeReplacements]
     )
 
     return (

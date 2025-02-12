@@ -136,7 +136,7 @@ export const PartDescriptionSection = forwardRef<
                     selectionRef.current.end
                 )
             }
-        }, [formState.partDescription])
+        }, [formState.partDescription, partDescriptionRef])
 
         const handlePartNumberChange = (index: number, value: string) => {
             const newPartNumbers = [...formState.partNumbers]

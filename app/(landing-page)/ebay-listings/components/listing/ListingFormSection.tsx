@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useCallback } from 'react'
 import { Loader2 } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import { FormState } from '../../types/listingTypes'
@@ -89,17 +89,20 @@ export function ListingFormSection({
         }))
     }
 
-    const handleMinimumOfferPriceChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement> | string
-    ) => {
-        const value = typeof e === 'string' ? e : e.target.value
-        setFormState((prev) => ({
-            ...prev,
-            minimumOfferPrice: value,
-            isVerified: false,
-            verificationResult: null,
-        }))
-    }
+    const handleMinimumOfferPriceChange = useCallback(
+        (
+            e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement> | string
+        ) => {
+            const value = typeof e === 'string' ? e : e.target.value
+            setFormState((prev) => ({
+                ...prev,
+                minimumOfferPrice: value,
+                isVerified: false,
+                verificationResult: null,
+            }))
+        },
+        [setFormState]
+    )
 
     const handlePlacementChange = (value: string) => {
         setSelectedPlacements((prev) => {
@@ -188,8 +191,10 @@ export function ListingFormSection({
         hasSearchedVehicle,
         vehicle,
         formState.partDescription,
+        formState.paintCode,
         productionYearInfo,
         isLoadingProductionYear,
+        setFormState,
     ])
 
     // Effect to show fees dialog when verification is successful
@@ -197,7 +202,7 @@ export function ListingFormSection({
         if (formState.isVerified && formState.verificationResult) {
             setShowFeesDialog(true)
         }
-    }, [formState.isVerified, formState.verificationResult])
+    }, [formState.isVerified, formState.verificationResult, setShowFeesDialog])
 
     return (
         <div className="space-y-6 p-1 max-w-full">

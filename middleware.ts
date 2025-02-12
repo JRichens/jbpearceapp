@@ -1,5 +1,8 @@
 import { authMiddleware, redirectToSignIn } from '@clerk/nextjs'
 
+// Set runtime to nodejs to avoid Edge Runtime warnings
+export const runtime = 'nodejs'
+
 export default authMiddleware({
     publicRoutes: [
         '/api/dailychecks',

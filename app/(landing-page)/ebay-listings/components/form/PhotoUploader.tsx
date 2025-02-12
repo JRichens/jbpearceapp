@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Loader2, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { MAX_PHOTOS } from '../../types/listingTypes'
+import Image from 'next/image'
 import {
     startCamera,
     stopCamera,
@@ -457,10 +458,12 @@ export function PhotoUploader({
                 <div className="grid grid-cols-3 gap-2 mt-2">
                     {photosPreviews.map((preview, index) => (
                         <div key={index} className="relative aspect-square">
-                            <img
+                            <Image
                                 src={preview}
                                 alt={`Preview ${index + 1}`}
                                 className="w-full h-full object-cover rounded-md"
+                                width={200}
+                                height={200}
                             />
                             {photoStatuses[index] && (
                                 <>

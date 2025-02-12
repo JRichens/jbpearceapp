@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import { compareEbayListings } from '@/lib/ebay/compare-listings'
 import { auth } from '@clerk/nextjs'
 
+// Runtime and dynamic configuration
+export const runtime = 'nodejs' // Enable Node.js runtime
+export const dynamic = 'force-dynamic'
+
 interface ComparisonResult {
     missingFields: string[]
     differentValues: Array<{
@@ -77,7 +81,13 @@ export async function GET(request: Request) {
             },
         }
 
-        return NextResponse.json(response)
+        return NextResponse.json(response, {
+            headers: {
+                'Cache-Control': 'private, no-cache, no-store, must-revalidate',
+                Pragma: 'no-cache',
+                Expires: '0',
+            },
+        })
     } catch (error: any) {
         console.error('Error comparing eBay listings:', error)
         return NextResponse.json(

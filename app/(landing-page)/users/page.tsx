@@ -105,7 +105,7 @@ const UserPage = () => {
                 },
             },
         ],
-        [liveData]
+        [] // Empty dependency array since columns don't depend on any external values
     )
 
     return (

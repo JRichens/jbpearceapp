@@ -39,7 +39,13 @@ export async function GET() {
         const filteredListings = listings.filter(
             (listing: EbayListing) => (listing.watchCount ?? 0) >= 3
         )
-        return NextResponse.json(filteredListings)
+        return NextResponse.json(filteredListings, {
+            headers: {
+                'Cache-Control': 'private, no-cache, no-store, must-revalidate',
+                Pragma: 'no-cache',
+                Expires: '0',
+            },
+        })
     } catch (error: any) {
         console.error('Error in eBay listings API route:', error)
         return NextResponse.json(
@@ -211,22 +217,42 @@ export async function POST(req: Request) {
 
         if (isVerification) {
             const verificationResult = await verifyEbayListing(listingParams)
-            return NextResponse.json({
-                success: true,
-                message: 'Listing verified successfully',
-                verificationResult,
-            })
+            return NextResponse.json(
+                {
+                    success: true,
+                    message: 'Listing verified successfully',
+                    verificationResult,
+                },
+                {
+                    headers: {
+                        'Cache-Control':
+                            'private, no-cache, no-store, must-revalidate',
+                        Pragma: 'no-cache',
+                        Expires: '0',
+                    },
+                }
+            )
         } else {
             const enableEbayListing = process.env.ENABLE_EBAY_LISTING === 'true'
 
             if (!enableEbayListing) {
-                return NextResponse.json({
-                    success: true,
-                    message:
-                        'Test Mode: Listing simulated successfully (eBay listing disabled)',
-                    itemId: 'SIMULATION-' + Date.now(),
-                    testMode: true,
-                })
+                return NextResponse.json(
+                    {
+                        success: true,
+                        message:
+                            'Test Mode: Listing simulated successfully (eBay listing disabled)',
+                        itemId: 'SIMULATION-' + Date.now(),
+                        testMode: true,
+                    },
+                    {
+                        headers: {
+                            'Cache-Control':
+                                'private, no-cache, no-store, must-revalidate',
+                            Pragma: 'no-cache',
+                            Expires: '0',
+                        },
+                    }
+                )
             }
 
             const result = await addEbayListing(listingParams)
@@ -245,12 +271,22 @@ export async function POST(req: Request) {
                 })
             }
 
-            return NextResponse.json({
-                success: true,
-                message: 'Listing submitted successfully to eBay',
-                itemId: result.itemId,
-                testMode: false,
-            })
+            return NextResponse.json(
+                {
+                    success: true,
+                    message: 'Listing submitted successfully to eBay',
+                    itemId: result.itemId,
+                    testMode: false,
+                },
+                {
+                    headers: {
+                        'Cache-Control':
+                            'private, no-cache, no-store, must-revalidate',
+                        Pragma: 'no-cache',
+                        Expires: '0',
+                    },
+                }
+            )
         }
     } catch (error: any) {
         return NextResponse.json(

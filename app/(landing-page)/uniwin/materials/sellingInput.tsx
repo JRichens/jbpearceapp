@@ -53,7 +53,7 @@ const SellingInput = ({ cell, row, data, setData }: SellingInputProps) => {
     // Run the debounced only when the user modifies the selling price
     useEffect(() => {
         isModified && debouncedSellingPrice
-    }, [sellingPrice])
+    }, [sellingPrice, debouncedSellingPrice, isModified])
 
     // Reset the pulse animation once it has been set to true after 1.5 seconds
     useEffect(() => {
