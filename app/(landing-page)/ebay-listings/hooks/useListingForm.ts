@@ -181,13 +181,15 @@ export function useListingForm() {
             newParams.delete('passenger')
         }
 
-        if (param === 'productionYears' && newParams.has('productionYearsFL')) {
-            newParams.delete('productionYearsFL')
-        } else if (
-            param === 'productionYearsFL' &&
-            newParams.has('productionYears')
-        ) {
-            newParams.delete('productionYears')
+        // Handle mutually exclusive production year parameters
+        const productionYearParams = [
+            'productionYears',
+            'productionYearsPreFL',
+            'productionYearsPostFL',
+        ]
+        if (productionYearParams.includes(param)) {
+            // Remove all production year parameters
+            productionYearParams.forEach((p) => newParams.delete(p))
         }
 
         // Toggle the parameter
@@ -306,11 +308,18 @@ export function useListingForm() {
                                 `${formState.productionYearInfo.from}-${formState.productionYearInfo.to}`
                             )
                         } else if (
-                            param.key === 'productionYearsFL' &&
+                            param.key === 'productionYearsPreFL' &&
                             formState.productionYearInfo.facelift
                         ) {
                             titleParts.push(
                                 `${formState.productionYearInfo.from}-${formState.productionYearInfo.facelift}`
+                            )
+                        } else if (
+                            param.key === 'productionYearsPostFL' &&
+                            formState.productionYearInfo.facelift
+                        ) {
+                            titleParts.push(
+                                `${formState.productionYearInfo.facelift}-${formState.productionYearInfo.to}`
                             )
                         }
                     }

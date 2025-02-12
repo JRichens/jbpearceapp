@@ -14,7 +14,8 @@ type TitleParameter = {
         | 'passenger'
         | 'driver'
         | 'productionYears'
-        | 'productionYearsFL'
+        | 'productionYearsPreFL'
+        | 'productionYearsPostFL'
     label: string
     value?: string
     isCustom?: boolean
@@ -47,12 +48,17 @@ const TITLE_PARAMETERS: TitleParameter[] = [
     { key: 'dvlaYearOfManufacture', label: 'Year' },
     {
         key: 'productionYears',
-        label: 'Production Years',
+        label: 'Production',
         isCustom: true,
     },
     {
-        key: 'productionYearsFL',
-        label: 'Production Years FL',
+        key: 'productionYearsPreFL',
+        label: 'Pre-Facelift',
+        isCustom: true,
+    },
+    {
+        key: 'productionYearsPostFL',
+        label: 'Facelift',
         isCustom: true,
     },
     { key: 'nomCC', label: 'Engine Capacity' },
@@ -108,10 +114,16 @@ export function TitleParameters({
                     return `${productionYearInfo.from}-${productionYearInfo.to}`
                 }
                 if (
-                    param.key === 'productionYearsFL' &&
+                    param.key === 'productionYearsPreFL' &&
                     productionYearInfo.facelift
                 ) {
                     return `${productionYearInfo.from}-${productionYearInfo.facelift}`
+                }
+                if (
+                    param.key === 'productionYearsPostFL' &&
+                    productionYearInfo.facelift
+                ) {
+                    return `${productionYearInfo.facelift}-${productionYearInfo.to}`
                 }
             }
             return null
@@ -240,14 +252,16 @@ export function TitleParameters({
         // Don't show production year buttons if we have no info
         if (
             (param.key === 'productionYears' ||
-                param.key === 'productionYearsFL') &&
+                param.key === 'productionYearsPreFL' ||
+                param.key === 'productionYearsPostFL') &&
             !productionYearInfo
         ) {
             return null
         }
-        // Don't show FL option if there's no facelift year
+        // Don't show Pre-Facelift and Facelift options if there's no facelift year
         if (
-            param.key === 'productionYearsFL' &&
+            (param.key === 'productionYearsPreFL' ||
+                param.key === 'productionYearsPostFL') &&
             !productionYearInfo?.facelift
         ) {
             return null
