@@ -95,7 +95,13 @@ const getMaterialCategory = (code: string): string => {
     ]
     const copperComponents = ['PYRO', 'ELEMENTS', 'MOT']
     const brassComponents = ['BM', 'BCR', 'GM']
-    const cableComponents = ['LOW GRADE', 'PVC', 'PVC DATA CABLE', 'AC']
+    const cableComponents = [
+        'LOW GRADE',
+        'PVC',
+        'PVC DATA CABLE',
+        'PVC SINGLES',
+        'AC',
+    ]
     const aliComponents = [
         'ALIW',
         'ALLY CAST',
