@@ -59,6 +59,7 @@ const MaterialsComponent = ({ tableData, setTableData }: Props) => {
             'LOW GRADE': 'Low Grade Cable',
             PVC: 'Household Cable',
             'PVC DATA CABLE': 'Data Cable',
+            'PVC SINGLES': 'High Grade Cable',
             AC: 'Armoured Cable',
             // aliComponents replacements
             ALIW: 'Clean Ali Wheels',
