@@ -227,11 +227,12 @@ const MaterialsPage = () => {
 
     const [tableData, setTableData] = React.useState<Materials[]>([])
 
-    // Toggle alpha sort and save to localStorage
+    // Toggle alpha sort, save to localStorage, and refresh page
     const toggleAlphaSort = () => {
         const newValue = !isAlphaSort
         setIsAlphaSort(newValue)
         localStorage.setItem('materialsAlphaSort', JSON.stringify(newValue))
+        window.location.reload()
     }
 
     useEffect(() => {
