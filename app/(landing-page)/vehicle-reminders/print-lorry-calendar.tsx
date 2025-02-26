@@ -23,8 +23,11 @@ const MONTHS = [
 
 const PrintLorryCalendar = ({ data }: PrintLorryCalendarProps): JSX.Element => {
     // Format date to display day and month only
-    const formatDate = (dateString: string) => {
-        if (dateString === 'No date') return ''
+    const formatDate = (dateString: string, vehicle: CompanyVehicles) => {
+        if (dateString === 'No date') {
+            // For trailers without MOT dates, show "No MOT"
+            return vehicle.vehicleType === 'Trailers' ? 'No MOT' : ''
+        }
         const date = new Date(dateString)
         return date.toLocaleDateString('en-GB', {
             day: 'numeric',
@@ -41,7 +44,21 @@ const PrintLorryCalendar = ({ data }: PrintLorryCalendarProps): JSX.Element => {
             // Skip if SORN
             if (vehicle.TAXstatus === 'SORN') return false
 
-            // Skip if no MOT date
+            // For trailers, include them even if they don't have an MOT date
+            if (vehicle.vehicleType === 'Trailers') {
+                // If trailer has MOT date, check if it's in current year and matches current month
+                if (vehicle.MOTdate !== 'No date') {
+                    const motDate = new Date(vehicle.MOTdate)
+                    return (
+                        motDate.getFullYear() === currentYear &&
+                        motDate.getMonth() === index
+                    )
+                }
+                // Include trailers without MOT date in January
+                return index === 0 // January
+            }
+
+            // For other vehicle types, use the original logic
             if (vehicle.MOTdate === 'No date') return false
 
             const motDate = new Date(vehicle.MOTdate)
@@ -54,6 +71,11 @@ const PrintLorryCalendar = ({ data }: PrintLorryCalendarProps): JSX.Element => {
 
         // Sort vehicles by day of month
         acc[index] = monthVehicles.sort((a, b) => {
+            // Handle case where one or both vehicles might not have MOT date
+            if (a.MOTdate === 'No date' && b.MOTdate === 'No date') return 0
+            if (a.MOTdate === 'No date') return -1 // Place trailers without dates first
+            if (b.MOTdate === 'No date') return 1
+
             const dateA = new Date(a.MOTdate)
             const dateB = new Date(b.MOTdate)
             return dateA.getDate() - dateB.getDate()
@@ -66,7 +88,9 @@ const PrintLorryCalendar = ({ data }: PrintLorryCalendarProps): JSX.Element => {
         <div className="w-full h-[650px] p-1 print:h-auto">
             {/* Header */}
             <div className="text-center mb-1">
-                <h1 className="text-lg font-bold">Lorry MOT Calendar</h1>
+                <h1 className="text-lg font-bold">
+                    Lorry & Trailer MOT Calendar
+                </h1>
                 <p className="text-xs text-gray-600">
                     Generated on{' '}
                     {new Date().toLocaleDateString('en-GB', {
@@ -94,7 +118,10 @@ const PrintLorryCalendar = ({ data }: PrintLorryCalendarProps): JSX.Element => {
                                             {vehicle.registration}
                                         </div>
                                         <div className="text-gray-500">
-                                            {formatDate(vehicle.MOTdate)}
+                                            {formatDate(
+                                                vehicle.MOTdate,
+                                                vehicle
+                                            )}
                                         </div>
                                     </div>
                                     <div className="truncate">

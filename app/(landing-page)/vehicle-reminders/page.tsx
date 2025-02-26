@@ -30,8 +30,12 @@ import PrintLorryCalendar from './print-lorry-calendar'
 
 // Utility function to get effective MOT days considering special statuses
 const getEffectiveMOTDays = (vehicle: CompanyVehicles): number => {
-    // Ignore MOT days for both 'Agri' and 'NA' statuses
-    if (vehicle.MOTstatus === 'Agri' || vehicle.MOTstatus === 'NA') {
+    // Ignore MOT days for both 'Agri' and 'NA' statuses or if MOT date is "No date"
+    if (
+        vehicle.MOTstatus === 'Agri' ||
+        vehicle.MOTstatus === 'NA' ||
+        vehicle.MOTdate === 'No date'
+    ) {
         return Infinity
     }
     return typeof vehicle.MOTdays === 'number' ? vehicle.MOTdays : Infinity
@@ -40,8 +44,13 @@ const getEffectiveMOTDays = (vehicle: CompanyVehicles): number => {
 // Utility function to get minimum days between MOT and TAX
 const getMinDays = (vehicle: CompanyVehicles): number => {
     const motDays = getEffectiveMOTDays(vehicle)
+
+    // Ignore TAX days if TAX date is "No date"
     const taxDays =
-        typeof vehicle.TAXdays === 'number' ? vehicle.TAXdays : Infinity
+        vehicle.TAXdate === 'No date' || typeof vehicle.TAXdays !== 'number'
+            ? Infinity
+            : vehicle.TAXdays
+
     return Math.min(motDays, taxDays)
 }
 
@@ -114,7 +123,12 @@ const VehicleReminders = () => {
         pageStyle: `
             @page {
                 size: landscape;
-                margin: ${selectedVehicleType === 'Lorries' ? '5mm' : '20mm'};
+                margin: ${
+                    selectedVehicleType === 'Lorries' ||
+                    selectedVehicleType === 'Trailers'
+                        ? '5mm'
+                        : '20mm'
+                };
             }
             @media print {
                 body {
@@ -299,6 +313,9 @@ const VehicleReminders = () => {
                                 <SelectItem value={VehicleType.Agri}>
                                     Agri
                                 </SelectItem>
+                                <SelectItem value={VehicleType.Trailers}>
+                                    Trailers
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -336,11 +353,19 @@ const VehicleReminders = () => {
                         }}
                         muiTableBodyRowProps={({ row, table }) => {
                             const vehicle = row.original
+                            // Check if vehicle is expiring soon (within 14 days)
+                            // Only consider valid dates and non-SORN vehicles
                             const isExpiringSoon =
                                 vehicle.TAXstatus !== 'SORN' &&
+                                // Check MOT expiry - only if it has a valid date and not Agri/NA status
                                 ((vehicle.MOTdate !== 'No date' &&
+                                    vehicle.MOTstatus !== 'Agri' &&
+                                    vehicle.MOTstatus !== 'NA' &&
+                                    typeof vehicle.MOTdays === 'number' &&
                                     vehicle.MOTdays <= 14) ||
+                                    // Check TAX expiry - only if it has a valid date
                                     (vehicle.TAXdate !== 'No date' &&
+                                        typeof vehicle.TAXdays === 'number' &&
                                         vehicle.TAXdays <= 14))
 
                             return {
@@ -379,8 +404,24 @@ const VehicleReminders = () => {
             {/* Hide the printable component */}
             <div style={{ display: 'none' }}>
                 <div ref={componentRef}>
-                    {selectedVehicleType === 'Lorries' ? (
-                        <PrintLorryCalendar data={filteredAndSortedData} />
+                    {selectedVehicleType === 'Lorries' ||
+                    selectedVehicleType === 'Trailers' ? (
+                        <PrintLorryCalendar
+                            data={
+                                // When Lorries is selected, include both Lorries and Trailers
+                                selectedVehicleType === 'Lorries'
+                                    ? data
+                                          .filter(
+                                              (vehicle) =>
+                                                  vehicle.vehicleType ===
+                                                      'Lorries' ||
+                                                  vehicle.vehicleType ===
+                                                      'Trailers'
+                                          )
+                                          .sort(sortVehicles)
+                                    : filteredAndSortedData
+                            }
+                        />
                     ) : (
                         <PrintableVehicleTable data={filteredAndSortedData} />
                     )}

@@ -264,6 +264,7 @@ enum VehicleType {
   Cars
   Lorries
   Agri
+  Trailers
 }
 
 enum MOTStatus {

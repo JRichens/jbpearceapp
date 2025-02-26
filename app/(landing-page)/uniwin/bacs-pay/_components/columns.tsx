@@ -70,18 +70,26 @@ export const createColumns = (
             </div>
         ),
     },
-
     {
-        accessorKey: 'string4',
-        header: 'Payment Type',
-        cell: ({ cell }) => {
-            if (cell.row.getValue('logical22') === '1') {
-                return <div className="text-center">TRADING ACC</div>
-            } else {
-                return <div className="text-center">BACS</div>
-            }
-        },
+        accessorKey: 'string6',
+        header: 'Tel No.',
+        cell: ({ row }) => (
+            <div className="font-mono tracking-wide text-center">
+                {row.getValue('string6')}
+            </div>
+        ),
     },
+    // {
+    //     accessorKey: 'string4',
+    //     header: 'Payment Type',
+    //     cell: ({ cell }) => {
+    //         if (cell.row.getValue('logical22') === '1') {
+    //             return <div className="text-center">TRADING ACC</div>
+    //         } else {
+    //             return <div className="text-center">BACS</div>
+    //         }
+    //     },
+    // },
     {
         accessorKey: 'number16',
         header: 'VAT',

@@ -150,6 +150,9 @@ const AddVehiclePopup = ({ open, setOpen }: Props) => {
                                         Lorries
                                     </SelectItem>
                                     <SelectItem value="Agri">Agri</SelectItem>
+                                    <SelectItem value="Trailers">
+                                        Trailers
+                                    </SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

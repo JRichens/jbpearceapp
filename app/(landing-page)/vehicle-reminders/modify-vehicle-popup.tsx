@@ -56,6 +56,7 @@ const ModifyVehiclePopup = ({
 
     const motStatusOptions = Object.values(MOTStatus)
     const taxStatusOptions = Object.values(TAXStatus)
+    // Make sure to use the updated VehicleType enum that includes Trailers
     const vehicleTypeOptions = Object.values(VehicleType)
 
     const { toast } = useToast()
