@@ -124,8 +124,8 @@ const VehicleReminders = () => {
             @page {
                 size: landscape;
                 margin: ${
-                    selectedVehicleType === VehicleType.Lorries ||
-                    selectedVehicleType === VehicleType.Trailers
+                    selectedVehicleType === 'Lorries' ||
+                    selectedVehicleType === 'Trailers'
                         ? '5mm'
                         : '20mm'
                 };
@@ -304,16 +304,10 @@ const VehicleReminders = () => {
                                 <SelectItem value="All Vehicles">
                                     All Vehicles
                                 </SelectItem>
-                                <SelectItem value={VehicleType.Cars}>
-                                    Cars
-                                </SelectItem>
-                                <SelectItem value={VehicleType.Lorries}>
-                                    Lorries
-                                </SelectItem>
-                                <SelectItem value={VehicleType.Agri}>
-                                    Agri
-                                </SelectItem>
-                                <SelectItem value={VehicleType.Trailers}>
+                                <SelectItem value="Cars">Cars</SelectItem>
+                                <SelectItem value="Lorries">Lorries</SelectItem>
+                                <SelectItem value="Agri">Agri</SelectItem>
+                                <SelectItem value="Trailers">
                                     Trailers
                                 </SelectItem>
                             </SelectContent>
@@ -404,19 +398,19 @@ const VehicleReminders = () => {
             {/* Hide the printable component */}
             <div style={{ display: 'none' }}>
                 <div ref={componentRef}>
-                    {selectedVehicleType === VehicleType.Lorries ||
-                    selectedVehicleType === VehicleType.Trailers ? (
+                    {selectedVehicleType === 'Lorries' ||
+                    selectedVehicleType === 'Trailers' ? (
                         <PrintLorryCalendar
                             data={
                                 // When Lorries is selected, include both Lorries and Trailers
-                                selectedVehicleType === VehicleType.Lorries
+                                selectedVehicleType === 'Lorries'
                                     ? data
                                           .filter(
                                               (vehicle) =>
                                                   vehicle.vehicleType ===
-                                                      VehicleType.Lorries ||
+                                                      'Lorries' ||
                                                   vehicle.vehicleType ===
-                                                      VehicleType.Trailers
+                                                      'Trailers'
                                           )
                                           .sort(sortVehicles)
                                     : filteredAndSortedData
