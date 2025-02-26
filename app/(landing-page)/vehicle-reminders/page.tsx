@@ -124,8 +124,8 @@ const VehicleReminders = () => {
             @page {
                 size: landscape;
                 margin: ${
-                    selectedVehicleType === 'Lorries' ||
-                    selectedVehicleType === 'Trailers'
+                    selectedVehicleType === VehicleType.Lorries ||
+                    selectedVehicleType === VehicleType.Trailers
                         ? '5mm'
                         : '20mm'
                 };
@@ -404,19 +404,19 @@ const VehicleReminders = () => {
             {/* Hide the printable component */}
             <div style={{ display: 'none' }}>
                 <div ref={componentRef}>
-                    {selectedVehicleType === 'Lorries' ||
-                    selectedVehicleType === 'Trailers' ? (
+                    {selectedVehicleType === VehicleType.Lorries ||
+                    selectedVehicleType === VehicleType.Trailers ? (
                         <PrintLorryCalendar
                             data={
                                 // When Lorries is selected, include both Lorries and Trailers
-                                selectedVehicleType === 'Lorries'
+                                selectedVehicleType === VehicleType.Lorries
                                     ? data
                                           .filter(
                                               (vehicle) =>
                                                   vehicle.vehicleType ===
-                                                      'Lorries' ||
+                                                      VehicleType.Lorries ||
                                                   vehicle.vehicleType ===
-                                                      'Trailers'
+                                                      VehicleType.Trailers
                                           )
                                           .sort(sortVehicles)
                                     : filteredAndSortedData
