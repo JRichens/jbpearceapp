@@ -72,6 +72,41 @@ const EbayVehicleSearch = () => {
     const [progressDescription, setProgressDescription] = useState('')
     const [progressValue, setProgressValue] = useState(0)
     const [colorClass, setColorClass] = useState('')
+    const [elapsedTime, setElapsedTime] = useState(0)
+
+    // Timer effect for scraping process
+    useEffect(() => {
+        let timer: NodeJS.Timeout | null = null
+
+        if (carScraping) {
+            // Reset timer when starting a new scrape
+            setElapsedTime(0)
+
+            // Set up interval to increment timer every second
+            timer = setInterval(() => {
+                setElapsedTime((prev) => prev + 1)
+            }, 1000)
+        } else {
+            // Reset timer when scraping is done
+            setElapsedTime(0)
+        }
+
+        // Clean up interval on unmount or when scraping stops
+        return () => {
+            if (timer) clearInterval(timer)
+        }
+    }, [carScraping])
+
+    // Format elapsed time as "5s" or "1m 5s"
+    const formatElapsedTime = (seconds: number): string => {
+        if (seconds < 60) {
+            return `${seconds}s`
+        } else {
+            const minutes = Math.floor(seconds / 60)
+            const remainingSeconds = seconds % 60
+            return `${minutes}m ${remainingSeconds}s`
+        }
+    }
 
     useEffect(() => {
         if (carScrappeAccumulation) {
@@ -183,12 +218,21 @@ const EbayVehicleSearch = () => {
             searchInput
         )
 
-        // Then call the AI Streaming API
+        // Limit the number of items to 2000 if there are more
+        const limitedData =
+            scrapedData.length > 2000 ? scrapedData.slice(0, 2000) : scrapedData
+
+        // Log the data size for debugging
+        console.log(
+            `Original data size: ${scrapedData.length}, Limited to: ${limitedData.length}`
+        )
+
+        // Then call the AI API
         try {
             const response = await askClaude(
-                JSON.stringify(scrapedData),
+                JSON.stringify(limitedData),
                 searchInput,
-                scrapedData.length.toString()
+                limitedData.length.toString()
             )
 
             setCarScraping(false)
@@ -479,8 +523,11 @@ const EbayVehicleSearch = () => {
             </div>
             {carScraping && (
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 text-white text-xl flex flex-col items-center gap-4 bg-black p-4 bg-opacity-50 rounded-2xl shadow-xl">
-                    <div className="w-full flex flex-col">
-                        <div>
+                    <div className="w-full flex flex-col items-center">
+                        <div className="text-2xl font-bold mb-2">
+                            {formatElapsedTime(elapsedTime)}
+                        </div>
+                        <div className="text-center">
                             Scraping {numberOfListings.split(' ')[0]} listings..
                         </div>
                         <Typewriter
