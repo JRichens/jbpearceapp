@@ -455,7 +455,7 @@ export async function addEbayListing(
                 )}</span>
             </div>
             <div class="spec-item">
-                <span class="spec-label">Color</span>
+                <span class="spec-label">Colour</span>
                 <span class="spec-value">${escapeXml(
                     vehicle?.colourCurrent || ''
                 )}</span>

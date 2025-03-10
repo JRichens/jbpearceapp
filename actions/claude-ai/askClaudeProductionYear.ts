@@ -17,6 +17,22 @@ type PerplexityResponse = {
     }>
 }
 
+// Function to extract JSON from a string that might contain text before/after the JSON
+function extractJsonFromString(text: string): string {
+    const firstCurlyBraceIndex = text.indexOf('{')
+    const lastCurlyBraceIndex = text.lastIndexOf('}')
+
+    if (
+        firstCurlyBraceIndex !== -1 &&
+        lastCurlyBraceIndex !== -1 &&
+        lastCurlyBraceIndex > firstCurlyBraceIndex
+    ) {
+        return text.substring(firstCurlyBraceIndex, lastCurlyBraceIndex + 1)
+    }
+
+    return text // Return original if no valid JSON structure found
+}
+
 export async function askClaudeProductionYear(
     vehicle: string,
     part: string
@@ -63,7 +79,7 @@ Base your response on current internet sources to ensure accuracy.
 
 Do not include citation brackets in your response.
 
-If the part provided is similar to a head unit or stereo or sat nav, add a sentence that says A code may be required to activate this unit.
+If the part provided is an electrical head unit or stereo or sat nav, add a sentence that says A code may be required to activate this unit.
 
 The final sentence of the description should mention that if still unsure of compatibility then send us your vehicle registration and we can check for you. 
 .`,
@@ -106,8 +122,13 @@ The final sentence of the description should mention that if still unsure of com
 
         if (data.choices && data.choices[0]?.message?.content) {
             try {
+                // Extract JSON from the response content
+                const contentString = data.choices[0].message.content
+                const jsonString = extractJsonFromString(contentString)
+
+                // Parse the extracted JSON
                 const parsedResponse = JSON.parse(
-                    data.choices[0].message.content
+                    jsonString
                 ) as ProductionYearResponse
                 console.log('Perplexity API Parsed Response:', parsedResponse)
                 return parsedResponse
