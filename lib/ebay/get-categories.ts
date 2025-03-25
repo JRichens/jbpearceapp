@@ -62,27 +62,24 @@ async function getSuggestedCategories(
         // Strip out ampersands from search term before using in XML
         const sanitizedSearchTerm = searchTerm.replace(/&/g, '')
 
-        // Use eBay's Trading API to get suggested categories
-        const response = await fetchWithRetry(
-            'https://api.ebay.com/ws/api.dll',
-            {
-                method: 'POST',
-                headers: {
-                    'X-EBAY-API-SITEID': '3', // UK site ID
-                    'X-EBAY-API-COMPATIBILITY-LEVEL': '967',
-                    'X-EBAY-API-CALL-NAME': 'GetSuggestedCategories',
-                    'X-EBAY-API-IAF-TOKEN': `${process.env.EBAY_USER_TOKEN}`,
-                    'Content-Type': 'text/xml',
-                },
-                body: `<?xml version="1.0" encoding="utf-8"?>
+        // Use eBay's Trading API to get suggested categories - no retries
+        const response = await fetch('https://api.ebay.com/ws/api.dll', {
+            method: 'POST',
+            headers: {
+                'X-EBAY-API-SITEID': '3', // UK site ID
+                'X-EBAY-API-COMPATIBILITY-LEVEL': '967',
+                'X-EBAY-API-CALL-NAME': 'GetSuggestedCategories',
+                'X-EBAY-API-IAF-TOKEN': `${process.env.EBAY_USER_TOKEN}`,
+                'Content-Type': 'text/xml',
+            },
+            body: `<?xml version="1.0" encoding="utf-8"?>
                 <GetSuggestedCategoriesRequest xmlns="urn:ebay:apis:eBLBaseComponents">
                     <RequesterCredentials>
                         <eBayAuthToken>${process.env.EBAY_USER_TOKEN}</eBayAuthToken>
                     </RequesterCredentials>
                     <Query>${sanitizedSearchTerm}</Query>
                 </GetSuggestedCategoriesRequest>`,
-            }
-        )
+        })
 
         const responseText = await response.text()
 
@@ -126,7 +123,7 @@ async function getSuggestedCategories(
 
         if (!suggestedCategoryArray) {
             console.log('No SuggestedCategoryArray found in response')
-            return getDirectCategoryMatches(sanitizedSearchTerm)
+            throw new Error('No SuggestedCategoryArray found in response')
         }
 
         const suggestedCategoryNodes =
@@ -136,10 +133,8 @@ async function getSuggestedCategories(
         )
 
         if (suggestedCategoryNodes.length === 0) {
-            console.log(
-                'No suggested categories found, falling back to direct search'
-            )
-            return getDirectCategoryMatches(sanitizedSearchTerm)
+            console.log('No suggested categories found')
+            throw new Error('No suggested categories found')
         }
 
         const categories = []
@@ -206,11 +201,7 @@ async function getSuggestedCategories(
         return categories.slice(0, 3)
     } catch (error) {
         console.error('Error getting suggested categories:', error)
-
-        // Fall back to direct category search
-        console.log('Falling back to direct category search due to error')
-        const sanitizedSearchTerm = searchTerm.replace(/&/g, '')
-        return getDirectCategoryMatches(sanitizedSearchTerm)
+        throw error
     }
 }
 
@@ -244,7 +235,7 @@ async function getDirectCategoryMatches(
                     </RequesterCredentials>
                     <DetailLevel>ReturnAll</DetailLevel>
                     <ViewAllNodes>true</ViewAllNodes>
-                    <LevelLimit>4</LevelLimit>
+                    <LevelLimit>10</LevelLimit>
                 </GetCategoriesRequest>`,
             }
         )
@@ -355,6 +346,191 @@ async function getDirectCategoryMatches(
     }
 }
 
+// List of fallback category IDs in priority order
+const FALLBACK_CATEGORY_IDS = [
+    '33710',
+    '262161',
+    '33716',
+    '33640',
+    '179850',
+    '179681',
+    '33596',
+    '33646',
+    '262085',
+    '179679',
+    '33656',
+    '33644',
+    '174119',
+    '33704',
+    '33645',
+    '262166',
+    '50459',
+    '33675',
+    '9886',
+    '33648',
+    '174084',
+    '177711',
+    '33706',
+    '33725',
+    '262221',
+    '46101',
+    '33545',
+    '169395',
+    '33543',
+    '262157',
+    '14769',
+    '262084',
+    '174112',
+    '174593',
+    '33701',
+    '262265',
+    '33705',
+    '33588',
+    '179680',
+    '53908',
+    '33742',
+    '177697',
+    '33602',
+    '33638',
+    '179847',
+    '169473',
+    '263249',
+    '42605',
+    '38204',
+    '174093',
+    '262245',
+    '33589',
+    '46096',
+    '33615',
+    '262156',
+    '138858',
+    '33554',
+    '108856',
+    '4708',
+    '177710',
+]
+
+/**
+ * Get categories by IDs using the GetCategories API
+ * This function fetches all categories and filters them by the provided IDs
+ */
+async function getCategoriesByIds(
+    categoryIds: string[]
+): Promise<
+    Array<{ id: string; name: string; fullPath: string; finalName: string }>
+> {
+    try {
+        console.log(`Fetching categories for ${categoryIds.length} IDs`)
+
+        // Use eBay's Trading API to get all categories
+        const response = await fetchWithRetry(
+            'https://api.ebay.com/ws/api.dll',
+            {
+                method: 'POST',
+                headers: {
+                    'X-EBAY-API-SITEID': '3',
+                    'X-EBAY-API-COMPATIBILITY-LEVEL': '967',
+                    'X-EBAY-API-CALL-NAME': 'GetCategories',
+                    'X-EBAY-API-IAF-TOKEN': `${process.env.EBAY_USER_TOKEN}`,
+                    'Content-Type': 'text/xml',
+                },
+                body: `<?xml version="1.0" encoding="utf-8"?>
+                <GetCategoriesRequest xmlns="urn:ebay:apis:eBLBaseComponents">
+                    <RequesterCredentials>
+                        <eBayAuthToken>${process.env.EBAY_USER_TOKEN}</eBayAuthToken>
+                    </RequesterCredentials>
+                    <DetailLevel>ReturnAll</DetailLevel>
+                    <ViewAllNodes>true</ViewAllNodes>
+                    <LevelLimit>10</LevelLimit>
+                </GetCategoriesRequest>`,
+            }
+        )
+
+        const responseText = await response.text()
+        if (!response.ok) {
+            throw new Error(`eBay API error: ${response.statusText}`)
+        }
+
+        const { DOMParser } = require('@xmldom/xmldom')
+        const parser = new DOMParser()
+        const xmlDoc = parser.parseFromString(responseText, 'text/xml')
+
+        const categoryNodes = xmlDoc.getElementsByTagName('Category')
+        console.log(`Fetched ${categoryNodes.length} categories from eBay`)
+
+        // Create a map to store categories by ID
+        const categoryMap = new Map()
+
+        // Process all categories and store them in the map
+        for (let i = 0; i < categoryNodes.length; i++) {
+            const category = categoryNodes[i]
+            const id = getElementText(category, 'CategoryID')
+            const name = getElementText(category, 'CategoryName')
+
+            if (id && name && categoryIds.includes(id)) {
+                // Get the category path by traversing parent categories
+                let fullPath = name
+                let currentCategory = category
+                const parentIdNodes =
+                    currentCategory.getElementsByTagName('CategoryParentID')
+
+                // Only get the first parent ID (immediate parent)
+                if (parentIdNodes.length > 0) {
+                    const parentId = parentIdNodes[0].textContent
+                    if (parentId) {
+                        // Find the parent category node
+                        for (let j = 0; j < categoryNodes.length; j++) {
+                            const potentialParent = categoryNodes[j]
+                            const parentCategoryId = getElementText(
+                                potentialParent,
+                                'CategoryID'
+                            )
+                            if (parentCategoryId === parentId) {
+                                const parentName = getElementText(
+                                    potentialParent,
+                                    'CategoryName'
+                                )
+                                if (parentName) {
+                                    fullPath = `${parentName} > ${name}`
+                                }
+                                break
+                            }
+                        }
+                    }
+                }
+
+                categoryMap.set(id, {
+                    id,
+                    name,
+                    fullPath: fullPath,
+                    finalName: name,
+                })
+            }
+        }
+
+        // Create the result array in the same order as the input categoryIds
+        const result = []
+        const missingIds = []
+        for (const id of categoryIds) {
+            const category = categoryMap.get(id)
+            if (category) {
+                result.push(category)
+            } else {
+                missingIds.push(id)
+            }
+        }
+
+        console.log(`Returning ${result.length} matched categories`)
+        console.log(
+            `Missing ${missingIds.length} categories: ${missingIds.join(', ')}`
+        )
+        return result
+    } catch (error) {
+        console.error('Error fetching categories by IDs:', error)
+        throw error
+    }
+}
+
 export async function getEbayCategories(
     searchTerm?: string,
     useVehicleSearch: boolean = false
@@ -381,21 +557,26 @@ export async function getEbayCategories(
             } catch (error) {
                 console.error('Error getting suggested categories:', error)
 
-                // Fall back to direct category search if suggested categories fails
-                console.log(
-                    'Falling back to direct category search due to error'
-                )
-                const sanitizedSearchTerm = searchTerm.replace(/&/g, '')
-                const directCategories = await getDirectCategoryMatches(
-                    sanitizedSearchTerm
-                )
-
-                if (directCategories.length > 0) {
-                    console.log(
-                        'Found categories from direct search:',
-                        directCategories.length
+                // Only fallback to predefined category IDs
+                console.log('Falling back to predefined category IDs')
+                try {
+                    // Get all categories from our fallback list for scrollable display
+                    const fallbackCategories = await getCategoriesByIds(
+                        FALLBACK_CATEGORY_IDS
                     )
-                    return directCategories
+
+                    if (fallbackCategories.length > 0) {
+                        console.log(
+                            'Found fallback categories:',
+                            fallbackCategories.length
+                        )
+                        return fallbackCategories
+                    }
+                } catch (fallbackError) {
+                    console.error(
+                        'Error getting fallback categories:',
+                        fallbackError
+                    )
                 }
 
                 // If both methods fail, throw the original error
@@ -426,7 +607,7 @@ export async function getEbayCategories(
                     </RequesterCredentials>
                     <DetailLevel>ReturnAll</DetailLevel>
                     <ViewAllNodes>true</ViewAllNodes>
-                    <LevelLimit>4</LevelLimit>
+                    <LevelLimit>10</LevelLimit>
                 </GetCategoriesRequest>`,
             }
         )

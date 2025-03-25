@@ -14,6 +14,7 @@ import {
     forwardRef,
     useRef,
     useEffect,
+    useState,
 } from 'react'
 import { Button } from '@/components/ui/button'
 import { Plus, Search, X } from 'lucide-react'
@@ -63,6 +64,9 @@ export const PartDescriptionSection = forwardRef<
             start: null,
             end: null,
         })
+
+        // Track which part number fields have NA selected
+        const [naSelected, setNaSelected] = useState<boolean[]>([false])
 
         useImperativeHandle(ref, () => ({
             resetPartNumbers: () => {
@@ -169,6 +173,8 @@ export const PartDescriptionSection = forwardRef<
                 ...prev,
                 partNumbers: [...prev.partNumbers, ''],
             }))
+            // Add a new entry to naSelected state
+            setNaSelected((prev) => [...prev, false])
         }
 
         const removePartNumberField = (index: number) => {
@@ -186,6 +192,21 @@ export const PartDescriptionSection = forwardRef<
                 partNumbers: newPartNumbers,
                 partNumber: combinedPartNumbers,
             }))
+
+            // Update naSelected state by removing the corresponding entry
+            setNaSelected((prev) => prev.filter((_, i) => i !== index))
+        }
+
+        // Toggle NA for a part number field
+        const toggleNa = (index: number) => {
+            const newNaSelected = [...naSelected]
+            newNaSelected[index] = !newNaSelected[index]
+            setNaSelected(newNaSelected)
+
+            // If toggling to NA, set the value to 'NA'
+            // If toggling off NA, clear the value
+            const newValue = newNaSelected[index] ? 'NA' : ''
+            handlePartNumberChange(index, newValue)
         }
 
         const handleSearch = (partNumber: string) => {
@@ -284,8 +305,30 @@ export const PartDescriptionSection = forwardRef<
                                     }
                                     placeholder="Enter manufacturer part number"
                                     autoComplete="on"
-                                    className="text-xl"
+                                    className={`text-xl ${
+                                        naSelected[index]
+                                            ? 'bg-gray-100 text-gray-500'
+                                            : ''
+                                    }`}
+                                    disabled={naSelected[index]}
                                 />
+                                {/* NA button */}
+                                <Button
+                                    type="button"
+                                    variant={
+                                        naSelected[index]
+                                            ? 'default'
+                                            : 'outline'
+                                    }
+                                    size="icon"
+                                    onClick={() => toggleNa(index)}
+                                    className="shrink-0"
+                                >
+                                    <span className="text-xs font-medium">
+                                        NA
+                                    </span>
+                                </Button>
+
                                 {partNumber.trim() !== '' &&
                                     !['NA', 'N/A'].includes(
                                         partNumber.trim().toUpperCase()
@@ -332,29 +375,39 @@ export const PartDescriptionSection = forwardRef<
                 </div>
 
                 <div className="space-y-4">
-                    {/* Show Wheels/Tyres button if part description is entered and no vehicle is selected */}
-                    {formState.partDescription.trim() !== '' && !vehicle && (
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="lg"
-                            onClick={() => {
-                                handleVehicleChange(createDefaultVehicle())
-                                setFormState((prev) => ({
-                                    ...prev,
-                                    showCarInfo: false, // Ensure car info is hidden by default
-                                    partNumbers: ['NA'], // Set part number to NA
-                                    partNumber: 'NA',
-                                    tyreModel: '', // Initialize tyreModel as empty string
-                                    brand: '', // Initialize brand as empty string
-                                    dotDateCode: '', // Initialize dotDateCode as empty string
-                                }))
-                            }}
-                            className="w-full"
-                        >
-                            Wheels / Tyres
-                        </Button>
-                    )}
+                    {/* Show Wheels/Tyres button if part description contains 'alloy', 'wheel', or 'tyre' and no vehicle is selected */}
+                    {formState.partDescription.trim() !== '' &&
+                        !vehicle &&
+                        (formState.partDescription
+                            .toLowerCase()
+                            .includes('alloy') ||
+                            formState.partDescription
+                                .toLowerCase()
+                                .includes('wheel') ||
+                            formState.partDescription
+                                .toLowerCase()
+                                .includes('tyre')) && (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="lg"
+                                onClick={() => {
+                                    handleVehicleChange(createDefaultVehicle())
+                                    setFormState((prev) => ({
+                                        ...prev,
+                                        showCarInfo: false, // Ensure car info is hidden by default
+                                        partNumbers: ['NA'], // Set part number to NA
+                                        partNumber: 'NA',
+                                        tyreModel: '', // Initialize tyreModel as empty string
+                                        brand: '', // Initialize brand as empty string
+                                        dotDateCode: '', // Initialize dotDateCode as empty string
+                                    }))
+                                }}
+                                className="w-full"
+                            >
+                                Wheels / Tyres
+                            </Button>
+                        )}
 
                     {showRegForm && (
                         <div>

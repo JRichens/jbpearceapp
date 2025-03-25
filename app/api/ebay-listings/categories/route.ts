@@ -38,10 +38,19 @@ export async function GET(request: Request) {
             )
         }
 
+        // Determine if these are fallback categories (more than 3 categories with useVehicleSearch=true)
+        const isFallbackCategories = useVehicleSearch && categories.length > 3
+
         // Limit the number of categories if needed
-        const MAX_CATEGORIES = useVehicleSearch ? 3 : 100
+        // For fallback categories, return all of them for scrollable display
+        const MAX_CATEGORIES = isFallbackCategories
+            ? 100
+            : useVehicleSearch
+            ? 3
+            : 100
         const limitedCategories = categories.slice(0, MAX_CATEGORIES)
         console.log('API: Returning categories:', limitedCategories.length)
+        console.log('API: Using fallback categories:', isFallbackCategories)
 
         return NextResponse.json(limitedCategories, {
             status: 200,
