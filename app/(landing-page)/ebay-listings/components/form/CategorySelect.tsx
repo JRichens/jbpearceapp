@@ -173,8 +173,8 @@ export function CategorySelect({
                                 </div>
                                 {filteredCategories.length === 0 && (
                                     <p className="text-sm text-gray-500 mt-2">
-                                        No categories found matching "
-                                        {searchTerm}"
+                                        No categories found matching &quot;
+                                        {searchTerm}&quot;
                                     </p>
                                 )}
                             </div>
